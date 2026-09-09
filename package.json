@@ -1,25 +1,28 @@
 {
-  "name": "simon-frontend",
+  "name": "simon",
   "private": true,
   "version": "0.0.0",
+  "description": "Self-hosted trade management for small retail. See docs/prd.md.",
   "type": "module",
+  "workspaces": [
+    "packages/*",
+    "frontend",
+    "backend"
+  ],
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
-    "lint": "oxlint",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "react": "^19.2.8",
-    "react-dom": "^19.2.8"
+    "dev": "npm run dev --workspace frontend",
+    "dev:api": "npm run dev --workspace backend",
+    "build": "npm run build --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "devDependencies": {
-    "@types/node": "^24.13.3",
-    "@types/react": "^19.2.18",
-    "@types/react-dom": "^19.2.4",
-    "@vitejs/plugin-react": "^6.1.0",
-    "oxlint": "^1.79.0",
     "typescript": "~6.0.2",
-    "vite": "^8.2.2"
+    "vitest": "^4.0.18"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }

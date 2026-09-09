@@ -9,6 +9,8 @@ allowed-tools: Read, Write, Edit, Glob, Grep, Bash
 ## Monorepo layout
 
 ```
+/                npm workspaces root — vitest config, scripts across all workspaces
+/packages/shared @simon/shared — money, units, shared types. Used by BOTH sides.
 /frontend        React 19 + Vite 8 + TypeScript, pure SPA (no SSR)
   src/
     features/    domain modules, one per resource
@@ -25,8 +27,9 @@ allowed-tools: Read, Write, Edit, Glob, Grep, Bash
 /docs            prd.md is authoritative
 ```
 
-> The repository root is currently the Vite app. **Moving it under `/frontend` is the first
-> structural step** (PRD §22 Phase 0) — do it before adding backend code, not after.
+> The split is done. `packages/shared` is consumed as TypeScript **source** via a path alias
+> (`@simon/shared`) — no build step and no build ordering. Add a new shared module by
+> exporting it from `packages/shared/src/index.ts`.
 
 ## Dependency flow
 

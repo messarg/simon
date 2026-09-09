@@ -40,9 +40,10 @@ price.toFixed(2)                        // formatting used as arithmetic
 
 ## Do this
 
-All arithmetic goes through `backend/domain/money.ts` (mirrored for the client in
-`frontend/src/lib/money.ts` — one implementation, shared package or generated copy, never
-two divergent ones).
+All arithmetic goes through **`packages/shared/src/money.ts`**, imported as `@simon/shared`
+by both the backend and the till. It exists exactly once — this is the reason Simon is a
+monorepo. Two copies drift, and a till displaying a total the server did not compute is
+precisely the bug this representation exists to prevent.
 
 ```ts
 export type Dram = number;        // integer, whole drams

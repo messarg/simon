@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { formatDram, lineTotal } from '@simon/shared'
 import heroImg from './assets/hero.png'
 import reactLogo from './assets/react.svg'
 import viteLogo from './assets/vite.svg'
@@ -16,7 +17,7 @@ function App() {
           <img src={viteLogo} className="vite" alt="Vite logo" />
         </div>
         <div>
-          <h1>Get started</h1>
+          <h1>Simon — {formatDram(lineTotal(2500, 1_200_000))}</h1>
           <p>
             Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
           </p>

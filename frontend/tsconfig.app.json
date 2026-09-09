@@ -20,7 +20,13 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "erasableSyntaxOnly": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+
+    /* Workspace packages, consumed as source (no build step) */
+    "paths": {
+      "@simon/shared": ["../packages/shared/src/index.ts"],
+      "@/*": ["./src/*"]
+    }
   },
-  "include": ["src"]
+  "include": ["src", "../packages/shared/src"]
 }

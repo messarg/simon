@@ -1263,6 +1263,7 @@ that number is always flattering and always wrong.
 Constraints retained: **decoupled client–server, local-only, no Next.js, no SSR.**
 
 ```
+/packages/shared  money, units, shared types — imported as @simon/shared by both sides
 /backend    Node.js + Express (REST), Prisma, SQLite (WAL)
             /domain    money, costing, allocation, units — pure, heavily tested
             /services  transactional use cases (sale, receipt, repayment)
@@ -1273,8 +1274,12 @@ Constraints retained: **decoupled client–server, local-only, no Next.js, no SS
 /docs       this PRD, ADRs, operator runbook
 ```
 
-- **Monorepo.** The repository root is currently the Vite app; **moving it under `/frontend`
-  is the first structural step.**
+- **One repository, npm workspaces.** Frontend, backend, and `packages/shared` ship as a
+  single artifact — Docker Compose behind one Nginx, later one Tauri executable. A shop
+  installs "Simon 1.4.0", not a frontend and a backend with separate versions.
+- **`packages/shared` holds the money module**, imported by both sides as `@simon/shared`.
+  This is the load-bearing reason for a monorepo: §10.1's rules must exist exactly once, or
+  the till will eventually display a total the server did not compute.
 - **Business logic lives in `/backend/domain`**, not in routes or components. The test for
   correct layering: can the rule be unit-tested with no HTTP and no database?
 - **Shared types** from one source, not two hand-maintained copies that drift.

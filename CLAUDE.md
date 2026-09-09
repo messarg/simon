@@ -6,7 +6,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Simon** (Սիմոն) is a self-hosted trade-management / POS system for small retail and hardware stores in Armenia, covering the full buy–sell cycle. **`docs/prd.md` is the authoritative specification — read it before implementing anything.**
 
-The repository currently holds only the Vite `react-ts` starter. Per the PRD it becomes a monorepo (`/frontend`, `/backend`); moving the existing app under `/frontend` is the first structural step.
+One repository, npm workspaces — frontend, backend, and shared code ship as a single artifact:
+
+```
+packages/shared/   @simon/shared — money, units, shared types. Imported by BOTH sides.
+frontend/          React 19 + Vite 8, pure SPA (no SSR)
+backend/           Node + Express + Prisma + SQLite  (skeleton only so far)
+docs/prd.md        authoritative specification
+```
+
+`packages/shared` is consumed as TypeScript **source** through the `@simon/shared` alias — no build step, no build ordering. It is the load-bearing reason this is a monorepo: the money rules must exist exactly once.
 
 ### Invariants from the PRD that are expensive to fix later
 
@@ -23,22 +32,37 @@ Unresolved: Armenian fiscal (ՀԴՄ) and tax-regime requirements — see PRD §1
 
 ## Commands
 
+Run from the repository root; scripts fan out across workspaces.
+
 ```bash
-npm install       # install dependencies
-npm run dev       # dev server with HMR at http://localhost:5173
-npm run build     # tsc -b (typecheck, all projects) then vite build -> dist/
-npm run preview   # serve the production build from dist/
-npm run lint      # oxlint
+npm install                  # installs every workspace and links @simon/*
+npm run dev                  # frontend dev server, HMR at http://localhost:5173
+npm run dev:api              # backend on :5000 (Vite proxies /api to it)
+npm run build                # build every workspace
+npm run typecheck            # tsc --noEmit across every workspace
+npm run lint                 # oxlint
+npm test                     # vitest, all workspaces
+npm run test:watch
 ```
 
-There is **no test runner configured**. Do not reference `npm test` or invent a single-test command until one is added (Vitest is the conventional pairing with Vite; it must be installed and wired into `package.json` first).
+Single test file or case:
 
-To typecheck without emitting a build, run `npx tsc -b --noEmit`. Note `npm run build` typechecks as its first step, so a build failure is often a type error rather than a bundling error.
+```bash
+npm test -- money                    # by file/path pattern
+npm test -- -t "rounds half up"      # by test name
+```
+
+Vitest owns `**/src/**/*.test.ts`; Playwright (when added) will own `tests/**`. `TZ` is pinned to `Asia/Yerevan` in `vitest.config.ts` — shift and report boundaries are shop-local time, so an unpinned machine would produce different results.
+
+`npm run build` typechecks first, so a build failure is often a type error rather than a bundling error.
 
 ## Architecture
 
-- **Build tool:** Vite 8 with `@vitejs/plugin-react` (`vite.config.ts`). React 19, TypeScript 6.
-- **Entry chain:** `index.html` → `src/main.tsx` (creates the React root in `#root`, wraps in `StrictMode`) → `src/App.tsx`.
+- **Build tool:** Vite 8 with `@vitejs/plugin-react` (`frontend/vite.config.ts`). React 19, TypeScript 6.
+- **Entry chain:** `frontend/index.html` → `src/main.tsx` → `src/App.tsx`.
+- **Aliases:** `@simon/shared` → `packages/shared/src`, `@/*` → `frontend/src/*`. Declared in **both** `vite.config.ts` (bundler) and `tsconfig.app.json` (type checker) — setting only one gives an editor that resolves imports the build then fails on.
+- **API base URL:** relative (`/api`). Same-origin in production behind Nginx; Vite proxies to `localhost:5000` in dev. **Never hardcode a LAN IP.**
+- **TypeScript 6 note:** `baseUrl` is deprecated and errors. `paths` resolve relative to the tsconfig file itself.
 - **TypeScript project references:** `tsconfig.json` is a solution file with no sources of its own; it references `tsconfig.app.json` (browser code under `src/`) and `tsconfig.node.json` (Node-side config such as `vite.config.ts`). Compiler options belong in the referenced config that matches the file's environment — editing the root `tsconfig.json` generally has no effect. Builds are incremental (`tsc -b`), so stale `.tsbuildinfo` can mask changes; `tsc -b --force` clears that.
 - **Linting:** oxlint, configured in `.oxlintrc.json`. It is a standalone binary, not ESLint — ESLint plugins and `eslintrc` config do not apply.
 - **Static assets:** files in `public/` are served at the site root and copied verbatim; files imported from `src/assets/` are hashed and bundled. Choose based on whether the URL must be stable.
@@ -95,5 +119,5 @@ Spawn via the Agent tool for deep or parallel work.
 ## Conventions
 
 - `.idea/` is gitignored (JetBrains is in use).
-- The default branch is `master`; work happens on `development`.
+- The default branch is `master`; work happens on `development`. Releases are git tags — Simon is installed per shop, so there is no staging or production server to push to.
 - Project instructions live in **this file only**. There is no `.claude/CLAUDE.md`.
