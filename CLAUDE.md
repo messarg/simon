@@ -19,7 +19,7 @@ The repository currently holds only the Vite `react-ts` starter. Per the PRD it 
 - Business logic belongs in `backend/domain` (pure, unit-tested), not in routes or components.
 - UI strings are Armenian and live in resource files; code, schema, and comments are English.
 
-Unresolved: Armenian fiscal (ՀԴՄ) and tax-regime requirements — see PRD §10 and §18.
+Unresolved: Armenian fiscal (ՀԴՄ) and tax-regime requirements — see PRD §16 and §18.
 
 ## Commands
 

@@ -6,7 +6,7 @@ allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 
 # Offline & sync
 
-Simon is **LAN-primary with a resilient client**, not peer-to-peer offline-first (PRD §8.1).
+Simon is **LAN-primary with a resilient client**, not peer-to-peer offline-first (PRD §14.1).
 The shop PC is authoritative. The client is built so a brief LAN interruption never costs a
 sale — because a customer is standing at the counter and the queue must not stop.
 
@@ -81,7 +81,7 @@ cached stock number look authoritative.
 Sales are additive, so genuine conflicts are rare and specific:
 
 - **Stock goes negative on sync** → accept the movement, flag the product for recount
-  (PRD §7.6). The goods are already gone; refusing the record does not bring them back.
+  (PRD §13.6). The goods are already gone; refusing the record does not bring them back.
 - **Credit limit breached by a queued offline sale** → accept, flag for owner review.
 - **Product deleted/deactivated between cache and sync** → accept, flag. Never reject.
 
@@ -116,7 +116,7 @@ Three states, in Armenian, non-technical:
 
 - Unit: outbox ordering, backoff, retryable vs terminal error classification.
 - Integration: submit the same sale id twice → exactly one sale, one set of movements.
-- E2E (PRD §19.8): sell through a simulated two-minute outage; every queued sale syncs
+- E2E (PRD §25.8): sell through a simulated two-minute outage; every queued sale syncs
   exactly once, no duplicates.
 
 ## Checklist

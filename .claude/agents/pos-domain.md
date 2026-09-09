@@ -20,7 +20,7 @@ and only surfaces when the owner's books stop reconciling months later.
 
 ## Always read first
 
-- `docs/prd.md` §4 (foundational data decisions), §5 (domain model), §6–7 (flows) — authoritative
+- `docs/prd.md` §10 (foundational data decisions), §11 (domain model), §12–13 (flows) — authoritative
 - `.claude/skills/money/SKILL.md`
 - `.claude/skills/ledger/SKILL.md`
 - `backend/src/domain/` — the existing pure logic and its tests
@@ -41,7 +41,7 @@ and only surfaces when the owner's books stop reconciling months later.
 6. **Payments allocate to specific charges**, oldest first by default. Allocations must sum
    exactly to the payment. Aging is measured from the charge date.
 7. **Corrections are reversals**, never updates or deletes, and always write an audit row.
-8. **Never block the queue.** Negative stock warns and flags (PRD §7.6); a credit-limit breach
+8. **Never block the queue.** Negative stock warns and flags (PRD §13.6); a credit-limit breach
    warns and requires override. A customer is standing at the counter.
 
 ## Decision guide

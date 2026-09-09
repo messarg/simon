@@ -7,7 +7,7 @@ allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 # Barcode input
 
 Scanning is the hottest path in the product. Budget: **scan → line rendered in under 200 ms
-(p95)** (PRD §14).
+(p95)** (PRD §20).
 
 ## Support both, HID first
 
@@ -46,7 +46,7 @@ Rules:
 
 ⚠️ **`getUserMedia` requires a secure context.** On a plain-HTTP LAN IP (`http://192.168.1.x`)
 Android Chrome and iOS Safari refuse camera access — usually *silently*. This is a known
-constraint, not a bug to debug (PRD §11, §9.2).
+constraint, not a bug to debug (PRD §17, §15.6).
 
 Resolve one of:
 - TLS on the LAN with a certificate trusted on staff devices, **or**
@@ -68,7 +68,7 @@ as a fallback.
 ## Lookup
 
 Barcode → product is **one-to-many**: a product legitimately carries a manufacturer EAN, an
-internal code, and a second supplier's code (PRD §5).
+internal code, and a second supplier's code (PRD §11).
 
 ```ts
 // ProductBarcode.barcode is UNIQUE and indexed — the hottest query in the system
@@ -82,7 +82,7 @@ Resolution order: exact match → normalised match (trim, strip leading zeros, E
 
 An unknown barcode is **normal**, not an error — much of a hardware store's stock has no
 manufacturer code. Open the 15-second "add product" sheet (name, price, unit) and let the
-catalogue fill through trading (PRD §12.1). This is the highest-leverage onboarding feature
+catalogue fill through trading (PRD §18.1). This is the highest-leverage onboarding feature
 in the product; never dead-end on "product not found".
 
 ### Internal barcodes

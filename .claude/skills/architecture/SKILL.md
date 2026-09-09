@@ -26,7 +26,7 @@ allowed-tools: Read, Write, Edit, Glob, Grep, Bash
 ```
 
 > The repository root is currently the Vite app. **Moving it under `/frontend` is the first
-> structural step** (PRD §16 Phase 0) — do it before adding backend code, not after.
+> structural step** (PRD §22 Phase 0) — do it before adding backend code, not after.
 
 ## Dependency flow
 

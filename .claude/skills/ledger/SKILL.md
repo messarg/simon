@@ -6,8 +6,8 @@ allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 
 # Ledgers: stock & debt
 
-Two append-only ledgers carry every quantity and every dram of credit in Simon. PRD §4.4,
-§4.6, §4.7, §7.1.
+Two append-only ledgers carry every quantity and every dram of credit in Simon. PRD §10.4,
+§10.6, §10.7, §13.1.
 
 ## The rule
 
@@ -119,11 +119,11 @@ export function allocateOldestFirst(payment: Dram, openCharges: OpenCharge[]): A
 
 `0–30 / 31–60 / 61–90 / 90+`, measured from the **charge** date (not the last payment), by
 outstanding amount per charge. Surface the oldest unpaid charge at checkout before a new
-debt sale is confirmed (PRD §6.2) — that screen is the product's core value.
+debt sale is confirmed (PRD §12.2) — that screen is the product's core value.
 
 ## Correction, never deletion
 
-Finalised sales, receipts, and payments are immutable (PRD §4.7).
+Finalised sales, receipts, and payments are immutable (PRD §10.7).
 
 | Wrong | Right |
 |---|---|

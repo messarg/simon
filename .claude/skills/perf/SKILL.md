@@ -7,7 +7,7 @@ allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 # Performance
 
 Performance here is not a score — it is whether a worker can clear a queue. The budgets in
-PRD §14 are product requirements, not aspirations.
+PRD §20 are product requirements, not aspirations.
 
 | Budget | Target |
 |---|---|

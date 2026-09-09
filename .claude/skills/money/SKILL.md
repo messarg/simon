@@ -8,7 +8,7 @@ allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 
 The single most important invariant in this codebase. Get it wrong and the books stop
 reconciling; the damage is silent and only shows up months later when the owner's totals
-disagree with the drawer. See PRD §4.1–4.5.
+disagree with the drawer. See PRD §10.1–4.5.
 
 ## The rule
 
@@ -82,7 +82,7 @@ two ×1000 multiplications before dividing back down.
 
 ## Weighted average cost (WAC)
 
-Simon uses moving weighted average, not FIFO (PRD §4.5). On every goods receipt:
+Simon uses moving weighted average, not FIFO (PRD §10.5). On every goods receipt:
 
 ```ts
 export function newAverageCost(
@@ -102,7 +102,7 @@ export function newAverageCost(
 - **Snapshot on sale.** `SaleLine.unitCostMdram` is written at sale time from the then-current
   average. Never join to `Product.avgCostMdram` for a historical margin report, or restocking
   silently rewrites last month's profit.
-- **Negative stock** uses the last known average and flags the movement (PRD §7.6).
+- **Negative stock** uses the last known average and flags the movement (PRD §13.6).
 
 ```ts
 /** Apportion a receipt-level cost across lines by value; remainder to the largest line. */
@@ -114,7 +114,7 @@ the largest line rather than letting it vanish; assert the sum in a test.
 
 ## Unit of measure
 
-Three roles per product (PRD §4.3): purchase, stock, sale. Conversion is by integer factor.
+Three roles per product (PRD §10.3): purchase, stock, sale. Conversion is by integer factor.
 
 ```ts
 // Receiving 3 spools of 50 m: qty 3000 milli-units × factor 50 → 150_000 milli-metres
@@ -126,7 +126,7 @@ divide with `roundHalfUp` — and question the data model first.
 
 ## VAT
 
-`taxCategory` sits on the product; the regime sits in settings (PRD §10). Whether prices are
+`taxCategory` sits on the product; the regime sits in settings (PRD §16). Whether prices are
 tax-**inclusive** or tax-**exclusive** is a store-level setting and changes the maths:
 
 ```ts

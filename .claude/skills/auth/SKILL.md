@@ -72,7 +72,7 @@ return role === "ADMIN" ? { ...base, avgCostMdram } : base;
 ```
 
 A `WORKER` token must not be able to obtain cost from **any** endpoint — list, search,
-detail, report, export, or an error message that echoes the record. PRD §19.9 is an explicit
+detail, report, export, or an error message that echoes the record. PRD §25.9 is an explicit
 acceptance test for this. Never `res.json(prismaObject)`.
 
 ## Network hardening

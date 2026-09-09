@@ -78,7 +78,7 @@ function projectProduct(p: Product, role: Role) {
 
 Never `res.json(product)` on a raw Prisma object. A worker token must not be able to obtain
 `avgCostMdram` from **any** endpoint — including list, search, report, and export. Hiding
-cost in the UI is not a control; PRD §19.9 tests exactly this.
+cost in the UI is not a control; PRD §25.9 tests exactly this.
 
 CORS is **not** authorization. It is a browser convention; `curl` ignores it. Restrict
 origins for convenience, authorize on every route for security.
@@ -131,7 +131,7 @@ return Armenian prose from the API.
 
 Structured (`pino`), one line per request with method, path, status, duration, user id.
 **Never log** PINs, session tokens, or full customer records. Debt amounts tied to a named
-customer are personal data (PRD §10.5).
+customer are personal data (PRD §16.5).
 
 ## Testing
 

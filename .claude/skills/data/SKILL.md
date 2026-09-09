@@ -415,7 +415,7 @@ const isEffectivelyActive = isPending
 
 ## 11. PaginatedResponse Type
 
-`PaginatedResponse<T>` exists in `src/types/common.ts` but is used by every list endpoint in Simon — movement history, sales, and the product catalogue all paginate (PRD §14). Reach for a plain array only for genuinely small, bounded sets (`Product[]`, `Customer[]`) or a single object, not a paged envelope. Reach for it only if you hit a backend endpoint that genuinely returns `{ items, page, pageSize, totalCount }`.
+`PaginatedResponse<T>` exists in `src/types/common.ts` but is used by every list endpoint in Simon — movement history, sales, and the product catalogue all paginate (PRD §20). Reach for a plain array only for genuinely small, bounded sets (`Product[]`, `Customer[]`) or a single object, not a paged envelope. Reach for it only if you hit a backend endpoint that genuinely returns `{ items, page, pageSize, totalCount }`.
 
 ```typescript
 // src/types/common.ts — note: NO totalPages field

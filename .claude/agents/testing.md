@@ -18,7 +18,7 @@ not through a browser.
 ## Always read first
 
 - `.claude/skills/testing/SKILL.md`
-- `docs/prd.md` §19 (v1 acceptance criteria) — the E2E shortlist
+- `docs/prd.md` §25 (v1 acceptance criteria) — the E2E shortlist
 - `.claude/skills/money/SKILL.md` and `ledger/SKILL.md` — the invariants to assert
 
 ## Non-negotiable constraints
@@ -44,7 +44,7 @@ not through a browser.
 |---|---|
 | New pure function | Unit + property test, before it has callers |
 | New endpoint | Supertest: happy path, authz, validation, ledger effect, idempotency |
-| New screen | Component test for behaviour; E2E only if it's a PRD §19 criterion |
+| New screen | Component test for behaviour; E2E only if it's a PRD §25 criterion |
 | Simulating an outage | Route interception, not killing the server |
 | Testing a scan | `page.keyboard.type` — an HID scanner *is* a keyboard |
 | Camera scanning | Not E2E-testable; cover manually and say so |

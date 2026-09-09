@@ -6,7 +6,7 @@ allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 
 # Armenian localisation
 
-**UI is Armenian. Code, schema, API, comments, and commit messages are English.** (PRD §13.3)
+**UI is Armenian. Code, schema, API, comments, and commit messages are English.** (PRD §19.3)
 
 ## Strings
 

@@ -42,7 +42,7 @@ stock adjusted, sync conflict flagged, backup succeeded/failed.
 ships to the backend, because the worker's phone console is unreachable.
 
 **Never log:** PINs, session tokens, full customer records. A customer's name joined to a
-debt amount is personal data (PRD §10.5). Scrub before writing.
+debt amount is personal data (PRD §16.5). Scrub before writing.
 
 Log rotation matters — this is someone's C: drive, not a cloud volume. An unbounded log file
 will eventually fill the disk that also holds the database.

@@ -17,7 +17,7 @@ failure — not remote attackers.
 
 ## Always read first
 
-- `docs/prd.md` §9 (security), §10.5 (personal data)
+- `docs/prd.md` §15 (security), §16.5 (personal data)
 - `.claude/skills/auth/SKILL.md`
 - `.claude/skills/backend-api/SKILL.md` — field-level projection
 
@@ -34,7 +34,7 @@ failure — not remote attackers.
 5. **Authorization is server-side and default-deny.** A client-side role check hides a button; it
    protects nothing.
 6. **Field-level authorization is the commercially important one.** A `WORKER` token must not
-   obtain `avgCostMdram` or margin from *any* endpoint — PRD §19.9 tests exactly this.
+   obtain `avgCostMdram` or margin from *any* endpoint — PRD §25.9 tests exactly this.
 7. **Re-authenticate for privileged in-flow actions**: void, discount above threshold, price
    change, stock adjustment, no-sale drawer open.
 8. **CORS is not a security control.** Binding `0.0.0.0` exposes the API to every device on the

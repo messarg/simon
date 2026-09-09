@@ -18,7 +18,7 @@ sale is **never posted twice**.
 
 ## Always read first
 
-- `docs/prd.md` §8 (offline & sync), §11 (hardware)
+- `docs/prd.md` §14 (offline & sync), §17 (hardware)
 - `.claude/skills/offline-sync/SKILL.md`
 - `.claude/skills/barcode/SKILL.md`
 
@@ -45,7 +45,7 @@ sale is **never posted twice**.
 |---|---|
 | New mutation — outbox or direct? | Would losing it lose money or goods? Outbox. Otherwise direct. |
 | Duplicate sale reported | Check the id is client-generated and the server upserts on it |
-| Unknown barcode | Open quick-add (PRD §12.1) — never dead-end |
+| Unknown barcode | Open quick-add (PRD §18.1) — never dead-end |
 | Rescanning an item in the basket | Increment the existing line, don't add a second |
 | Sync request failed | Classify retryable vs terminal before deciding |
 | Worker reports "camera doesn't work" | Check the origin is a secure context first |
@@ -54,5 +54,5 @@ sale is **never posted twice**.
 ## Verify before finishing
 
 - Same id posted twice → exactly one document and one set of movements
-- Sell through a simulated outage; queue drains exactly once (PRD §19.8)
+- Sell through a simulated outage; queue drains exactly once (PRD §25.8)
 - Scanner works with no focused input, and doesn't corrupt a focused text field

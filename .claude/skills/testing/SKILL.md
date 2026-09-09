@@ -79,7 +79,7 @@ the wrong stock movement is the bug that matters.
 
 ## Layer 4 — E2E (Playwright)
 
-Few, high-value, slow. The PRD §19 acceptance criteria are the shortlist:
+Few, high-value, slow. The PRD §25 acceptance criteria are the shortlist:
 
 - Cash sale of three scanned items completes.
 - Split payment lands correctly against drawer and customer.
@@ -113,7 +113,7 @@ npm test -- money        # single file / pattern
 npm test -- -t "rounds half up"   # single test by name
 ```
 
-Pin `TZ` in the Vitest config. Shift and report boundaries are shop-local time (PRD §13.3),
+Pin `TZ` in the Vitest config. Shift and report boundaries are shop-local time (PRD §19.3),
 and a machine in another timezone must not produce different results.
 
 ## CI
