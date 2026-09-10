@@ -1,24 +1,83 @@
 # Product Requirements Document — Simon
 
 **Product:** Simon (Սիմոն) — trade management for small retail
-**Document version:** 3.0 (adds the experience layer; supersedes v2, which is in git at `18f4b18`)
+**Document version:** 3.47 — see the revision history below
 **Primary market:** Small & medium retail and hardware stores in Armenia
 **UI language:** Armenian. Code, schema, API, comments, commits: English.
 **Currency:** Armenian Dram (AMD, ֏)
-**Status:** §16 (fiscal) and §24 (open questions) need local professional advice before launch.
+**Type:** Full PRD
+**Document owner:** messarg
+**Last updated:** 2026-09-10
+**Status:** §17 (fiscal) and §26 (open questions) need local professional advice before launch.
+
+### Revision history
+
+| Version | Date | Change |
+|:--|:--|:--|
+| **3.47** | 2026-09-10 | §27.23 assigned to a layer, and §23.1's coverage claim stripped of the count that had been wrong since 3.34 |
+| **3.46** | 2026-09-10 | §25's Wi-Fi mitigation cited the accepted-risk escape hatch 3.45 removed; it now names TLS, which is both true and stronger |
+| **3.45** | 2026-09-10 | §16.6 stops offering the plain-HTTP deployment its own decision removed; §9's sixth question gains the method that makes it work |
+| **3.44** | 2026-09-10 | Swept every mention of the tax basis — the heading, the requirement, the assumption and §26's intro all still stated the single-mode rule 3.41 replaced |
+| **3.43** | 2026-09-10 | `Sale.priceBasis` snapshotted — a setting that changes arithmetic must be recorded on the document it changed, or switching it rewrites history |
+| **3.42** | 2026-09-10 | §10.1's identity stated for both price bases — 3.41 added the second mode and left the arithmetic written for the first |
+| **3.41** | 2026-09-10 | The design now absorbs every answer to Q1, Q2 and Q10 instead of committing to one — none of them blocks the build any more |
+| **3.40** | 2026-09-10 | Two sentences still called Q7 blocking; `locationId` is a plain column until v2 has a table for it to reference |
+| **3.39** | 2026-09-10 | Q5, Q7, Q8 and Q9 answered by the project owner. `StockMovement.locationId` exists from Phase 0, which is now unblocked; A8 and A12 confirmed, A9 partly |
+| **3.38** | 2026-09-10 | `parkedDepth` gains a writer and a reader; §9's checklist gains the breadth question that three runs of findings earned |
+| **3.37** | 2026-09-10 | One queue, two counts — a parked basket is no longer reported as an unsent sale, and §14.5 says what parking does offline |
+| **3.36** | 2026-09-10 | The transition rule scoped to sales, the only queue-drained document with a lifecycle; offline parking defined as the same outbox rather than a second mechanism |
+| **3.35** | 2026-09-10 | Idempotency keys on the id **and the transition** — as written, completing a parked basket looked like a retry and the money was never taken |
+| **3.34** | 2026-09-10 | §9 gains the five-category propagation checklist, and cross-till resumption is walked through all five: audit, Z-report, requirement, acceptance and the till screen |
+| **3.33** | 2026-09-10 | Shift close scoped to its own baskets — with baskets now able to move between tills, an unscoped guard meant nobody could close while anyone had one open |
+| **3.32** | 2026-09-10 | `Sale.shiftId` follows the sale to the till that completes it — the obligation 3.31's cross-till resumption created |
+| **3.31** | 2026-09-10 | Lifecycle guards audited: a held basket is resumable from any till, and a closing shift blocks on open baskets rather than silently voiding them |
+| **3.30** | 2026-09-10 | Four features that had a model and a rule but no requirement — receipt numbering, session revocation, the needs-attention list, anonymisation — reached the FR index |
+| **3.29** | 2026-09-10 | Layer 6's dependency corrected — diagnostics need an API and a screen, not just a schema |
+| **3.28** | 2026-09-10 | §23.1's layer map completed against §9's v1 list — import, reports, the wizard, practice mode, reorder and barcode input had no build position |
+| **3.27** | 2026-09-10 | §23.1's layers now own the acceptance criteria that actually prove them — five had been parked on the client |
+| **3.26** | 2026-09-10 | §26 Q11–Q14 restored — folding the brief in had kept its assumptions and lost the questions that falsify them |
+| **3.25** | 2026-09-10 | `docs/fiscal-brief.md` folded into §26.1 and deleted. One document is the source of truth |
+| **3.24** | 2026-09-10 | The seven fiscal working assumptions joined §24.2's register as A10–A16, where every other bet in this document lives |
+| **3.23** | 2026-09-10 | §23.1 build order and dependencies; a map of §6's screens by audience; §0 points implementers at the build order |
+| **3.22** | 2026-09-10 | Audited §3's ten rules, §4's vocabulary and §18's hardware against the specs for the first time: barcodes and sessions now retire rather than delete, a hidden word left the report catalogue, and the cash drawer stopped opening on a reprint |
+| **3.21** | 2026-09-10 | Multi-location restored to Phase 6, and the v1 schema decision hiding inside it gated on §26 Q7 at Phase 0 |
+| **3.20** | 2026-09-10 | A separate fiscal brief was written, then folded back in at 3.25 |
+| **3.19** | 2026-09-10 | The Phase 5 gate now counts §21.2 correctly: one capturable baseline, eight KPI values to measure |
+| **3.18** | 2026-09-10 | Re-armed the Phase 5 gate against measured figures rather than against the absence of blanks — 3.17 had made it satisfiable by editing the table |
+| **3.17** | 2026-09-10 | Practice sales excluded from the owner's queue figure; every adoption KPI now carries a baseline, a capture point, or a reason it cannot have one |
+| **3.16** | 2026-09-10 | The outbox moved from `Session` to `Device`, and deactivating a device now revokes its sessions |
+| **3.15** | 2026-09-10 | `Device` — the till as a durable row, so §12.1's receipt number has a prefix and a counter that outlive a session |
+| **3.14** | 2026-09-10 | Receipt numbering specified and its fiscal conflict raised as §26 Q10; the `StockAdjustment` wrapper dropped in favour of self-sourced movements |
+| **3.13** | 2026-09-10 | Closed a cost leak the new audit-log endpoint opened: an opaque record snapshot is gated by route, because field-level stripping cannot see inside one |
+| **3.12** | 2026-09-10 | Swept the whole document for the shapes previous audits found once and fixed once: `StockAdjustment` as the source document adjustments and write-offs required, sale read endpoints, and endpoints for review flags, imports, settings, users, categories and the audit log |
+| **3.11** | 2026-09-10 | §13.7 purchase-return costing — a v1 scope item that had a model, an endpoint and a movement type but no rules — plus `PurchaseReturnLine`, the worker's other two screens (§6.15, §6.16) and the admin endpoints §16 required |
+| **3.10** | 2026-09-10 | §10 audited against §11 for the first time: `Product.stockQty` restored to the model, one identity for the sale total instead of two, plus `GoodsReceipt.reversesId`, `Customer.discountBp` and one name for the purchase factor |
+| **3.9** | 2026-09-10 | `ProductStats` for the four screens that need sales velocity, and a throttle so the `Session` row does not cost a database write per barcode scan |
+| **3.8** | 2026-09-10 | Third model audit — §7, §8, §19, §20 against §11: `ImportBatch`/`ImportRow` give §19.1's idempotency a mechanism, plus `Customer.nameSearch`, `BackupRun`, drift flags and debt reversal links — and three prose commitments that earlier edits had quietly falsified |
+| **3.7** | 2026-09-10 | Second model audit — §6 and §14–§16 against §11: a `Session` entity, `AuditLog.reason`, customer deactivation and merge, `updatedAt` for incremental sync, and seven smaller fields |
+| **3.6** | 2026-09-10 | Domain-model audit: `SaleReturnLine`, `ReviewFlag`, `SupplierAllocation`, `Stocktake`; a shift formula that counts repayments once; write-off reason codes; and seven smaller fields §12/§13 required but §11 never had |
+| **3.5** | 2026-09-10 | The five journeys (§6), the discovery plan (§2.5), named warning types for sync conflicts (§8.5, §14.6), and a pilot that must return numbers as well as software (§23) |
+| **3.4** | 2026-09-10 | Competitive landscape and "why now" (§1), evidence status (§2.4), glossary (§4.4), error catalogue (§8.5), personal-data lifecycle (§19.6), adoption KPIs (§21.2); measurable NFRs, risk likelihoods, and one normative home for the import rule (§19.1) |
+| **3.3** | 2026-09-10 | §15 API contracts; §11 lifecycles and field validation; §19.5 diagnostics; §9 requirement index; real numbers for lockout, session timeout and the offline debt cap |
+| **3.2** | 2026-09-09 | §10.8 tax extraction; §19.4 practice-mode isolation; §24 assumptions and constraints; §6.12–6.14 owner screens |
+| **3.1** | 2026-09-09 | Resolved internal conflicts: `STOCK` cost access, `VOIDED`, WAC rounding, the allocation invariant, the durability guarantee, and a single release authority |
+| **3.0** | see git | Added the experience layer (Part A) and usability acceptance criteria |
+| **2.0** | see git | The correctness core: integer money, append-only ledgers, weighted average, idempotent sync. Tagged at `18f4b18` |
 
 ---
 
 ## 0. How to read this document
 
 The document is in four parts. Read the part you need; they are written to stand alone.
+**If you are about to write code, start at §23.1** — it orders the sections by what has to exist
+before what, which is not the order they appear in.
 
 | Part | Sections | For |
 |:--|:--|:--|
 | **A — The people and the experience** | §1–§9 | Anyone. Who this is for, how it must feel, what each screen does |
-| **B — The rules** | §10–§14 | Engineers. Data, money, ledgers, flows. The correctness core |
-| **C — The environment** | §15–§19 | Engineers and ops. Security, compliance, hardware, data, reporting |
-| **D — Delivery** | §20–§25 | Everyone. Budgets, architecture, roadmap, risks, acceptance |
+| **B — The rules** | §10–§15 | Engineers. Data, money, ledgers, flows, the wire contract. The correctness core |
+| **C — The environment** | §16–§20 | Engineers and ops. Security, compliance, hardware, data, reporting |
+| **D — Delivery** | §21–§27 | Everyone. Assumptions, budgets, architecture, roadmap, risks, acceptance |
 
 **What changed from v2.** v2 established the correctness core — integer money, append-only
 ledgers, weighted-average costing, idempotent sync. All of that is unchanged and is now
@@ -27,6 +86,192 @@ learns to use it. Part A is new: personas, a mental model, an information archit
 screen specifications, a learnability plan, and an error-recovery catalogue. Part D adds
 usability acceptance criteria alongside functional ones, because a POS that is correct and
 unlearnable has failed.
+
+**What changed in 3.1.** No new scope. 3.1 closes the contradictions that appeared where 3.0's
+experience layer met v2's rules: the `STOCK` role's exact cost access (§16.5), the meaning of
+`VOIDED` (§10.7), rounding and the zero-or-negative denominator in the weighted average
+(§10.5), the allocation invariant under overpayment (§10.6), what the durability guarantee
+actually promises (§21), and a single authority for release content (§9 decides, §23 orders).
+
+**What changed in 3.2.** Four gaps that blocked implementation, now filled: **§10.8** settles
+tax as extraction from a tax-inclusive price rather than addition to it; **§19.4** gives
+practice mode a real isolation mechanism instead of a promise; **§24** separates the
+assumptions we are betting on from the constraints we are designing around; and **§6.12–6.14**
+specify the three owner screens that §5.1 had been pointing at since 3.0. Acceptance criteria
+went from 17 to 21.
+
+**What changed in 3.3.** The engineering contract, which was implied everywhere and written
+nowhere. **§15** states the API: conventions, RFC 7807 error mapping, the four idempotent
+queue-drained endpoints, and the rest of the surface. **§11** gains state machines for the four
+entities that have one, and the field conventions and validation rules that make a Prisma
+schema and a Zod contract derivable rather than guessable. **§19.5** says how a box with no
+remote access gets diagnosed. **§9** gains a requirement index — 58 numbered requirements, each
+with where it is specified and which acceptance criterion proves it. §16.2 and §16.3 now carry
+real numbers instead of "N failures" and "a short timeout", and §14.5's offline debt cap has a
+value and a setting. Sections 15–26 shifted by one; §27 is the acceptance criteria.
+
+**What changed in 3.4.** The document's honesty and its edges. **§1** names the alternatives it
+is actually competing against, starting with the notebook. **§2.4** says what Part A rests on,
+which is inference rather than research, and where each claim gets confirmed. **§4.4** is a
+glossary. **§8.5** turns the error table into a catalogue of frozen `type` values with
+indicative Armenian, so the wire contract can be built while the copy is still being reviewed.
+**§19.6** gives personal data a lifecycle. **§21** makes "no lock contention" and "readable in
+poor light" measurable, names WCAG 2.2 AA, and adds paper baselines plus **§21.2**'s adoption
+KPIs. **§25** gains a likelihood column and is reordered by it. Three remaining enums are
+enumerated, `NO_SALE` is modelled, and held sales are given a home. **§1** closes with why this
+is worth building now, including the one cost of delay that cannot be bought back later: the
+paper baseline can only be measured once, during the parallel fortnight. The import guarantee,
+previously stated in both §7.3 and §19.1, is now normative in §19.1 alone.
+
+**What changed in 3.6.** §12 and §13 were read line by line against §11 for the first time, and
+the model could not represent what the logic asked of it. **`SaleReturn` had no lines**, so the
+partial return §6.5 promises and §27.6 tests was unbuildable; it has them now, with `restock`
+and the snapshotted original cost per line. **§12.5's shift formula counted repayments twice** —
+once as `repayments`, once as the cash movement §12.3 writes — which would have overstated
+expected cash by every repayment of the day, on the screen §6.6 exists to make trustworthy; the
+formula is now a query over typed rows and `CashMovement` has a `REPAYMENT` type. **`ReviewFlag`
+gives §15.2's warnings the durable state that section demands**, and serves §13.6's recount list
+and §14.6's needs-attention list from one table. Write-off reasons became a coded field, supplier
+allocation became a table like `DebtAllocation`, `Product` gained the supplier §13.3's formula
+needs, and the stocktake session §11 had already given a state machine finally has a model.
+
+**What changed in 3.7.** The same audit, run against §6 and §14–§16. **There was no `Session`** —
+§16.3 specifies a revocable, per-device, shift-bound token, §19.4 puts practice mode on it and
+§21.2 reads a session log, and the entity did not exist; it does now, holding the token's hash
+rather than the token, plus the outbox depth each client reports so §19.5's `/health` can answer
+a question about queues that live on phones. **`AuditLog` could not store a reason** — six places
+demand an override "with a reason" and the table had only `before`/`after`, which is the less
+useful half in any shrinkage investigation. `Customer` gained deactivation and a forwarding
+address for merges; catalogue rows gained `updatedAt`, without which `?since=` had nothing to
+compare; and the strict credit-limit setting that §6.3 and §12.2 both assume now exists in
+§6.11.
+
+**What changed in 3.8.** The audit reached §7, §8, §19 and §20. **§19.1 was the only section
+labelled normative and its one guarantee had no mechanism** — "idempotent, re-runnable" with
+nothing to be idempotent *about*. `ImportBatch` and `ImportRow` supply it, and a second run of
+the opening-debts file can no longer double every balance in the shop. **Customers had no
+`nameSearch`**, so §20.3's Latin-typed search worked for products but not for the debtor screen
+the product exists for. `BackupRun` and a `LEDGER_CACHE_DRIFT` flag give §19.5's `/health` real
+tables to read; `DebtEntry.reversesId` makes §8.2's wrong-customer correction the linked
+reversal §10.7 demands; and erasure gained an explicit `anonymisedAt` instead of a rule that
+contradicted §11's own validation.
+
+Three findings were **prose commitments falsified by earlier edits**: §19.4 still said "§11 is
+unchanged" after `Session.mode` was added to it, §7.1 said "Nothing else" while §16.2 expected
+the wizard to issue a recovery code, and §19.6 said "nothing else about a customer is stored"
+after two passes had added fields to that row. None was reachable by checking that references
+resolve — a section can declare itself closed and be made wrong from somewhere else entirely.
+
+**What changed in 3.9.** Both entries here are obligations that models added in 3.7 and 3.8
+created against sections written much earlier. `Session` was right for §16.3, §19.4 and §19.5,
+and nobody asked what it costs §13.1 — as specified it wrote a row on **every request**,
+including every barcode lookup, against a single-writer database and §21's concurrency budget;
+session writes are now throttled to once a minute and kept out of document transactions. And
+sales velocity had four consumers — quick tiles, the low-stock alert, the reorder formula, dead
+stock — with no table behind it and a §22 job whose output had nowhere to go; `ProductStats` is
+that table, a rebuildable cache of the same standing as `Product.stockQty` and deliberately
+outside §10.4's drift check, because alerting on an approximate figure only teaches an owner to
+ignore alerts.
+
+**What changed in 3.10.** §10 and §11 had never been read against each other — adjacent
+sections that appear to say the same things, which is exactly why nobody checked. Two things
+were wrong in the arithmetic the product is judged by. **`Product.stockQty` was absent from
+§11** although §10.4 is entirely about it and eight other places name it. And **§10.1 and §10.8
+gave different formulas for `total`**: `sum(lines) + roundingAdjustment == total` is true only
+when no sale-level discount was given, and §12.1 offers them, so a discounted receipt did not
+add up. There is now one identity, printed on the receipt, with `taxTotal` explicitly not a term
+in it. Alongside: `GoodsReceipt` gained the `reversesId` §6.14 assumed, `Customer.discountPercent`
+became `discountBp` so its scale is not a guess, §10.3 stopped naming the purchase factor
+differently from §11, and `TRANSFER` is marked as the one movement type v1 never emits.
+
+**What changed in 3.11.** Three seams that do not involve §11 at all. **Purchase returns were
+v1 scope with no specification** — a model, an endpoint, a movement type, a roadmap phase, and
+not one sentence saying what returning goods does to the weighted average. §13.7 says it:
+reverse at the receipt's **landed** cost rather than the current average, or the units still on
+the shelf end up valued at a blend that includes goods no longer held. The freight is not
+refunded and is recorded as a loss rather than absorbed. **Two of the worker's four destinations
+had no screen** — §5.1 defines the whole worker app as four tabs and §6 specified two of them;
+§6.15 and §6.16 are the other two. And §16 required session revocation, lockout clearing,
+recovery-code redemption and practice-mode switching, none of which §15.4 had an endpoint for.
+
+**What changed in 3.12.** Rather than fix another instance, this pass swept for the *shapes*
+earlier audits had each found once. Two mattered. **`POST /adjustments` and `POST /write-offs`
+had no source document** — §11 requires every movement to name one and calls a movement without
+one a bug, so both endpoints could only ever write an invalid row; `StockAdjustment` is that
+document, one table serving the two movement types. And **§15 could create sales but never read
+them back** — returns start from the original sale, a jammed printer reprints from the record,
+held baskets are listed by time, and shift close must find every open one, all with no endpoint
+to do it. Endpoints were also missing for review flags, imports, settings, users, categories and
+the audit log; a trail nobody can read protects nobody, so it is a report in §20.2 now as well.
+`Payment.method = TRANSFER` joins `TRANSFER` in the movement enum as a value marked reserved
+rather than left looking implementable.
+
+**What changed in 3.13.** The audit-log endpoint added in 3.12 was a cost leak. §16.5 strips
+cost **field by field**, and `AuditLog.before`/`after` are whole-record JSON snapshots — a price
+change carries `avgCostMdram` inside a value no field filter inspects, and §27.9 says a `WORKER`
+obtains no cost field from *any* endpoint. It is now gated as a route, with the general rule
+stated so the next snapshot-shaped feature inherits it rather than repeating the mistake. Also:
+`reasonCode` had ended up on two models and is back to one, and §15.1's "JSON" now admits the
+one multipart exception it always had.
+
+**What changed in 3.14.** **`Sale.number` had no generation rule** in 2,771 lines, though §6.5
+scans it and §15.4 looks sales up by it — and the question hides a real architectural conflict:
+a gapless sequence needs one authority, and §14.2 promises the till completes sales with that
+authority unreachable. §12.1 now specifies device-prefixed numbering assigned at completion, and
+says plainly that a gapless number, where a regime demands one, comes from the ՀԴՄ through the
+`fiscalReceiptId` seam rather than from Simon. **§26 Q10** asks the accountant to confirm it,
+because if Simon must issue the gapless number then §14's offline design is what changes, not a
+field.
+
+`StockAdjustment` — added one version earlier to give two movement types a source — was itself
+both shapes that pass had swept for: a header with no lines, holding nothing the movement did
+not already carry. It is gone, and `ADJUSTMENT` and `WRITE_OFF` are now self-sourced as a stated
+exception. Several items written off together are several movements, because §20.2 aggregates
+movements and not documents.
+
+**What changed in 3.15.** 3.14's numbering rule named a `devicePrefix` and a per-device
+sequence that existed nowhere. `Device` holds both. It had to be its own row rather than a
+field on `Session`, because a session is revoked at every logout and a receipt number printed
+on paper outlives it by years — and because the device's copy of the counter has to be
+authoritative, or a till that loses Wi-Fi cannot number the sale in the customer's hand.
+
+**What changed in 3.16.** Two consequences of adding `Device` a version earlier. The outbox
+counters were left on `Session`, where §19.5 summed them across every session row a phone had
+ever had — a queue belongs to the till, not to whoever is signed in on it, so they moved. And
+`Device.isActive` claimed to stop a lost phone while its live session carried on selling;
+deactivating a device now revokes its sessions in the same transaction.
+
+**What changed in 3.17.** Moving the outbox to `Device` left one question open: practice mode is
+per-session, so did a practice sale count against the till's queue? It does not — it is
+discarded rather than sent, and counting it would give the owner a figure that never reaches
+zero and an alert that never clears. §21.2's baseline column also had four blanks; they are now
+explicit *n/a* entries, because "still using it at month 3" has no prior value to measure
+against and a blank cannot say that.
+
+**What changed in 3.18.** 3.17 filled §21.2's blank baselines, and two other places were keying
+their meaning off those blanks: §23 said Phase 5 could not exit "until §21.2's baseline column
+has no blanks left in it". Removing the blanks satisfied the gate without anyone measuring
+anything — the exit criterion had become passable from a desk. The gate now tests for **figures
+taken in the shop**, names which three baselines can carry one, and requires an *n/a* to be
+confirmed unmeasurable rather than merely unmeasured. §21.2's own opening sentence, which still
+claimed every baseline came from the parallel fortnight, now describes the table beneath it.
+
+**What changed in 3.19.** The gate re-armed in 3.18 named "§21.2's three measurable baselines"
+and listed three things, two of which are not baselines: the share-of-sales row already has one
+(`0% at go-live`) and the write-off row already has one (`0 discoverable`) — what the pilot
+takes for those is the *measurement*, not the baseline. §21.2 has exactly one baseline the shop
+can lose, the 90-day debt share on migration day, and eight KPI values to measure. The gate now
+says that.
+
+**What changed in 3.5.** The last gaps that editing could reach. **§6** opens with five numbered
+journeys — the four a worker is trained on plus receiving — so the paths that cross screens are
+specified, not left to be inferred from fourteen separate screen specs. **§2.5** turns §2.4's
+admission of missing evidence into an instrument: five shops, nine questions, and a Phase 1 exit
+condition, because the honest thing to do about an evidence gap is to schedule closing it.
+**§14.6**'s three sync conflicts get named warning types (§8.5), so a flag exists somewhere a
+person can see rather than only in the server's head. And **§23** now says what the parallel
+fortnight has to bring back: §21.2's baselines can be measured exactly once, and a pilot that
+ships software without them has half failed.
 
 ---
 
@@ -57,6 +302,53 @@ Naming the non-goals early prevents the product from drifting into an ERP nobody
 - Not an e-commerce platform.
 - Not a multi-store chain system in v1.
 - Not a tool that requires anyone to understand inventory theory.
+
+### The alternatives
+
+Simon is not really competing against other software. It is competing against a notebook that
+works.
+
+| Alternative | What it does well | Where it loses |
+|:--|:--|:--|
+| **The paper notebook** — the real incumbent | Instant, always available, never crashes, never asks for a password, costs nothing, and everyone in the shop already knows it | Cannot total a month, cannot age a debt, cannot tell him his margin, cannot survive a fire, and cannot be in two places at once |
+| **Excel or Google Sheets** | Free, familiar to the bookkeeper, exports trivially | It is not a till. No barcode, no shift, no ledger discipline — and every hand-written formula is a chance to be silently wrong |
+| **Cloud POS**, regional and international | Polished, supported, nothing to run yourself | A monthly fee in a currency the shop does not earn; useless the moment the internet drops; data on someone else's machine, which this market actively dislikes; and built around a supermarket's workflow, not a hardware store's |
+| **1C and its ecosystem** | Dominant in the post-Soviet accounting world, and accountants already know it | Priced and shaped for a bookkeeper rather than a shopkeeper. It is precisely the ERP §1 refuses to become |
+| **The ՀԴՄ fiscal device on its own** | Legally sufficient, and already sitting in many shops | Records the sale and nothing else: no stock, no debt, no margin, and no history anyone can interrogate |
+
+**Where Simon wins:** it is the only option that keeps the notebook's speed and locality while
+answering all four questions in §1's promise. **Where it is weakest:** no vendor support desk,
+no cloud backup unless someone sets one up, and exactly one machine to lose (§25).
+
+⚠️ The vendor-specific claims in this table — pricing, feature sets, local market share — are
+**inferred, not researched** (§2.4). They must be checked against what is actually being sold
+in Yerevan before anyone repeats them in a sales conversation (§26).
+
+### Why now
+
+Nothing in §1 is a new idea. Shopkeepers have wanted to know their margin for as long as there
+have been shops. What has changed is that the pieces finally cost nothing.
+
+- **The device is already in his pocket.** Simon's whole premise — the till is the worker's own
+  phone — was not buildable for this price five years ago, and it is the reason the hardware
+  bill is a scanner and a printer rather than a POS terminal (§18).
+- **The peripherals are commodity.** An HID scanner is 15–25k ֏ and needs no driver (§18). The
+  thing that used to make a POS a capital purchase is now an accessory.
+- **Local-first is practical again.** SQLite, a PWA and one cheap PC are genuinely enough for a
+  shop this size (§19.3). Self-hosting stopped being the compromise and became the feature (§1).
+- **Record-keeping is moving toward electronic fiscal reporting**, and the shop will have to
+  change something regardless. The open question is whether it adopts a system it chose or one
+  imposed on it — which is exactly why §17 is the highest-priority unknown in this document.
+
+**The cost of delay is specific, not rhetorical.** Two things expire. First, a shop that adopts
+a cloud POS is far harder to win back than one still on paper, and the alternatives in the table
+above are not standing still. Second — and this one cannot be recovered at any price — **the
+paper baseline can only be measured once.** §21.2's KPIs and §24.2's assumptions are all
+calibrated against how the notebook actually performs, and the parallel fortnight (§23) is the
+only window in which anyone can watch both systems run side by side. After the shop switches,
+that measurement is gone, and every claim in Part A stays a bet forever.
+
+⚠️ The first and fourth bullets are inference about the local market, not research (§2.4).
 
 ---
 
@@ -125,11 +417,59 @@ Making the target concrete. This narrative is the acceptance test for the whole 
 ### 2.3 The two failure modes we are designing against
 
 1. **Գոռ abandons it.** Under a queue, anything slower than paper loses. Mitigated by the
-   speed budgets (§20) and the one-screen till (§6.1).
+   speed budgets (§21) and the one-screen till (§6.1).
 2. **Արամ stops trusting it.** One unexplainable number is enough. Mitigated by making every
    figure drill down to the events that produced it (§3, rule 3).
 
 Everything in Part A exists to prevent one of these two.
+
+---
+
+### 2.4 What this is based on
+
+Part A reads with confidence. That confidence is a drafting style, not a claim of research, and
+the difference matters enough to write down.
+
+| Claim | Currently rests on | Would be confirmed by |
+|:--|:--|:--|
+| The personas in §2.1 | Composites. Not interview subjects; no quotation in them is a real quotation | Three to five shop visits before build completes |
+| The day in §2.2 | Inference from how the trade visibly works, not from observation | One full day observed in the pilot store |
+| "A worker abandons anything slower than paper" (§2.3) | A strongly held belief. The entire speed budget rests on it | H2 (§24.3), in the pilot |
+| Owners keep a paper *Nisya* book | Reported practice, common enough that the product is named for it | The pilot store's own book, at migration (§27.5) |
+| "Nobody will type in 3 000 products" (§7.3) | Inference from how rollouts fail in other markets | A2 (§24.2), days 1–14 of the pilot |
+| Competitor shape and pricing (§1) | Inferred, not researched | §26, before any sales conversation |
+| The "why now" timing argument (§1) | Inference about the local market and its direction of travel | Shop visits, plus §17's fiscal answer |
+
+**None of this blocks the build.** Every row is already tracked as an assumption (§24.2) or a
+hypothesis (§24.3), and the pilot (§23) is the instrument for all of them. What it does block is
+presenting this document to anyone outside the team as evidence-based. It is a well-reasoned
+bet, and it should be described as one.
+
+### 2.5 Closing the gap — the discovery plan
+
+Writing cannot fix §2.4; visiting shops can. The plan is small enough that there is no excuse
+for skipping it, and it is a **Phase 1 exit condition** (§23) so that it cannot be skipped
+quietly.
+
+**Five shops, one hour each, before Phase 1 ends.** Hardware and general retail, owner present,
+no demo and no laptop — the point is to listen, not to sell. Ask the same nine questions each
+time and write the answers down verbatim:
+
+1. Show me how you record a sale today. *(Tests the whole of §2.2.)*
+2. Show me your debt book. Who owes the most, and how do you know how old it is? *(§6.3, H3.)*
+3. What happened the last time a customer disputed what they owed?
+4. How many items do you sell that have no barcode? *(A5.)*
+5. Where does your product list live — anywhere, in any form? *(A2, and it decides §19.1.)*
+6. When a delivery arrives, what paperwork comes with it? *(A1.)*
+7. How do you know what you earned last month? Who tells you? *(H1.)*
+8. What software have you tried, and what made you stop? *(§1's alternatives table.)*
+9. Do you use an ՀԴՄ, and who set it up? *(§26 Q1 — the highest-priority unknown.)*
+
+**What "done" looks like:** §2.1's personas rewritten with at least one real quotation each;
+§2.4's rows changed from *inference* to *observed* or *contradicted*; §1's alternatives table
+corrected against products people have actually used; and A1, A2 and A5 (§24.2) either confirmed
+or re-planned. **A contradicted assumption is the most valuable outcome here** — it is far
+cheaper to find out in a kitchen than in Phase 3.
 
 ---
 
@@ -223,12 +563,50 @@ Real complexity that must never surface to the user:
 
 ---
 
+### 4.4 Glossary
+
+Terms this document uses without explaining. The Armenian words the *user* sees are in §4.1;
+these are the trade and engineering terms the *reader* meets.
+
+| Term | Meaning |
+|:--|:--|
+| **Nisya** (Նիսյա) | The shop's credit book: goods taken now, paid later, recorded by name. The practice this product is built around (§6.3) |
+| **ՀԴՄ** | *Հսկիչ դրամարկղային մեքենա* — the fiscal cash register required for recording retail sales in Armenia (§17) |
+| **ՊԵԿ** | *Պետական եկամուտների կոմիտե* — the State Revenue Committee, which registers ՀԴՄ devices (§17) |
+| **ԱԱՀ** | *Ավելացված արժեքի հարկ* — value-added tax; standard rate 20% (§10.8, §17) |
+| **Dram, ֏ (AMD)** | Armenian currency. Transaction amounts are whole drams (§10.1) |
+| **Milli-dram** | A dram ×1000. Used for unit prices and costs so averages do not drift (§10.1) |
+| **Milli-unit** | A quantity ×1000, so 2.5 kg is stored as `2500` (§10.2) |
+| **Basis point (bp)** | One hundredth of one percent. 20% is `2000` (§10.1) |
+| **WAC** — weighted average cost | The running average unit cost, recalculated on every receipt (§10.5) |
+| **Landed cost** | The true cost of goods including delivery and duty, spread across lines by value (§10.5) |
+| **COGS** | Cost of goods sold — the snapshotted unit costs of what was sold, which is what makes a margin report immutable (§10.5) |
+| **Ledger / movement** | An append-only record of change: never edited, only added to (§10.4, §10.6) |
+| **Allocation** | Which specific charges a payment paid off. Without it there is no aging (§10.6) |
+| **Aging** | How old an unpaid debt is, measured from the charge date (§10.6) |
+| **X-report / Z-report** | Mid-shift totals that do not reset, and end-of-shift totals that close the period (§6.6) |
+| **Idempotency** | Sending the same request twice has the same effect as sending it once (§14.3) |
+| **Outbox** | The client-side queue of completed sales waiting to reach the server (§14.4) |
+| **HID wedge** | A barcode scanner that pretends to be a keyboard: it types the code and presses Enter (§18) |
+| **WAL** | SQLite's write-ahead logging mode, which lets readers work while a writer commits (§13.1) |
+| **UUIDv7** | A time-sortable unique id that can be generated on the client (§11, §14.3) |
+| **RPO / RTO** | How much data a failure may lose, and how long recovery may take (§21) |
+
+**Not one of these words appears in the UI.** §4.1 and §4.3 are the rule; this table is for the
+people reading the schema.
+
+---
+
 ## 5. Information architecture
 
 ### 5.1 Two apps in one
 
 Role determines what exists, not just what is enabled. A worker never sees a greyed-out
 button for something he cannot do — the concept is simply absent from his world.
+
+*Naming, for the whole document:* **owner** means a user holding the `ADMIN` role, and
+**worker** means `WORKER` or `STOCK` (§16.4). Where the difference matters, the role name is
+used instead.
 
 **Worker (phone/tablet).** Four destinations. That is the whole app.
 
@@ -239,15 +617,19 @@ button for something he cannot do — the concept is simply absent from his worl
 Հերթափոխ (Shift)     ← open, close, cash in/out
 ```
 
+**Stock worker (`STOCK`).** The same four destinations — no extra tab. Receiving (§6.7),
+stocktake (§6.8) and write-offs live *inside* **Պահեստ**, because that is where a person
+already goes to think about stock. The role adds capability, not navigation.
+
 **Owner (desktop, back room or home).** Everything the worker sees, plus:
 
 ```
-Գլխավոր       (Home)         ← today at a glance
-Հաշվետվություն (Reports)     ← tiered, see §5.3
-Ապրանքներ     (Products)     ← catalogue, prices, costs
-Հաճախորդներ   (Customers)    ← debts, limits
-Մատակարարներ  (Suppliers)    ← orders, what I owe
-Կարգավորումներ (Settings)     ← few, defaulted, explained
+Գլխավոր       (Home)         ← today at a glance                (§6.9)
+Հաշվետվություն (Reports)     ← tiered, see §5.3                  (§6.10)
+Ապրանքներ     (Products)     ← catalogue, prices, costs          (§6.12)
+Հաճախորդներ   (Customers)    ← debts, limits                     (§6.13)
+Մատակարարներ  (Suppliers)    ← orders, what I owe                (§6.14)
+Կարգավորումներ (Settings)     ← few, defaulted, explained         (§6.11)
 ```
 
 ### 5.2 Navigation rules
@@ -280,6 +662,97 @@ forever, and that is a success, not an under-use.
 Each screen below specifies: **purpose · layout · states · interactions · what can go wrong ·
 why it is learnable**. Where a rule from §3 drives a decision, it is cited.
 
+**The sixteen screens, by who opens them.** They are numbered in the order they were specified,
+which is not the order anyone meets them. This is the map; §5.1 is the navigation.
+
+| Who | Screens |
+|:--|:--|
+| **Worker — the four destinations of §5.1** | Till **§6.1** · Debts **§6.15** · Stock **§6.16** · Shift **§6.6** |
+| Reached from the till, inside a sale | Payment **§6.2** · Debt sale **§6.3** · Repayment **§6.4** · Returns **§6.5** |
+| Reached from Stock, `STOCK` role only | Receiving **§6.7** · Stocktake **§6.8** *(v2)* |
+| **Owner** | Home **§6.9** · Reports **§6.10** · Products **§6.12** · Customers **§6.13** · Suppliers **§6.14** · Settings **§6.11** |
+
+### The five journeys
+
+Screens are specified one at a time below; a shift is not lived that way. These are the paths
+that cross them — the four a worker is trained on (§7.6) plus the one that belongs to `STOCK`.
+Numbered steps follow the user's path; where the system's part matters — a commit, or a screen
+answering back — it is named rather than assumed. Branches are specified where they happen, not
+collected at the end.
+
+**J1 — Open the shift.** *Once per shift, ~15 seconds.*
+1. Launch → the till (§6.1). Not signed in → PIN pad.
+2. Enter PIN → `POST /auth/login` (§15.4). *Wrong → `pin-incorrect`, attempts remaining shown.
+   Five wrong → `account-locked`, and §16.2's three ways out.*
+3. No open shift → **Բացել հերթափոխ**.
+4. Count the drawer, type one number — the opening float — then tap to open. Two taps in all
+   (§6.6); the number is typed between them.
+5. Simon: `POST /shifts` → shift `OPEN` (§11). The till is ready to sell.
+
+**J2 — Cash sale.** *~90% of all use. Target under 15 seconds for three items (§21).*
+1. Scan → line appears at the top of the basket, under 200 ms (§6.1).
+   *Unknown code → quick-add sheet (§7.4): name, price, unit, **ՊԱՀԵԼ ԵՎ ՎԱՃԱՌԵԼ**, back in the
+   basket. Never a dead end (rule 1).*
+   *Same item rescanned → the existing line increments.*
+2. Repeat per item. *Wrong quantity → tap the line, retype on the keypad. Wrong item → swipe,
+   with 5 seconds of undo (§8.1).*
+3. **ՎՃԱՐԵԼ** → payment (§6.2).
+4. **ԿԱՆԽԻԿ**, then one tendered shortcut — exact, or the next round 500/1000/5000 (§6.2).
+   Change is already the largest number on screen.
+   **That tap completes the sale.** The payment button *is* the action, not a confirmation of
+   it, and nothing opens on top of it (§8.1, rule 6). Four taps for one item — scan, pay, cash,
+   done — which is §21.1's budget exactly, and it is why there is no room for a dialog.
+   *Payment short of the total → the button is simply inactive, with the shortfall shown
+   (§6.2, rule 7). That is prevention, not a confirmation step.*
+5. Simon: `POST /api/sales` (§15.3), committed in one transaction, printed after commit
+   (§12.1, §13.1).
+   *Offline → written to the outbox and completed locally; the queue drains later, exactly once
+   (§14.3, §14.4).*
+   *Stock short → `insufficient-stock` warning; the sale completes anyway (§13.6).*
+
+**J3 — Debt sale.** *The reason the product exists (§6.3).*
+1. Build the basket exactly as J2.
+2. **ՎՃԱՐԵԼ** → **ՊԱՐՏՔ**.
+3. Type the first letters of the name; recent customers first.
+   *Not there → create with name and phone, without leaving the sale (§6.13). A duplicate phone
+   is caught here (§6.13).*
+4. **Read the four lines**: what they owe, the age of the oldest charge, their limit, and the
+   balance after this sale. The customer is standing there and can read them too.
+5. The completing tap. **The four lines above are the screen, not a dialog laid over it** —
+   §12.2 makes that summary a functional requirement precisely so it is read in passing rather
+   than tapped through, which is what §8.1 means by preferring undo to confirm.
+   *Over the limit → `credit-limit-exceeded`: admin PIN and a reason, or reduce the sale
+   (§12.2) — a genuine hard confirm, because money is being lent. Offline → allowed to §6.11's
+   offline cap, then flagged on sync (§14.5).*
+6. Simon: `POST /api/sales` with a `DEBT` payment → sale, lines, stock movements and a `CHARGE`,
+   all in one transaction (§12.1).
+
+**J4 — Close the shift.** *Once a day, the screen most likely to feel accusatory (§6.6).*
+1. **Փակել հերթափոխ**. *This shift's held baskets → `shift-has-open-baskets`, listed by time and
+   first item; complete or void each, or let another till take one (§11, Lifecycles).*
+   *Unsynced sales → explicit acknowledgement, because the Z-report would be incomplete.*
+2. Simon shows expected cash (§12.5). Shift → `CLOSING`.
+3. Count in stacks: 5000 × n, 1000 × n, and so on. The counter totals as you go.
+4. Simon shows the difference, neutrally. *Large variance → a note is asked for, not demanded as
+   an explanation.*
+5. **Hard confirm** — one of the few §8.1 asks for, because closing ends a period and is hard
+   to unwind. Shift → `CLOSED`, Z-report issued, session ends (§16.3).
+
+**J5 — Receive a delivery.** *`STOCK` or `ADMIN` only (§16.4). A paper invoice in one hand.*
+1. **Պահեստ** → **Ընդունում** (§6.7). *Offline → blocked clearly; receiving needs authoritative
+   stock (§14.5).*
+2. Pick the supplier, type the invoice number.
+3. Per line: scan or search, then quantity and unit cost from the invoice. Packaging converts
+   itself — 3 spools of 50 m posts 150 m (§10.3).
+4. Enter **Առաքման ծախս** if there is one. Simon spreads it across the lines by value (§10.5).
+5. Submit → `POST /goods-receipts`: `PURCHASE_RECEIPT` movements, the weighted average moves,
+   the payable is created — one transaction (§13.2).
+
+*Throughout J5: the new average cost is never shown to `STOCK` — only the invoice costs they
+typed themselves (§16.5).*
+
+---
+
 ### 6.1 Till — Վաճառել
 
 **The single most important screen in the product.** ~90% of all interaction. Everything a
@@ -309,11 +782,11 @@ worker does routinely happens here without navigating anywhere.
 
 1. **HID scanner** — a cheap USB/Bluetooth laser scanner types the code and presses Enter.
    Fastest, needs no driver, works with no focused input. *The primary path for a fixed till.*
-2. **Camera** — for a worker selling from the aisle. (Constrained by §17.)
+2. **Camera** — for a worker selling from the aisle. (Constrained by §18.)
 3. **Quick tiles (Արագ)** — a grid of the most-sold unbarcoded goods: sand, cable, cement,
    rebar. **Auto-populated from actual sales velocity**, manually pinnable. Essential for a
    hardware store, where much of the stock has no barcode at all.
-4. **Search (Փնտրել)** — Armenian or Latin-typed (§19.3).
+4. **Search (Փնտրել)** — Armenian or Latin-typed (§20.3).
 
 **States.**
 
@@ -331,7 +804,7 @@ worker does routinely happens here without navigating anywhere.
 - **Tap a line** → quantity keypad for that line.
 - **Swipe a line** → remove, with a 5-second **Հետարկել** (undo) toast (rule 6).
 - **Long-press a line** → price override, if permitted; requires a reason.
-- **Hold sale (Պահել)** → park the basket, serve the next customer, resume later. Multiple
+- **Hold sale (Պահել)** → park the basket, serve the next customer, resume later — **on this till or any other**, because the basket lives on the server (§12.1). Multiple
   held sales are listed by time and first item.
 
 **Quantity entry.** A large keypad, not a spinner and not a native `type="number"`. Decimals
@@ -401,6 +874,9 @@ cannot tell you that the number is 62 days old while the customer is standing in
 you. The worker sees it, and so does the customer.
 
 - Recent customers first, then search by name or phone. Never a plain unsorted list.
+- A charge whose **due date** has passed is marked overdue here and on the owner's home
+  (§6.9). This is separate from age (§10.6): *how old is this money* and *did they miss a
+  promise* are different questions and must not share one number.
 - **Over the credit limit → warn and require an admin override with a reason**, not a hard
   block (rule 1) — unless the owner has set the limit to strict in settings.
 - **Never shame the customer.** The copy is factual. This screen is often visible to them.
@@ -435,8 +911,10 @@ first, exactly like a paper book.
   never asked to choose between `SALE_RETURN` and `WRITE_OFF`.
 - Refunding a debt sale reduces the debt rather than paying out cash. Simon picks this
   automatically and says so.
-- **Void vs. return:** a sale not yet completed is simply discarded. A completed sale is
-  never deleted — it is reversed by a linked return (rule 4).
+- **Void vs. return:** a basket that was never completed (`DRAFT` or `HELD`) is *voided* —
+  it posted nothing, so there is nothing to reverse. A **completed sale is never voided and
+  never deleted**; it is reversed by a linked return, in full or in part (rule 4, §10.7).
+  "Void this sale" is not an action the product offers after payment.
 
 ---
 
@@ -482,19 +960,23 @@ designed carelessly.
 **Purpose.** Get goods and their true cost into the system from a paper invoice, fast.
 
 - **Receiving without a prior order is the primary path**, not an exception. Most small-shop
-  deliveries arrive with just a paper invoice.
+  deliveries arrive with just a paper invoice. *(Assumption A1 — §24.2.)*
 - Scan or search each item, enter quantity and unit cost from the invoice.
 - **"Առաքման ծախս" (delivery charge)** — one field. Simon spreads it across the goods by
   value so the real cost is right. The user is never told the word "apportionment"; they
   just see each item's cost land slightly higher than the invoice line.
 - Unit conversion is invisible and automatic: receiving 3 spools of 50 m adds 150 m of
   stock, because the product knows its own packaging (§10.3).
-- Cost fields are **hidden entirely from workers without stock permission** — not greyed
-  out, absent.
+- Cost fields are **absent entirely for `WORKER`** — not greyed out, not empty: absent.
+  `STOCK` types invoice costs here, because that is the job. What `STOCK` never sees is the
+  resulting `avgCostMdram`, the margin, or the supplier's terms (§16.5).
 
 ---
 
 ### 6.8 Stocktake — Հաշվառում
+
+> **v2** (§9). Specified now because the `STOCKTAKE` movement type and the session snapshot
+> must exist in the v1 schema — retrofitting them means migrating a live ledger.
 
 **Purpose.** Reconcile what the system thinks with what is on the shelf, without closing the
 shop.
@@ -541,10 +1023,8 @@ shop.
 
 ### 6.10 Reports — Հաշվետվություն
 
-Tiered per §5.3. Available: sales by period/product/category/worker · **margin by product**
-· stock valuation at cost · **debtor aging 0–30/31–60/61–90/90+** · supplier payables ·
-stock movement history per item · shift Z-reports with variances · discount report by worker
-· write-offs by reason · stock turnover and dead stock.
+Tiered per §5.3. **The report catalogue is listed once, in §20.2** — one list, so the two
+cannot drift apart. This section specifies only how those reports are presented.
 
 **Presentation rules:**
 - Default period is **today**; changing it is one tap (rule 9).
@@ -565,16 +1045,200 @@ a branch the code has to carry.
 | Setting | Default | Why it exists |
 |:--|:--|:--|
 | Shop name, address | — | Receipts |
-| Tax regime | Ask at setup | Changes receipt and reports (§16) |
+| Tax regime | Ask at setup | Which of VAT / turnover / micro (§17) |
+| Price basis | Tax-inclusive | Whether shelf prices include tax or exclude it — §10.8 supports both, and this is the switch |
+| Tax rate | 20% if VAT | Basis points (§10.1); zero under turnover and micro |
 | Cash rounding | None | Some shops round to 10 ֏ |
 | Negative stock | Warn (not block) | Rule 1; strict shops may differ |
+| Credit limit | Warn (not block) | Rule 1. Strict shops block the sale outright (§6.3, §12.2) |
+| Debt book (Nisya) | On | Wizard Q4 (§7.1). A shop that sells only for cash never sees §6.3 or §6.4 at all — the concept is absent, not disabled (§5.1) |
 | Max discount without admin | 5% | Shrinkage control |
 | Credit limit default | 50,000 ֏ | Starting point per customer |
+| Offline debt cap | 20,000 ֏ | Bounds a queued debt sale while the limit is uncheckable (§14.5) |
 | Low-stock alert | Auto from velocity | Manual override per product |
-| Backup destination | Local + USB | §18.2 |
+| Retention period | 10 years | The longest plausible financial-record period (§19.2, §19.6). Erring long costs disk; erring short is unrecoverable — §26 Q13 shortens it, never lengthens it |
+| Debt consent step | Off | §26 Q14. If consent turns out to be the lawful basis, this adds one step to §6.3 rather than a redesign |
+| Backup destination | Local + USB | §19.2 |
 | Text size | Normal | Older owners; a real accessibility need |
 
 Anything not on this list is a decision Simon should make itself.
+
+---
+
+### 6.12 Products — Ապրանքներ
+
+**Purpose.** Keep the catalogue true, and finish what the till started.
+
+**The default view is not the catalogue.** It is the **"needs detail"** list from §7.3 —
+products created by quick-add that still have no cost, category or reorder point. The owner's
+job here is completing stubs, not browsing three thousand rows, and opening on a full
+alphabetical list would bury the twelve items that actually want him.
+
+```
+┌────────────────────────────────────────────┐
+│  ԱՆԱՎԱՐՏ  12          Բոլորը  1 847       │
+├────────────────────────────────────────────┤
+│  Մալուխ 3x2.5                              │
+│  Գին 1 200 ֏ · ⚠ ինքնարժեքը լրացված չէ    │
+├────────────────────────────────────────────┤
+│  Պտուտակ 4x40                              │
+│  Գին 50 ֏ · ⚠ ինքնարժեքը լրացված չէ       │
+└────────────────────────────────────────────┘
+```
+
+- Filters: incomplete · low stock · dead stock · inactive · by category. Search is §20.3's.
+- **Cost and margin columns exist only for `ADMIN`** (§16.5). For `STOCK` the column is absent,
+  not empty.
+- A price change writes `PriceHistory` and an `AuditLog` row and needs admin re-auth (§16.3).
+  The previous price stays visible — *"was 1 100 ֏ until 12 March"* — because rule 3 applies to
+  prices as much as to totals.
+- **Barcodes are a list, not a field** (§11 `ProductBarcode`): add, **retire**, mark one
+  primary. Retiring stops a code being printed on new labels; it never stops the code scanning,
+  because the labels already on the shelves do not know they were retired.
+- **Products are deactivated, never deleted** (rule 4, §8.1). A deactivated product keeps
+  appearing in history and reports; it stops being sellable and stops being suggested.
+
+**What can go wrong.**
+
+| Situation | Behaviour |
+|:--|:--|
+| Barcode already on another product | Rejected, naming the other product, with a link to it. Never a silent reassign |
+| Changing `decimalPlaces` after movements exist | **Blocked.** It reinterprets every historical quantity — `2500` means 2.5 kg or 2 500 pieces depending on a field the past does not share |
+| Changing `stockUom` after movements exist | **Blocked**, same reason (§10.3). Add a `ProductUnit` instead |
+| Changing a price while a held sale carries that line | No effect — the line snapshotted its price (§11) |
+| Deactivating a product with stock on hand | Allowed, showing the remaining value at cost. It is usually a write-off decision (§13.5) |
+
+**Why it is learnable.** It is the quick-add sheet (§7.4) with the optional fields filled in,
+and it opens on exactly the things that are unfinished.
+
+---
+
+### 6.13 Customers — Հաճախորդներ
+
+**Purpose.** One page per person, exactly like the Nisya book — plus the two controls that
+stop debt growing without anyone having decided to let it.
+
+Sorted by debt outstanding, descending, with the age of the oldest charge beside it. Never
+alphabetical: the owner opens this screen to work out who to telephone.
+
+```
+┌────────────────────────────────────────────┐
+│  Դավիթ Ս.      45 000 ֏    62 օր   ⚠      │
+│  Սահմանաչափ    50 000 ֏                    │
+├────────────────────────────────────────────┤
+│  Արմեն Կ.      12 400 ֏     8 օր           │
+├────────────────────────────────────────────┤
+│  Անի Մ.         3 000 ֏     2 օր           │
+└────────────────────────────────────────────┘
+```
+
+- **A worker can create a customer** — name and phone, nothing else — from the debt sale screen
+  without leaving the sale (§6.3, rule 1). The credit limit takes its default from §6.11. This
+  is the only write a `WORKER` makes on this screen.
+- **Only `ADMIN` sets or raises a credit limit, or blocks a customer.** Those two fields are the
+  only things bounding debt (§11 `Customer`), so they are not a worker's to move.
+- Tap a customer → their ledger: charges and payments oldest first, each payment showing the
+  charges it crossed off (§6.4), each charge drilling through to its sale (rule 3).
+- **Print or export a statement** for one debtor. In a cash-and-trust economy this is how a
+  disagreement gets settled without it becoming an argument.
+
+**What can go wrong.**
+
+| Situation | Behaviour |
+|:--|:--|
+| The same person entered twice — the classic | Duplicate detection on phone at create; then a **merge** that re-points every `DebtEntry` and writes an audit row. Never a delete, and never re-typing a balance by hand |
+| Deleting a customer who owes money | **Not offered.** Deactivate — the debt history is financial record and survives (§10.7) |
+| Deleting a customer at their request (§17, item 5 — personal data) | Name and phone are cleared; the ledger rows and their amounts remain against an anonymised record. The retention obligation must be confirmed before launch (§17) |
+| Raising a limit to cover the sale in progress | Allowed with admin re-auth and a reason; both audited (§6.3, §16.3) |
+| A repayment recorded against the wrong customer | Reversed by a linked correction, never edited (§10.7) |
+
+**Why it is learnable.** It is the debt notebook: one name, one page, oldest at the top.
+
+---
+
+### 6.14 Suppliers — Մատակարարներ
+
+**Purpose.** The mirror of §6.13 — what **I** owe, to whom, and how long they are willing to
+wait.
+
+- Sorted by outstanding payable, descending, with `paymentTerms` and `leadTimeDays` visible:
+  the two fields that feed reorder maths (§13.3).
+- Tap a supplier → receipts, purchase returns and payments, each payment showing the receipts
+  it settled. The same allocation shape as customer debt (§10.6), deliberately the same screen
+  grammar, so learning one teaches the other.
+- Recording a payment creates a `SupplierPayment` with allocations, and a cash movement against
+  the open shift if it came out of the drawer (§12.5).
+- **Supplier terms are `ADMIN`-only** (§16.5). `STOCK` sees only the invoice costs it types
+  during receiving.
+
+**What can go wrong.**
+
+| Situation | Behaviour |
+|:--|:--|
+| Paying the same invoice twice | A fully-allocated receipt shows as settled and cannot be selected for another payment |
+| Paying more than is owed | Becomes a credit against the supplier, never a negative payable — §10.6's rule, mirrored |
+| A receipt entered against the wrong supplier | Reversed by a linked correction, never edited (§10.7) |
+
+**Why it is learnable.** It is §6.13 with the arrow pointing the other way, and it uses the
+same words for the same things (§4.2).
+
+---
+
+### 6.15 Debts — Պարտքեր
+
+**Purpose.** The worker's door into the debt book: find who owes, and take money against it.
+§5.1 makes this one of four destinations; it is not §6.13 with fewer buttons, it is a different
+job.
+
+Opens on the debtor list, **sorted by amount outstanding with the age of the oldest charge**
+beside it — the same ordering as §6.13, because one product should not sort the same list two
+ways. Never alphabetical.
+
+- **What a `WORKER` sees:** name, amount, age, overdue marker (§6.3). **What is absent:** the
+  credit limit control, the block switch, the customer's discount, and any figure derived from
+  cost. Absent, not disabled (§5.1, §16.5).
+- Search by name — Latin-typed (§20.3), so `Dav` finds `Դավիթ` — or by phone.
+- Tap a customer → their charges oldest first → **Մարում** takes a repayment (§6.4).
+- **Create a customer here too**, name and phone, the same sheet §6.3 opens. A debtor who walks
+  in to pay before they have ever bought on credit is rare but not impossible.
+
+**What can go wrong.**
+
+| Situation | Behaviour |
+|:--|:--|
+| Customer not in the list | Create inline; duplicate phone is caught at the point of typing (§6.13) |
+| Repayment against the wrong customer | Change before confirming; afterwards an admin correction reverses it as a linked entry (§8.2, §11 `DebtEntry.reversesId`) |
+| Offline | Balances show as **last known** and are labelled so (§14.4); a repayment still records and queues (§14.5) |
+
+**Why it is learnable.** It is the Nisya book with the shop's controls left in the office.
+
+---
+
+### 6.16 Stock — Պահեստ
+
+**Purpose.** Answer *"do we have it, and how many?"* without walking to the office — and, for
+`STOCK`, the way in to receiving.
+
+- Scan or search → the item, its **quantity on hand**, its selling price. For a `WORKER` there
+  is no cost column at all (§16.5); for `STOCK`, none either — only the invoice costs they type
+  during receiving.
+- **Movement history per item**, as a plain list: what changed, when, and who. Never the words
+  "movement" or "ledger" (§4.3).
+- Offline, quantities are **last known and labelled as such** (§14.4). A number that might be
+  stale and does not say so is worse than no number.
+- **For `STOCK` only**, this is where **Ընդունում** (§6.7), stocktake (§6.8, v2) and write-offs
+  (§13.5) live. No extra tab — the capability appears inside the place a person already goes to
+  think about stock (§5.1).
+
+**What can go wrong.**
+
+| Situation | Behaviour |
+|:--|:--|
+| It says 0 and the item is in hand | Sell it anyway (rule 1); the movement raises a `NEGATIVE_STOCK` flag and the product joins the recount list (§13.6) |
+| Offline and asked to receive | Blocked clearly — receiving needs authoritative stock (§14.5) |
+| Two products look identical in the list | Barcode and unit are shown beside the name; the internal code disambiguates unbarcoded goods (§18) |
+
+**Why it is learnable.** It is the shelf, written down.
 
 ---
 
@@ -585,7 +1249,9 @@ finds it too much work to start, and goes back to paper in week two.
 
 ### 7.1 The first hour, day, and week
 
-**First hour — setup wizard.** Five questions, no jargon, skippable and resumable:
+**First hour — setup wizard.** Five questions, no jargon, skippable and resumable — each
+answer is written to `Setting` under `setup.*` (§11) as it is given, so closing the laptop
+halfway costs nothing:
 
 1. Shop name?
 2. Who will use it? (names + PINs — the owner sets them)
@@ -593,15 +1259,20 @@ finds it too much work to start, and goes back to paper in week two.
 4. Do you keep a debt book? (turns Nisya on)
 5. Do you have a product list to import, or shall we build it as you sell?
 
-Nothing else. Everything else has a working default. At the end of the wizard the shop can
-make a real sale.
+Nothing else is asked. Everything else has a working default.
+
+The wizard **ends by showing the owner's recovery code once** (§16.2) and waiting while he
+writes it down. That is not a sixth question — it is the one thing he leaves the wizard
+holding, and the only route back in if he is ever the locked-out admin. At the end of the
+wizard the shop can make a real sale.
 
 **First day — sell with the catalogue empty.** Simon must be useful before it is complete.
 An unknown barcode opens a 15-second add sheet (§7.4), so the catalogue fills through normal
 trading. Day one is productive even if nothing was imported.
 
 **First week — the numbers arrive.** By day 3 there is enough history for low-stock
-suggestions; by day 7, velocity-based quick tiles and a first weekly report. Value should
+suggestions — the first `ProductStats` refresh (§11) needs roughly that much trading behind it —
+and by day 7, velocity-based quick tiles and a first weekly report. Value should
 visibly compound, so the owner feels the investment paying back while the effort is still
 fresh.
 
@@ -616,19 +1287,31 @@ employer's money, so he learns only the one path he was shown, and stays slow an
 Practice mode makes exploration free. It also makes training possible without polluting
 data, and gives support a way to reproduce a problem safely.
 
+How the isolation is actually achieved — a separate database file rather than a flag on every
+row — is §19.4, along with the rules that keep a practice sale out of the outbox, the drawer
+and the fiscal adapter.
+
 ### 7.3 Progressive catalogue building
 
 Nobody will type in 3,000 products. This is the most common reason small-retail software
-pilots fail, and it must be designed against directly:
+pilots fail, and it must be designed against directly *(assumption A2 — §24.2; the claim is
+inferred, not researched, §2.4)*:
 
 - **CSV/Excel import** with preview, validation, duplicate-barcode detection, and per-row
-  errors. Idempotent and re-runnable — a failed import must never leave a half-built mess.
+  errors. The guarantee that makes it safe to press the button twice — idempotent, re-runnable,
+  never partially applied — is stated once, in §19.1.
 - **Opening debts import**, with their **original dates**, so aging is correct from day one.
-  Importing them as "today" would make every debt look fresh and destroy the feature's value
-  in its first week.
+  Importing them as "today" would make every debt look fresh and destroy the feature's value in
+  its first week. How they are posted is §19.1's rule.
 - **Quick-add at checkout** — the 15-second sheet: name, price, unit. Cost and category can
   come later; the sale must not wait.
 - **A "needs detail" list** for the owner to complete later at his own pace.
+
+**Decision (2026-09-10): build as though the shop has nothing digital.** Quick-add is the
+onboarding story and import is a bonus, because that ordering is correct whatever §26 Q4 turns up
+— a shop with a spreadsheet gets a faster start, and a shop with a paper ledger is not stranded.
+The one thing import must carry regardless is **opening debts with their original dates**
+(§19.1), because that data has no other way in and aging is wrong from day one without it.
 
 ### 7.4 Quick-add sheet
 
@@ -704,18 +1387,21 @@ look identical to the harmless ones.
 | Two sales sent twice | Nothing — the second is ignored (§14.3) | Automatic |
 | Cash doesn't match at close | Neutral variance + note prompt | Recorded, not punished |
 | Wrong price on a receipt | Return + re-sell, or admin price correction | Both leave a trail |
-| Host PC won't start | *Not recoverable in-app* | Runbook + tested restore (§18.2) |
+| Host PC won't start | *Not recoverable in-app* | Runbook + tested restore (§19.2) |
 
 ### 8.3 Offline, in human language
 
 Never the word "offline", never a status code, never a stack trace.
 
-| State | Copy (indicative) |
-|:--|:--|
-| Connected | *nothing — no chrome at all* |
-| Working offline | «Աշխատում է առանձին։ Վաճառքները կպահվեն։» |
-| Pending | «3 վաճառք դեռ չի ուղարկվել» — tappable |
-| Sync problem | «Չհաջողվեց ուղարկել 1 վաճառք» + what to do |
+**The exact wording lives in §8.5**, once. This table is about where it appears and how loud it
+is.
+
+| State | Where it appears | What it says |
+|:--|:--|:--|
+| Connected | Nowhere — no chrome at all | Nothing |
+| Working offline | A calm strip below the status bar | That work is being saved, in the same tone as any other status |
+| Pending | The same strip, tappable → the outbox list | How many sales are still waiting |
+| Sync problem | The same strip, tappable → the needs-attention list | How many failed, and what to do about it |
 
 A calm banner, never a blocking modal (rule 1). The till keeps selling.
 
@@ -727,26 +1413,220 @@ teaching moment.
 
 ---
 
+### 8.5 The error catalogue
+
+§8.2 says what goes wrong; this says what the API returns and what the user reads. **The `type`
+is the contract and is frozen; the Armenian is indicative and is not** — §4.2's review by a
+native speaker applies to every string in the right-hand column, and none of them should ship
+unreviewed.
+
+The client maps `type` to a resource key; the server never sends user-facing prose (§15.2).
+
+| `type` (frozen) | Status | Armenian (indicative) | What the user can do |
+|:--|:--|:--|:--|
+| `unknown-barcode` | — *(client-side)* | «Նոր ապրանք» | The quick-add sheet opens; the sale continues (§7.4) |
+| `credit-limit-exceeded` | `422` | «Սահմանաչափը գերազանցված է։ Ունի 45 000 ֏, սահմանաչափը՝ 50 000 ֏» | Admin override with a reason, or reduce the sale (§6.3) |
+| `customer-blocked` | `422` | «Այս հաճախորդին պարտքով վաճառք չի թույլատրվում» | Take payment another way; only an admin unblocks |
+| `insufficient-stock` | **warning on `200`** | «Պահեստում նշված է 0։ Վաճառքը կշարունակվի» | Nothing. The sale completes and the item joins the recount list — the default, and rule 1 (§13.6) |
+| `insufficient-stock-strict` | `422` | «Պահեստում չկա բավարար քանակ» | Only in strict mode (§6.11): reduce the quantity, or an admin adjusts stock first |
+| `credit-limit-exceeded-on-sync` | **warning on `200`** | «Պարտքը գերազանցել է սահմանաչափը» | Nothing at the till. The sale posts and goes to the owner's needs-attention list (§14.6) |
+| `product-deactivated-on-sync` | **warning on `200`** | «Ապրանքն այլևս ակտիվ չէ» | Nothing at the till. The sale posts; the owner reviews the product (§14.6) |
+| `return-exceeds-sold` | `422` | «Վերադարձը գերազանցում է վաճառվածը» | Reduce the quantity; the original sale's remaining amount is shown |
+| `sale-already-returned` | `422` | «Այս վաճառքն արդեն վերադարձվել է» | Open the existing return |
+| `discount-above-cap` | `422` | «Զեղչը գերազանցում է թույլատրվածը» | Admin PIN plus a reason (§12.1) |
+| `shift-not-open` | `422` | «Հերթափոխը բաց չէ» | Open a shift; the basket survives (§6.6) |
+| `shift-has-open-baskets` | `422` | «Կան չավարտված վաճառքներ» | Complete or void each one, listed by time and first item. Only **this shift's** baskets are listed — one another till has picked up is no longer here |
+| `duplicate-barcode` | `422` | «Այս շտրիխկոդն արդեն կա՝ {ապրանք}» | Open the other product; never a silent reassign (§6.12) |
+| `immutable-after-movements` | `422` | «Չափման միավորը այլևս չի փոխվում» | Add a `ProductUnit` instead (§6.12) |
+| `pin-incorrect` | `401` | «Սխալ PIN» | Retry; the remaining attempts are shown |
+| `account-locked` | `423` | «Կողպված է։ Փորձե՛ք {n} րոպեից» | Wait, or any admin unlocks it in one action (§16.2) |
+| `too-many-attempts` | `429` | «Չափից շատ փորձեր։ Սպասե՛ք {n} վայրկյան» | Wait out the rate limit — a different thing from being locked (§16.2) |
+| `not-permitted` | `403` | «Ձեր իրավունքները չեն բավարարում» | Ask an admin; the screen says which role is needed |
+| `session-expired` | `401` | «Մուտքագրե՛ք PIN-ը» | Re-enter the PIN; the basket is preserved (§16.3) |
+| `offline-working` | — *(client-side)* | «Աշխատում է առանձին։ Վաճառքները կպահվեն։» | Nothing — the till keeps selling (§8.3) |
+| `offline-pending` | — *(client-side)* | «{n} վաճառք դեռ չի ուղարկվել» | Counts **sales** only, never parked baskets (§14.4). Tappable; opens the outbox list |
+| `offline-not-available` | — *(client-side)* | «Կապ չկա։ Այս գործողությունը հասանելի չէ» | Retry when connected; §14.5 lists what needs the server |
+| `offline-debt-cap` | — *(client-side)* | «Առանց կապի պարտքի սահմանը լրացել է» | Take cash, or wait for the connection (§14.5) |
+| `sync-failed` | `5xx` | «Չհաջողվեց ուղարկել {n} վաճառք» | Tappable; opens the needs-attention list (§14.6) |
+| `not-found` | `404` | «Չի գտնվել» | The record never existed. A deactivated or `VOIDED` one still opens (§10.7) |
+| `malformed-request` | `400` | *not shown — this is a bug* | Parked in the outbox and listed for the owner; never retried (§14.4, §15.2) |
+| `illegal-transition` | `422` | «Այս վաճառքն արդեն փակված է» | The sale has moved on since this device last saw it — reload and look at where it is now (§11, *Lifecycles*) |
+| `internal-error` | `5xx` | «Սխալ։ Վաճառքը պահպանված է» | The sale is safe; the diagnostics screen has the detail (§19.5) |
+
+**Every message names a number or a next step.** A message that only reports a state is a
+design failure that already happened (rule 7), and «Սխալ» on its own is the worst of them.
+
+---
+
 ## 9. Scope
 
 ### v1 — must ship together to be useful
 Catalogue & units · barcode and non-barcode selling · till, split payment, held sales ·
 debt (Nisya) with aging and limits · suppliers, receiving with landed cost · stock ledger ·
 returns both directions · shifts with denomination counting · roles and field-level
-permissions · owner home with drill-down · backup & tested restore · Armenian UI · setup
-wizard, import, quick-add, practice mode.
+permissions · owner home with drill-down · velocity-based low-stock suggestions (§13.3) ·
+backup & tested restore · Armenian UI · setup wizard, import, quick-add, practice mode.
 
 ### v2 — next
-Fiscal/ՀԴՄ integration (§16) · label printing · stocktake sessions with approval · velocity
-reorder suggestions · purchase orders · multi-location · Tauri desktop packaging.
+Fiscal/ՀԴՄ integration (§17) · label printing · stocktake sessions with approval (§6.8) ·
+purchase orders, including turning a reorder suggestion into an actual order (§13.3) ·
+multi-location · Tauri desktop packaging.
+
+**This section is the authority on release content.** Several v2 items are specified in full
+in Parts A and B — stocktake, purchase orders — because their data model has to exist in v1 or
+the ledger needs migrating later. *Specified* is not *shipped*; §23 maps each build phase to
+its release.
+
+**One v2 item carries a v1 decision inside it.** Multi-location ships in v2, but *whether stock
+is keyed by location* is a schema question that has to be settled before Phase 0 writes
+`StockMovement` — adding a location key to a ledger with a year of movements in it is a
+migration, not a field. §26 Q7 asked the owner whether a second shop was likely within a year;
+**the answer, on 2026-09-10, was to carry the field regardless** — v1's schema has a nullable
+`locationId` it does not yet use (§11). Cheap now, expensive later, and the cheapness would have
+expired at Phase 0.
+
+---
+
+*Three dimensions had never been audited: §3's ten design rules against the specifications that
+must honour them, §4's vocabulary contract against the screens and reports, and §18's hardware
+against the flows. Doing so in 3.22 found four defects — two of them endpoints I had written
+myself, using `DELETE` in a document whose fourth rule is that nothing is deleted. The most
+useful was not an inconsistency at all: §18 opens the cash drawer through the printer's kick-out
+port, so the reprint offered after a paper jam would have opened it for anyone, and §16.3's
+re-authentication would have been a control enforced in software and bypassed in hardware.*
 
 ### Later / conditional
 Batch & expiry · serial numbers · barcode-scale integration · supplier price lists ·
 multi-currency · customer-facing display.
 
 ### Non-goals (v1)
-Cloud sync or multi-store consolidation · payroll · full double-entry general ledger ·
-e-commerce · CRM/marketing · manufacturing or bill-of-materials.
+The **permanent** non-goals are stated once, in §1 ("What Simon is not"): accounting system,
+CRM, e-commerce, multi-store chain. In addition, v1 does not do: cloud sync or multi-store
+consolidation · payroll · full double-entry general ledger · manufacturing or
+bill-of-materials.
+
+---
+
+### Functional requirement index
+
+Every v1 requirement, with where it is specified and which acceptance criterion (§27) proves
+it. The table exists so that *"is this built?"* and *"is this tested?"* each have exactly one
+answer, and so a requirement cannot quietly lose its acceptance criterion during a revision.
+
+| id | Requirement | Specified | Verified |
+|:--|:--|:--|:--|
+| **FR-CAT-01** | A product carries many barcodes, one marked primary | §11 | — |
+| **FR-CAT-02** | Stock, purchase and sale units with integer conversion factors | §10.3 | §27.3 |
+| **FR-CAT-03** | Quick-add from an unknown barcode without leaving the sale | §6.1, §7.4 | §27.13 |
+| **FR-CAT-04** | CSV/Excel import: idempotent, per-row errors, never partially applied | §7.3, §19.1 | §27.5 |
+| **FR-CAT-05** | Opening debts imported with their original dates | §7.3, §19.1 | §27.5 |
+| **FR-CAT-06** | Products are deactivated, never deleted | §6.12, §10.7 | — |
+| **FR-CAT-07** | `decimalPlaces` and `stockUom` immutable once movements exist | §6.12, §11 | §27.21 |
+| **FR-CAT-08** | Search tolerates Latin-typed Armenian | §20.3 | — |
+| **FR-SELL-01** | Scan → line in < 200 ms; a rescan increments the existing line | §6.1, §21 | §27.1 |
+| **FR-SELL-02** | Four first-class input paths: HID, camera, quick tiles, search | §6.1 | §27.1 |
+| **FR-SELL-03** | Quick tiles auto-populated from sales velocity | §6.1 | — |
+| **FR-SELL-04** | Quantity keypad honours the product's `decimalPlaces` | §6.1, §10.2 | — |
+| **FR-SELL-05** | Held sales survive an app restart and are resumable from any till, moving to the shift that completes them | §12.1, §11 `Sale.shiftId` | — |
+| **FR-SELL-06** | Split tender across cash, card and debt in any combination | §6.2, §11 | §27.2 |
+| **FR-SELL-07** | Change computed and shown as the largest figure on screen | §6.2 | §27.1 |
+| **FR-SELL-08** | Discounts capped by role; admin PIN plus a reason above the cap | §12.1, §16.3 | §27.16 |
+| **FR-SELL-09** | Tax extracted from the price or added to it, per the price basis — which is snapshotted onto the sale | §10.8, §11 `Sale.priceBasis` | §27.18 |
+| **FR-SELL-10** | Cash rounding appears as its own visible line | §10.1 | — |
+| **FR-SELL-11** | A sale commits in one transaction; printing happens after commit | §12.1, §13.1 | §27.2 |
+| **FR-SELL-12** | Returns start from the original sale; blind returns are admin-only | §6.5, §12.4 | §27.6 |
+| **FR-SELL-13** | Partial return, restock or write-off, cost reversed at the original average | §12.4 | §27.6 |
+| **FR-SELL-14** | Receipt numbers assigned on the device, prefixed per till, gap-tolerant by design | §12.1, §11 `Device` | — |
+| **FR-DEBT-01** | Debt sale shows balance, age of the oldest charge, and limit before confirming | §6.3 | §27.12 |
+| **FR-DEBT-02** | Credit limit warns and allows admin override with a reason | §12.2 | §27.12 |
+| **FR-DEBT-03** | Repayment allocated oldest-first, overridable, partial supported | §10.6, §12.3 | §27.5 |
+| **FR-DEBT-04** | Overpayment becomes a credit adjustment, never a negative charge | §10.6 | — |
+| **FR-DEBT-05** | Aging runs from the charge date; buckets 0–30/31–60/61–90/90+ | §10.6, §20.2 | §27.5 |
+| **FR-DEBT-06** | A worker creates a customer mid-sale; limits stay admin-only | §6.13 | §27.12 |
+| **FR-DEBT-07** | Duplicate customers are merged, never deleted or re-keyed by hand | §6.13 | §27.20 |
+| **FR-BUY-01** | Receiving without a prior order is the primary path | §6.7, §13.2 | §27.3 |
+| **FR-BUY-02** | Landed cost apportioned by value before the average moves | §10.5, §13.2 | §27.3 |
+| **FR-BUY-03** | Moving weighted average: rounded once, guarded at zero or negative stock | §10.5 | §27.4 |
+| **FR-BUY-04** | Unit cost snapshotted onto every sale line | §10.5, §11 | §27.4 |
+| **FR-BUY-05** | Supplier payables with allocation, mirroring customer debt | §6.14, §11 | — |
+| **FR-BUY-06** | Purchase returns reverse stock at the receipt's landed cost and credit the invoice only | §13.7 | §27.22 |
+| **FR-STK-01** | Append-only movement ledger; `stockQty` is a rebuildable cache | §10.4 | §27.3 |
+| **FR-STK-02** | Negative stock allowed with a flag; strict mode is a setting | §6.11, §13.6 | — |
+| **FR-STK-03** | Write-offs carry explicit reason codes | §13.5 | — |
+| **FR-STK-04** | Ledger-vs-cache drift is surfaced, never silently corrected | §10.4, §19.5 | — |
+| **FR-STK-05** | One needs-attention list carries every flag: negative stock, sync conflicts, cache drift | §11 `ReviewFlag`, §13.6, §14.6, §19.5 | — |
+| **FR-SHF-01** | Open on a counted float; close with a denomination counter | §6.6 | §27.7 |
+| **FR-SHF-02** | Expected-cash formula; variance always recorded, note prompted | §12.5 | §27.7 |
+| **FR-SHF-03** | X-report mid-shift, Z-report at close | §6.6, §12.5 | §27.7 |
+| **FR-SYN-01** | Catalogue cached in IndexedDB; a basket is buildable offline | §14.4 | §27.8 |
+| **FR-SYN-02** | One outbox carries parked and completed sales, draining FIFO and serially so neither overtakes the other; the UI never awaits the network | §14.4, §15.3 | §27.8 |
+| **FR-SYN-03** | Client-generated id **plus the target status** is the idempotency key: a replay returns `200`, a new legal transition is honoured, an illegal one is `422` | §14.3, §15.3, §11 | §27.8 |
+| **FR-SYN-04** | Offline debt sales bounded by the offline cap and flagged on sync | §6.11, §14.5 | — |
+| **FR-SYN-05** | Conflicts are accepted and flagged, never discarded | §14.6 | §27.8 |
+| **FR-SEC-01** | PIN verified server-side, rate limited, lockout with a way out | §16.2 | — |
+| **FR-SEC-02** | Sessions per-device, ending at shift close, with stated idle timeouts | §16.3 | — |
+| **FR-SEC-03** | Three roles; role determines what exists, not what is enabled | §5.1, §16.4 | — |
+| **FR-SEC-04** | Cost, margin and supplier terms stripped server-side for non-admins | §16.5 | §27.9 |
+| **FR-SEC-05** | Audit log for catalogue price change, **line price override**, stock adjustment, discount above cap, **credit-limit override**, basket void, sale return, permissions — with the reason the person typed | §10.7 | — |
+| **FR-SEC-06** | An admin revokes another device's session in one action; deactivating a device revokes its sessions with it | §16.3, §15.4, §11 `Device` | — |
+| **FR-DAT-01** | Consistent snapshots hourly and at close; local plus USB; encrypted | §19.2 | §27.10 |
+| **FR-DAT-02** | One-click restore, with a documented and rehearsed drill | §19.2 | §27.10 |
+| **FR-DAT-03** | Every report exports to CSV/Excel in one tap | §6.10, §20.2 | — |
+| **FR-DAT-04** | Health endpoint and an owner-readable diagnostics screen | §19.5 | — |
+| **FR-DAT-05** | Erasure anonymises a customer — name and phone cleared, ledger amounts and dates kept | §19.6, §6.13 | — |
+| **FR-LRN-01** | Setup wizard: five questions, skippable, resumable | §7.1 | §27.11 |
+| **FR-LRN-02** | Practice mode isolated in a separate database, audited on entry and exit | §7.2, §19.4 | §27.19 |
+| **FR-LRN-03** | Contextual help, first-run coach marks, teaching empty states | §7.5, §8.4 | §27.14 |
+| **FR-LRN-04** | Undo for routine actions; hard confirm only for the irreversible | §8.1 | §27.16 |
+
+**Adding a feature means adding a row here** — and a row here is one of five places every change
+has to land.
+
+### Keeping this document true when it changes
+
+A change never lands in one place. It fans out in five directions, and the last one is what gets
+missed: those sections do not *describe* a feature, they *watch* it, so nothing in the writing of
+a rule reminds you they exist.
+
+| | Where a change lands | The question |
+|:--|:--|:--|
+| **1. The model** | §11 — fields, enums, lifecycles, validation | Can the schema represent it? |
+| **2. The rules** | §10, §12–§14, §16, §19 — whichever section specifies it | Is the behaviour written once, where it will be read? |
+| **3. The interfaces** | §15 the endpoint · §16.5 what it strips | Can a client reach it, and does it leak cost? |
+| **4. The surfaces** | §6 the screen and the journey · §8.5 the error type | Can a person do it, and see it fail? |
+| **5. The observers** | §10.7 audit · §20.2 report · §9 this index · §27 acceptance · §23.1 layer · §24.2 assumption · §21 budget | **Who watches it, and will the trail explain itself in six months?** |
+
+**Category 5 is where this document has repeatedly gone wrong.** Letting a held basket move
+between tills (3.31) needed edits in eleven places, and the last four found were all observers —
+the audit trail, the Z-report, the requirement row and the acceptance criterion. Each surfaced in
+a separate review, one per pass, because a rule tells you what it does and never tells you who is
+watching it.
+
+**Walk all five when you change something.** It is faster than four reviews, and it is the only
+part of this process that does not depend on someone remembering.
+
+**Then one more question, which the five do not ask.** Re-read every rule that *mentions* the
+thing you changed — not to check its references resolve, but to check it still names the thing
+correctly. Widening the outbox to carry two kinds left three rules describing one kind; splitting
+its counter left the heartbeat reporting one of two. Both were true before the change and false
+after it, and neither is a broken reference, so nothing automatic catches them.
+**Ask: does every rule that mentions this still name it right?**
+
+**And ask it mechanically, not by memory: grep the words the old rule used**, across the whole
+file, not the sections you expect to be affected. Changing tax from one basis to two left the
+phrase "never added" in a requirement, "extracted, not added" in a section heading, and "no safe
+middle" in §26 — four rings out from the edit, found in one command and not in three reviews.
+
+**A requirement without an acceptance criterion is a deliberate choice, not an oversight.**
+Those rows are covered either by the domain unit and property tests (§21, *Correctness*) or are
+too small to justify a trip to the shop. Gaining an acceptance criterion is cheap; losing one
+without noticing is not, which is why this column exists at all.
+
+**Two acceptance criteria have no requirement, also deliberately.** §27.15 (no internal term
+reaches a worker's screen) is enforced by §4.1's vocabulary rule rather than by any one feature,
+and §27.17 (one-handed, ≥ 48 px) is a non-functional requirement (§21) that every screen inherits.
+Both are cross-cutting, and pinning either to a single FR would make it look optional everywhere
+else.
 
 ---
 
@@ -776,13 +1656,36 @@ changes hands. Unit costs need finer resolution: the weighted average of a screw
 compound into visible cost drift. Three extra decimal places absorbs it.
 
 **Rounding.** Half-up, applied to the absolute value, **exactly once, at the line total**.
-Never round a unit price, a factor, or an intermediate product. Sum already-rounded line
-totals to get the sale total. Half-up on the absolute value (rather than banker's rounding)
+Never round a unit price, a factor, or an intermediate product. Exactly two values round in
+their own right rather than as intermediates: the stored weighted average cost (§10.5) and the
+per-line extracted tax (§10.8). Both land in `Int` columns, and neither is ever re-rounded
+downstream. Sum already-rounded line totals to get the **subtotal** — the sale total is that,
+less any sale-level discount, plus any cash rounding (§10.8).
+
+Half-up on the absolute value (rather than banker's rounding)
 means a return of 12.5 rounds to the same magnitude as the sale of 12.5 — otherwise a
 partial return leaves a one-dram ghost balance that nobody can explain.
 
-**Cash rounding is a separate, visible line.** If the shop rounds to 10 ֏,
-`sum(lines) + roundingAdjustment == total` must always hold, so the receipt adds up.
+**Cash rounding is a separate, visible line.** Whether or not the shop rounds, one identity
+must hold on every sale, because it is what makes a receipt checkable by the person holding it:
+
+```
+subtotal = Σ lineTotal                          already-rounded line totals
+
+tax-inclusive   total = subtotal − discountTotal + roundingAdjustment
+tax-exclusive   total = subtotal − discountTotal + taxTotal + roundingAdjustment
+```
+
+**Which line applies is the price basis (§6.11, §10.8), and it changes what `taxTotal` is.**
+Inclusive, it is a memo of tax already inside `total` and never a term. Exclusive, it *is* a
+term, and a receipt that omits it does not add up. One module owns both forms (§10.1) and the
+receipt prints whichever identity is in force — this is the one place where the two modes are
+visibly different, and pretending otherwise would put a wrong sum in a customer's hand.
+
+An earlier form of this rule read `sum(lines) + roundingAdjustment == total`, which is only true
+when no sale-level discount was given — and §12.1 offers them. Every term above is printed,
+because a receipt whose arithmetic is invisible is a receipt the customer cannot check, and an
+unexplainable total is the failure §2.3 says ends the relationship.
 
 One module owns every conversion, rounding, and formatting operation. No arithmetic on money
 anywhere else.
@@ -798,7 +1701,8 @@ pieces (§6.1).
 Three roles, related by integer conversion factors on the product:
 
 - **Stock UoM** — the canonical unit inventory is held in (metre).
-- **Purchase UoM** — how the supplier sells it (a 50 m spool), with `unitsPerPurchaseUnit`.
+- **Purchase UoM** — how the supplier sells it (a 50 m spool): its own `ProductUnit` row with
+  `role = PURCHASE` and `factorToStockUom = 50` (§11).
 - **Sale UoM(s)** — how customers buy it (metre, or a pre-cut 5 m length).
 
 Receiving 3 spools posts +150 metres. A single flat unit string cannot express this and
@@ -812,6 +1716,9 @@ quantity, a unit cost, a reason, an actor, and a link to its source document.
 ```
 SALE · SALE_RETURN · PURCHASE_RECEIPT · PURCHASE_RETURN
 ADJUSTMENT · WRITE_OFF · STOCKTAKE · TRANSFER · OPENING_BALANCE
+
+`TRANSFER` is reserved for multi-location (v2, §9) and nothing in v1 emits it — it is in the
+enum from the start so that adding a second shop does not migrate a live ledger.
 ```
 
 `Product.stockQty` is a **cached projection**, recomputed inside the same transaction that
@@ -831,6 +1738,15 @@ newAvgCost = (stockQty × currentAvgCost + receivedQty × receiptUnitCost)
              ÷ (stockQty + receivedQty)
 ```
 
+- **Rounded once, on store.** `newAvgCost` is rounded **half-up to a whole milli-dram** as it
+  is written. This is one of §10.1's two named carve-outs from "never round an intermediate":
+  the average is not an intermediate, it is a stored `Int`, and the division almost never lands
+  on one.
+- **The denominator can be zero or negative.** §13.6 permits negative stock, so
+  `stockQty + receivedQty ≤ 0` is reachable and the formula is then undefined — do not
+  evaluate it. Set `avgCostMdram = receiptUnitCost`, post the receipt, and flag the movement.
+  A prior average that describes goods the system does not believe it holds is not evidence
+  about anything.
 - **Landed cost first.** Delivery, duty, and other receipt-level charges are apportioned
   across lines **by value** before the average moves. Ignoring this systematically overstates
   margin — the most common costing error in small-retail systems, and the reason §6.7 has a
@@ -847,22 +1763,90 @@ newAvgCost = (stockQty × currentAvgCost + receivedQty × receiptUnitCost)
 positive; the type carries direction** — mixed signs make every aggregate a source of bugs.
 
 Payments are **allocated to specific charges**, oldest first by default, manually
-overridable. Allocations for one payment must sum exactly to the payment.
+overridable. Allocations for one payment must sum exactly to the payment **less any excess**:
+where a payment exceeds the outstanding balance the remainder is posted as a credit
+`ADJUSTMENT`, so the invariant is `sum(allocations) + credit == payment`.
 
 Without allocation there is no aging, and without aging "owes 45,000" is not actionable
 while "45,000, of which 30,000 is over 90 days" is. Aging is measured from the **charge**
 date, not the last payment. Overpayment becomes a credit `ADJUSTMENT`, never a negative
 charge.
 
+`DebtEntry.dueDate` is optional and **never affects aging**. When set it drives only the
+*overdue* marker in §6.3 and §6.9. Letting a due date move a charge between aging buckets
+would make the buckets unstable and the report unreproducible.
+
 ### 10.7 Correction, never deletion
 
 Finalised sales, receipts, and payments are never updated or deleted. Corrections create a
-linked reversing document (`reversesId`). A `DRAFT` sale that never completed may simply be
-discarded — nothing was posted.
+linked reversing document (`reversesId`). A `DRAFT` or `HELD` sale that never completed is
+marked `VOIDED` rather than deleted — nothing was posted, so there is nothing to reverse, but
+an abandoned basket is worth being able to see. `VOIDED` is **unreachable from `COMPLETED`**:
+once money has changed hands the only correction is a return (§6.5).
 
-`AuditLog` records every price change, stock adjustment, discount above threshold, void, and
-permission change: actor, timestamp, before/after. This is what makes rule 4 real, and it
+`AuditLog` records every catalogue price change, **line price override** (§6.1), stock
+adjustment, discount above threshold, **credit-limit override** (§6.3), basket void, sale
+return, **held-basket transfer between shifts** (§12.1 — it moves takings from one drawer to
+another, and §16.1's second threat is a worker muddying exactly that), and permission change: actor, timestamp, before/after — and, for anything a person had
+to justify, the `reason` they typed. This is what makes rule 4 real, and it
 protects the honest worker as much as it catches the dishonest one.
+
+---
+
+### 10.8 Tax and the price basis
+
+Armenian shelf prices are quoted the way the customer pays them. Simon therefore treats
+`sellPriceMdram` as **tax-inclusive by default** and *extracts* tax rather than adding it — the
+shape of consumer retail almost everywhere. Under a tax-exclusive basis it adds instead; the
+basis is a setting (§6.11) and the sale records which one it used (§11 `Sale.priceBasis`).
+
+```
+lineTax  = round_half_up(lineTotal × rateBp ÷ (10000 + rateBp))
+taxTotal = Σ lineTax        — summed from already-rounded line values, per §10.1
+```
+
+- **Whether `taxTotal` is a memo or an addend is the price basis** (§6.11). Inclusive, it is a
+  memo — `total = subtotal − discountTotal + roundingAdjustment`, tax already inside. Exclusive,
+  it is a term and the total is that plus `taxTotal` (§10.1). **Reading §11's `Sale` field list
+  without checking the basis is the most likely way to build this wrong** — the same field is a
+  memo in one mode and an addend in the other, and nothing in the field name says which.
+- **The rate is snapshotted onto the line** as `taxRateBp`, exactly as `unitCostMdram` is
+  (§10.5). A rate change in March must not rewrite February's receipts.
+- **Round once per line, then sum.** Extracting from the sale total instead yields a figure
+  that does not equal the sum of its lines, and rule 3 breaks at the first drill-down.
+- **Non-VAT regimes are rate zero, not a second code path.** Turnover and micro-business shops
+  get `rateBp = 0`, `taxTotal = 0`, and no tax line on the receipt (§17). `taxCategory` is
+  still recorded on every product and line, so changing regime is a settings change and a
+  reprojection — never a migration.
+- **Returns extract at the original rate**, from the original line, for the same reason cost is
+  reversed at the original average (§12.4).
+
+**A setting that changes arithmetic is snapshotted onto the document it changed.** `Sale.priceBasis`
+records which of §10.1's two identities was in force, exactly as `unitCostMdram` and `taxRateBp`
+record the cost and the rate (§10.5). Without it, switching the setting silently rewrites every
+past receipt — the failure §10.5 exists to prevent, arriving through a different door.
+
+*Swept against §6.11 (2026-09-10): the price basis is the only setting with this property.* Cash
+rounding also changes a total, but `Sale.roundingAdjustment` already stores the outcome rather
+than the rule, so a reprint reproduces it. Every other setting governs what is *allowed* — limits,
+caps, thresholds — and changing one cannot alter a sale already made.
+
+**Both bases are supported, and which one applies is a setting** (§6.11). Tax-inclusive
+extraction is the default and the arithmetic above; tax-exclusive addition is the same formula
+run the other way — `lineTax = round_half_up(lineTotal × rateBp ÷ 10000)`, added to reach the
+total rather than found inside it. One module owns both (§10.1), one setting picks between them,
+and **no screen or report changes shape**. The **receipt does**: inclusive prints a total with
+tax noted beneath it, exclusive prints subtotal, tax and then total, because those are different
+sums and §10.1's identity differs with them. That is the one visible difference, and it is a
+layout the receipt template already has to hold either way.
+
+That is deliberate: it turns §26 Q2 from a decision that blocks layer 2 into a switch thrown at
+setup, at the cost of one receipt layout that has to exist in two forms. The accountant's answer still matters, and getting it wrong still misprices everything —
+but being wrong is now a settings correction rather than a rewrite.
+
+Which regime the shop is in, and whether the tax-inclusive default (A3) holds, is §26 Q2
+and should be settled before the pilot. The arithmetic above does not change with the
+answer — only the rate, and whether the receipt shows a tax line.
 
 ---
 
@@ -874,54 +1858,187 @@ All ids are UUIDv7 — time-sortable, so they cluster in index order, and client
 ### Catalogue
 | Model | Key fields | Notes |
 |:--|:--|:--|
-| **Product** | `id`, `sku`, `name`, `nameSearch`, `categoryId`, `stockUom`, `decimalPlaces`, `avgCostMdram`, `sellPriceMdram`, `taxCategory`, `reorderPoint`, `reorderQty`, `trackStock`, `isActive` | Never deleted — deactivated; sale lines reference it. `nameSearch` holds the normalised/transliterated form (§19.3) |
-| **ProductBarcode** | `id`, `productId`, `barcode` (unique), `isPrimary` | **One-to-many.** A product legitimately has a manufacturer EAN, an internal code, and a second supplier's code |
-| **ProductUnit** | `id`, `productId`, `uom`, `factorToStockUom`, `role`, `barcode?` | Drives §10.3 |
+| **Product** | `id`, `sku`, `name`, `nameSearch`, `categoryId`, `stockUom`, `stockQty`, `decimalPlaces`, `avgCostMdram`, `sellPriceMdram`, `taxCategory`, `defaultSupplierId?`, `reorderPoint`, `reorderQty`, `tilePinnedAt?`, `trackStock`, `isActive` | `defaultSupplierId` feeds §13.3's lead time and is nullable — quick-add (§7.4) does not set it. `stockQty` is the cached projection §10.4 governs — recomputed inside the transaction that writes each movement, rebuildable by replaying the ledger, and never the source of truth. `tilePinnedAt` non-null means the owner pinned this to the quick grid (§6.1); pinned tiles sort first by pin time and sales velocity fills the rest, so a pin is a stored decision rather than a guess the algorithm might overturn. Never deleted — deactivated; sale lines reference it. `nameSearch` holds the normalised/transliterated form (§20.3) |
+| **ProductBarcode** | `id`, `productId`, `barcode` (unique), `isPrimary`, `retiredAt?` | **One-to-many.** A retired code **still resolves** — an old sticker on a shelf has to scan to the right product years later, which is §18's reason for saying retired codes are never reused. What retirement prevents is *reassignment*: the code can never point at a different product, and rule 4's "nothing is deleted" applies to the catalogue as much as to the ledger. A product legitimately has a manufacturer EAN, an internal code, and a second supplier's code |
+| **ProductUnit** | `id`, `productId`, `uom`, `factorToStockUom`, `role` (STOCK/PURCHASE/SALE), `barcode?` | Drives §10.3 |
 | **Category** | `id`, `name`, `parentId` | Shallow tree |
 | **PriceHistory** | `id`, `productId`, `sellPriceMdram`, `effectiveFrom`, `changedBy` | "When did this get more expensive, and who did it?" |
 
 ### Selling
 | Model | Key fields | Notes |
 |:--|:--|:--|
-| **Sale** | `id` (client-generated), `number`, `shiftId`, `userId`, `customerId?`, `status` (DRAFT/HELD/COMPLETED/VOIDED), `subtotal`, `discountTotal`, `taxTotal`, `roundingAdjustment`, `total`, `completedAt`, `reversesId?`, `fiscalReceiptId?` | `id` is the idempotency key. `HELD` supports §6.1 parked sales |
-| **SaleLine** | `id`, `saleId`, `productId`, `productName`, `qty`, `uom`, `factorToStockUom`, `unitPriceMdram`, `unitCostMdram`, `discountAmount`, `discountReason?`, `lineTotal` | **Price and cost both snapshotted.** Name denormalised for reprints |
-| **Payment** | `id`, `saleId`, `method` (CASH/CARD/DEBT/TRANSFER), `amount`, `tenderedAmount?`, `changeGiven?` | **Multiple per sale** — split tender (§6.2) |
-| **SaleReturn** | `id`, `originalSaleId`, `userId`, `reason`, `refundMethod`, `restock`, `total` | Partial supported; reverses COGS at the **original** unit cost |
+| **Sale** | `id` (client-generated), `number`, `shiftId`, `userId`, `customerId?`, `status` (DRAFT/HELD/COMPLETED/VOIDED), `subtotal`, `discountTotal`, `discountReason?`, `taxTotal`, `priceBasis` (INCLUSIVE/EXCLUSIVE), `roundingAdjustment`, `total`, `createdAt`, `completedAt`, `reversesId?`, `fiscalReceiptId?` | `id` is the idempotency key. `number` is the human-readable reference, device-prefixed and assigned on completion (§12.1) — not a fiscal receipt number, which is `fiscalReceiptId` (§17). `createdAt` is what §6.1 lists held baskets by — derivable from a UUIDv7, but a displayed timestamp should not depend on decoding a primary key. **`shiftId` is set when the basket is created, rewritten to the completing shift if the sale is resumed on another till (§12.1), and frozen at `COMPLETED`** — the rewrite happens only while the sale is still `DRAFT`/`HELD`, so §10.7's rule that a finalised document is never updated holds, and §12.5 reconciles the drawer that took the money rather than the one that started the basket. `HELD` supports §6.1 parked sales. `VOIDED` is reachable **only from `DRAFT`/`HELD`** (§10.7) — a completed sale is reversed, never voided. `taxTotal` is tax **inside** `total` under a tax-inclusive basis and **added to it** under an exclusive one — §10.1 gives both identities, §6.11 holds the switch, and **`priceBasis` records which one this sale used**, because a reprint must reproduce the sale rather than recompute it (§10.8) |
+| **SaleLine** | `id`, `saleId`, `productId`, `productName`, `qty`, `uom`, `factorToStockUom`, `unitPriceMdram`, `unitCostMdram`, `taxRateBp`, `lineTax`, `discountAmount`, `discountReason?`, `priceOverridden`, `lineTotal` | **Price, cost and tax rate all snapshotted** (§10.5, §10.8). Name denormalised for reprints. `discountReason` is customer-facing and prints on the receipt; `priceOverridden` only flags that §6.1's long-press was used, because the *justification* belongs in `AuditLog.reason` where every other override's does |
+| **Payment** | `id`, `saleId`, `method` (CASH/CARD/DEBT/TRANSFER), `amount`, `tenderedAmount?`, `changeGiven?` | **Multiple per sale** — split tender (§6.2). `TRANSFER` is reserved for bank settlement of a B2B sale (§17, item 3) and is **not offered on §6.2's payment screen in v1** — it is in the enum from the start so that invoicing a contractor later does not migrate paid sales |
+| **SaleReturn** | `id`, `originalSaleId`, `userId`, `reason`, `refundMethod` (CASH/CARD/DEBT_REDUCTION), `total`, `createdAt` | Header only. Partial returns live in the lines |
+| **SaleReturnLine** | `id`, `returnId`, `saleLineId`, `productId`, `qty`, `unitCostMdram`, `refundAmount`, `restock` | **The original `SaleLine.unitCostMdram`, copied**, so COGS reverses at the cost that was booked (§12.4). `restock` is per line: one item comes back to the shelf, another is damaged, and §6.5 asks the question once with a per-line override |
 
 ### Buying
 | Model | Key fields | Notes |
 |:--|:--|:--|
 | **Supplier** | `id`, `name`, `taxId`, `phone`, `paymentTerms`, `leadTimeDays`, `isActive` | `leadTimeDays` feeds reorder maths |
-| **PurchaseOrder** | `id`, `number`, `supplierId`, `status`, `expectedAt`, `total` | Optional — most deliveries arrive unordered |
+| **PurchaseOrder** | `id`, `number`, `supplierId`, `status` (DRAFT/OPEN/PARTIAL/RECEIVED/CANCELLED), `expectedAt`, `total` | Optional — most deliveries arrive unordered. **The PO flow is v2 (§9);** the table exists in v1 so a receipt can gain a `poId` without a migration |
 | **PurchaseOrderLine** | `id`, `poId`, `productId`, `qtyOrdered`, `qtyReceived`, `unitCostMdram` | Partial receipt is normal |
-| **GoodsReceipt** | `id`, `number`, `supplierId`, `poId?`, `receivedAt`, `userId`, `supplierInvoiceNo`, `landedCostTotal`, `total` | Moves stock **and** updates the average |
+| **GoodsReceipt** | `id`, `number`, `supplierId`, `poId?`, `receivedAt`, `userId`, `supplierInvoiceNo`, `landedCostTotal`, `total`, `reversesId?` | Moves stock **and** updates the average. `reversesId` because §6.14 reverses a receipt booked against the wrong supplier rather than editing it, and §10.7 requires that reversal to be linked |
 | **GoodsReceiptLine** | `id`, `receiptId`, `productId`, `qty`, `unitCostMdram`, `apportionedLandedCost` | |
-| **SupplierPayment** | `id`, `supplierId`, `amount`, `method`, `paidAt`, `allocations[]` | Payables — the mirror of Nisya (§6.9) |
-| **PurchaseReturn** | `id`, `supplierId`, `receiptId?`, `reason`, `total` | |
+| **SupplierPayment** | `id`, `supplierId`, `amount`, `method`, `paidAt`, `userId` | Payables — the mirror of Nisya (§6.9) |
+| **SupplierAllocation** | `id`, `supplierPaymentId`, `goodsReceiptId`, `amount` | Deliberately the same shape as `DebtAllocation`, because §6.14 promises the same screen grammar. An inline array would not have been |
+| **PurchaseReturn** | `id`, `supplierId`, `receiptId?`, `reason`, `total`, `landedCostLost`, `userId`, `createdAt` | Header only; the lines are authoritative (§13.7). `landedCostLost` is the delivery charge apportioned to goods now going back — the supplier refunds the invoice, never the freight |
+| **PurchaseReturnLine** | `id`, `returnId`, `receiptLineId`, `productId`, `qty`, `unitCostMdram`, `creditAmount` | `unitCostMdram` is the **landed** cost copied from the receipt line — the figure that moved the average when it arrived, and therefore the only one that can move it back (§13.7). `creditAmount` is the invoice cost alone, because that is what the supplier owes |
 
 ### Money, stock & people
 | Model | Key fields | Notes |
 |:--|:--|:--|
-| **StockMovement** | `id`, `productId`, `type`, `qtyDelta` (signed), `unitCostMdram`, `balanceAfter`, `sourceType`, `sourceId`, `userId`, `note`, `createdAt` | §10.4. A movement with no source is a bug |
-| **Customer** | `id`, `fullName`, `phone`, `discountPercent`, `creditLimit`, `isBlocked`, `notes` | Limit + block are the controls; nothing else stops unbounded debt |
-| **DebtEntry** | `id`, `customerId`, `type`, `amount`, `saleId?`, `dueDate?`, `createdAt`, `userId` | §10.6 |
-| **DebtAllocation** | `id`, `paymentEntryId`, `chargeEntryId`, `amount` | Enables aging |
-| **Shift** | `id`, `userId`, `openedAt`, `closedAt?`, `openingFloat`, `expectedCash`, `countedCash`, `countedBreakdown`, `variance`, `status`, `notes` | `countedBreakdown` stores the denomination counts from §6.6 |
-| **CashMovement** | `id`, `shiftId`, `type` (PAY_IN/PAY_OUT/DROP), `amount`, `reason`, `userId` | Cash leaves the drawer for non-sale reasons constantly; unmodelled, it destroys every reconciliation |
-| **User** | `id`, `name`, `pinHash`, `role`, `isActive`, `failedAttempts`, `lockedUntil` | §17 |
-| **AuditLog** | `id`, `userId`, `action`, `entityType`, `entityId`, `before`, `after`, `createdAt` | §10.7 |
-| **Setting** | `key`, `value` | §6.11 |
+| **StockMovement** | `id`, `productId`, `type`, `qtyDelta` (signed), `unitCostMdram`, `balanceAfter`, `sourceType`, `sourceId`, `userId`, `locationId?`, `reasonCode?` (DAMAGE/EXPIRY/THEFT/INTERNAL_USE/SAMPLE), `note`, `createdAt` | §10.4. **`locationId` is null throughout v1** and exists only so a second shop is a feature rather than a migration (§26 Q7, A12). Until v2 adds a `Location` model it is a **plain nullable column, not a foreign key** — §11's `ON DELETE RESTRICT` convention has nothing to point at yet, and writing the constraint early buys a failing migration and no safety; when it is used, `Product.stockQty` becomes a per-location projection rather than one number. Every movement names its source document — **with one deliberate exception**:
+`ADJUSTMENT` and `WRITE_OFF` are their own source (`sourceType = 'StockMovement'`,
+`sourceId = id`). A wrapper document holding nothing but the same product, quantity, note and
+actor the movement already carries would be a value stored twice, and several items written off
+together are simply several movements: §20.2 aggregates movements, not documents. A movement of
+any **other** type with no source is a bug. `reasonCode` is required when `type = WRITE_OFF` and null otherwise — free text cannot be charted, and §20.2's "write-offs by reason" is the whole point of §13.5 |
+| **ReviewFlag** | `id`, `type` (NEGATIVE_STOCK/CREDIT_LIMIT_ON_SYNC/PRODUCT_DEACTIVATED_ON_SYNC/LEDGER_CACHE_DRIFT), `sourceType`, `sourceId`, `productId?`, `customerId?`, `note`, `createdAt`, `resolvedAt?`, `resolvedBy?` | **The durable state behind every warning.** §15.2 requires a warning to be read back from what the transaction wrote rather than re-derived; this is that row. One model serves §13.6's recount list, §14.6's needs-attention list, §19.5's owner alerts and §8.5's warning types, whose names it mirrors. `LEDGER_CACHE_DRIFT` is what §10.4 means by "surfaces drift rather than silently correcting it" — a discovered mismatch has to land somewhere a person will see it |
+| **Customer** | `id`, `fullName`, `nameSearch`, `phone`, `discountBp`, `creditLimit`, `isBlocked`, `isActive`, `mergedIntoId?`, `anonymisedAt?`, `notes` | `nameSearch` is the same normalised/transliterated form `Product` carries (§20.3) — a worker types `Dav` to find `Դավիթ` on §6.3, which is the screen the product exists for, and Latin-typed search cannot be product-only. `anonymisedAt` marks an erasure (§19.6): name and phone go null and the ledger stays. Limit + block are the controls; nothing else stops unbounded debt. `isActive` because §6.13 does not offer deletion, and `mergedIntoId` because a merged record must leave a forwarding address — an old receipt naming the absorbed customer still has to resolve |
+| **DebtEntry** | `id`, `customerId`, `type`, `amount`, `saleId?`, `dueDate?`, `reversesId?`, `createdAt`, `userId` | §10.6. `reversesId` because §8.2's fix for a debt sale on the wrong customer is an admin correction, and §10.7 requires a correction to be a **linked** reversing document rather than two rows that happen to cancel out |
+| **DebtAllocation** | `id`, `creditEntryId`, `chargeEntryId`, `amount` | Enables aging. `creditEntryId` points at either a `PAYMENT` or a credit `ADJUSTMENT` — a refund onto a debt is the latter (§12.4), and naming the field after payments alone would have made that look irregular |
+| **Shift** | `id`, `userId`, `openedAt`, `closedAt?`, `openingFloat`, `expectedCash`, `countedCash`, `countedBreakdown`, `variance`, `status` (OPEN/CLOSING/CLOSED), `unsyncedAtClose`, `notes` | `countedBreakdown` stores the denomination counts from §6.6. `unsyncedAtClose` records how many sales were still queued when the shift closed, so the Z-report can state it — a Z-report that silently omits sales is worse than one that admits to them (§6.6) |
+| **CashMovement** | `id`, `shiftId`, `type` (PAY_IN/PAY_OUT/DROP/NO_SALE/REPAYMENT), `amount`, `reason`, `userId` | Cash leaves the drawer for non-sale reasons constantly; unmodelled, it destroys every reconciliation. **`NO_SALE` carries `amount = 0`** — it records only that the drawer was opened outside a sale, which is the classic cover for taking cash and the reason §16.3 re-authenticates it |
+| **User** | `id`, `name`, `pinHash`, `recoveryCodeHash?`, `role`, `isActive`, `failedAttempts`, `lockedUntil`, `coachMarksSeen` | §16.2, §16.4. `recoveryCodeHash` exists only on `ADMIN` rows: generated at setup (§7.1), shown once, hashed like a PIN, single-use and regenerated after use. It is the third way out of a lockout when the locked-out person is the only admin. `coachMarksSeen` lists the screens this person has already been shown (§7.5) — per user, not per device, because Գոռ should not be taught the till again just because he picked up the other phone |
+| **Device** | `id`, `prefix` (unique), `label`, `registeredAt`, `lastSequence`, `blockStart?`, `blockEnd?`, `outboxDepth`, `outboxOldestAt?`, `parkedDepth`, `isActive` | The till as a durable thing, which `Session` is not: a session is revoked at every logout and a receipt number printed on paper outlives it by years. `prefix` is two characters, unique across the shop, assigned once and never reused — it is the left half of every `Sale.number` this device issues (§12.1). `lastSequence` is the right half. **The device's own copy of the counter is authoritative**; the server row records the highest sequence it has received, because a till that is offline still has to number the sale in the customer's hand (§14.2, rule 1). `blockStart`/`blockEnd` are null unless §26 Q10 turns out to require Simon to issue a gapless sequence, in which case they hold the range this till has been allocated (§12.1) — the field exists now so that answer costs a setting rather than a redesign. `outboxDepth` and `outboxOldestAt` count **sales awaiting delivery only** — a parked basket sits in the same FIFO queue (§14.4) but is not money in transit, and `parkedDepth` counts those separately. They live here rather than on `Session`, because a queue belongs to the till and not to whoever is signed in on it — summing them across sessions would count one phone once per login it has ever had (§19.5). A device registers on its first successful login (§16.2), and **deactivating it revokes its sessions in the same transaction** (§16.3): a lost phone that stops issuing receipt numbers but carries on selling has not been stopped |
+| **Session** | `id`, `userId`, `deviceId` → `Device` (§11), `tokenHash`, `mode` (LIVE/PRACTICE), `shiftId?`, `createdAt`, `lastSeenAt`, `expiresAt`, `revokedAt?` | **§16.3's token is a row, because everything §16 asks of it needs storage.** `tokenHash`, never the token — a bearer credential at rest is a stolen credential. `revokedAt` makes revocation real; `shiftId` is what lets a session end at shift close; `mode` is how practice stays per-device (§19.4) rather than shop-wide; `lastSeenAt` drives the idle timeouts and §21.2's dashboard-use figure. **Writes to this row and to `Device` are throttled and never sit inside another transaction** (§16.3): SQLite has one writer (§13.1), and a row written on every barcode lookup would spend §21's concurrency budget on bookkeeping |
+| **AuditLog** | `id`, `userId`, `action`, `entityType`, `entityId`, `before?`, `after?`, `reason?`, `createdAt` | §10.7. **`reason` is the text a person typed to justify an override** — price override, credit-limit override, discount above the cap, blind return, stock adjustment. It is required for those actions and null elsewhere. `before`/`after` record what changed; `reason` records why, and in a shrinkage investigation it is the more useful of the two. `before`/`after` are **nullable**: entering or leaving practice mode (§19.4) and opening the drawer outside a sale are events that happened, not fields that changed, and §27.19 counts exactly those rows |
+| **Stocktake** *(v2, §9)* | `id`, `status` (COUNTING/REVIEW/APPROVED/ABANDONED), `startedAt`, `startedBy`, `approvedAt?`, `approvedBy?`, `note` | The session §11's *Lifecycles* gives a state machine to, and §13.4 approves |
+| **StocktakeLine** *(v2, §9)* | `id`, `stocktakeId`, `productId`, `expectedQty`, `countedQty?`, `varianceValue` | `expectedQty` is the snapshot taken at `COUNTING`, which is why the shop can keep trading (§6.8) |
+| **ProductStats** | `productId` (primary key), `avgDailyQty30d`, `lastSoldAt?`, `daysSinceLastSale?`, `computedAt` | **A rebuildable cache, never a source of truth** — the same standing as `Product.stockQty` (§10.4). Four screens need sales velocity and none of them can afford to derive it live: quick tiles (§6.1) sit on the till's 200 ms path, the low-stock alert (§6.11) and reorder suggestion (§13.3) run per product, and dead stock (§6.9) needs `daysSinceLastSale`. Refreshed by §22's reorder-stats job, nightly and on demand, **outside any document transaction** (§13.1). Unlike `stockQty` it is **not** part of §10.4's drift check — an approximate figure that is a few hours stale is doing its job, and alerting on it would only teach the owner to ignore alerts |
+| **BackupRun** | `id`, `startedAt`, `completedAt?`, `destination` (LOCAL/USB), `sizeBytes?`, `outcome` (OK/FAILED), `error?` | §19.2. `/health` reports the last `OK` row and §19.5's first alert fires when there is none inside 24 hours. "Was the backup taken?" is the question asked on the worst day of the shop's life, and it needs an answer that is not a directory listing |
+| **Setting** | `key`, `value` | §6.11. Also holds the setup wizard's progress under `setup.*`, which is what makes §7.1 resumable |
+
+### Import
+
+| Model | Key fields | Notes |
+|:--|:--|:--|
+| **ImportBatch** | `id` (client-generated), `kind` (PRODUCTS/CUSTOMERS/OPENING_STOCK/OPENING_DEBTS), `fileHash`, `rowCount`, `appliedCount`, `skippedCount`, `failedCount`, `startedAt`, `completedAt?`, `userId` | §19.1's guarantee needs an identity to be idempotent *about*. `fileHash` catches the same spreadsheet uploaded twice by accident; `id` catches the same request retried |
+| **ImportRow** | `id`, `batchId`, `rowNumber`, `naturalKey`, `status` (APPLIED/SKIPPED/FAILED), `entityId?`, `error?` | One row per line of the file, so "reports per-row errors" is a query rather than a log scrape, and a re-run can tell what it already did |
+
+`ImportRow.naturalKey` is what makes a re-run safe, and it differs per `kind`: **products** key on
+`sku`, falling back to the primary barcode; **customers** on `phone`, falling back to
+`fullName`; **opening stock** on the product's key; **opening debts** on the customer's key plus
+the charge's original date and amount. A row whose `naturalKey` was already `APPLIED` — in this
+batch or any earlier one — is `SKIPPED`, never applied twice.
+
+That last rule is not fussiness. Opening debts import with their original dates (§19.1), and a
+second run without it would double every debtor's balance on day one — the exact number §27.5
+checks against the paper book, and the exact kind of unexplainable figure §2.3 says ends the
+relationship.
+
+---
 
 **Indexing.** `ProductBarcode.barcode` (unique) · `StockMovement(productId, createdAt)` ·
-`Sale(completedAt)` · `DebtEntry(customerId, createdAt)` · `Product.nameSearch`. Barcode
+`Sale(completedAt)` · `DebtEntry(customerId, createdAt)` · `Product.nameSearch` ·
+`Customer.nameSearch` · `ImportRow(naturalKey, status)`. Barcode
 lookup is the hottest path in the system.
+
+---
+
+### Lifecycles
+
+Four entities have a state machine. Everything else is written once and thereafter only
+referenced.
+
+**Sale** (§6.5, §10.7)
+
+| From | To | Trigger | Guard |
+|:--|:--|:--|:--|
+| — | `DRAFT` | First line added | A shift is open |
+| `DRAFT` | `HELD` | Պահել — park the basket | Basket not empty |
+| `HELD` | `DRAFT` | Resumed | **Any open shift** — that is the point of parking it on the server (§12.1). The sale belongs to the shift that *completes* it, which is the one §12.5 reconciles |
+| `DRAFT` / `HELD` | `COMPLETED` | Payment covers the total | Σ payments ≥ `total`; commits per §13.1 |
+| `DRAFT` / `HELD` | `VOIDED` | Abandoned by the worker | Never automatic: a shift **blocks** on open baskets rather than voiding them (§6.6, §8.5 `shift-has-open-baskets`) |
+| `COMPLETED` | — | **Terminal** — corrected only by a linked `SaleReturn` | — |
+
+`COMPLETED` and `VOIDED` are both terminal. There is deliberately no edge out of `COMPLETED`.
+
+**Shift** (§6.6, §12.5)
+
+| From | To | Trigger | Guard |
+|:--|:--|:--|:--|
+| — | `OPEN` | Worker opens with a counted float | No other `OPEN` shift for this user |
+| `OPEN` | `CLOSING` | Close begun; expected cash computed | Unsynced sales acknowledged (§6.6) |
+| `CLOSING` | `OPEN` | Cancelled | Nothing counted yet |
+| `CLOSING` | `CLOSED` | Counted, variance recorded, Z-report issued | Every `DRAFT`/`HELD` sale **whose `shiftId` is this shift** is completed, voided, **or has been resumed on another till** — which moves it off this shift (§11 `Sale.shiftId`). One till's open basket never blocks another till's close |
+| `CLOSED` | — | **Terminal** — sessions bound to it end (§16.3) | — |
+
+**PurchaseOrder** *(v2, §9)* — `DRAFT` → `OPEN` → `PARTIAL` → `RECEIVED`, with `CANCELLED`
+reachable from `DRAFT` and `OPEN` only. `PARTIAL` and `RECEIVED` are derived from receipt
+lines, never set by hand.
+
+**Stocktake session** *(v2, §9)* — `COUNTING` → `REVIEW` → `APPROVED`, or `ABANDONED` from
+either of the first two. Approval is the only transition that posts movements (§13.4), and it
+is irreversible except by a further adjustment.
+
+`GoodsReceipt`, `SaleReturn`, `DebtEntry`, `StockMovement` and `CashMovement` have no
+lifecycle at all: written once, inside one transaction, never updated (§10.7).
+
+### Field conventions & validation
+
+The tables above name fields; these are the rules that turn them into a schema and a Zod
+contract (§22). Stated once, because a type column repeated twenty times is how two of them end
+up disagreeing.
+
+| Convention | Rule |
+|:--|:--|
+| `id` | `TEXT`, UUIDv7, 36 chars, primary key, client-generated (§14.3) |
+| `?` suffix | Nullable. Everything else is `NOT NULL` |
+| Money — `*Mdram`, `amount`, `total`, `subtotal`, … | `INTEGER`. Milli-dram where the name says so, whole dram otherwise (§10.1) |
+| Quantity — `qty`, `qtyDelta`, `stockQty` | `INTEGER`, milli-units ×1000 (§10.2) |
+| Percentage — `*Bp` | `INTEGER`, basis points, 0–10000 |
+| Enums — `status`, `type`, `method`, `role` | `TEXT` with a `CHECK` constraint. Never an integer code: reading the database with `sqlite3` should not require a lookup table |
+| Timestamps — `*At` | `TEXT`, RFC 3339 UTC. Shop-local only at the edges (§20.3) |
+| `updatedAt` | On every row the client caches — `Product`, `ProductBarcode`, `ProductUnit`, `Category`, `Customer` — set on every write. This is what `GET /catalogue/snapshot?since=` compares against (§15.4); without it the cache can only ever be refetched whole, which on a low-end phone over shop Wi-Fi is the difference between a sync and a stall |
+| Free text — `name`, `note`, `reason` | `TEXT`, NFC-normalised on write (§20.3) |
+| Foreign keys | `ON DELETE RESTRICT` throughout. Nothing financial is ever deleted (§10.7), so a cascade could only ever fire because of a bug |
+
+Zod validates the request at the boundary; the `CHECK` constraint catches whatever a future
+endpoint forgets.
+
+| Field | Rule |
+|:--|:--|
+| `Product.name` | 1–120 chars, trimmed, not blank |
+| `Product.decimalPlaces` | 0–3, and **immutable once movements exist** (§6.12) |
+| `Product.sellPriceMdram` | ≥ 0. Zero is legal — a free sample still moves stock |
+| `ProductBarcode.barcode` | 1–48 chars, `[0-9A-Za-z-]`, **globally unique** |
+| `ProductUnit.factorToStockUom` | > 0 |
+| `Customer.fullName` | 1–120 chars, trimmed, not blank — **unless `anonymisedAt` is set**, when it and `phone` are null (§19.6). The only nullable case, and it is a legal requirement rather than an oversight |
+| `Customer.nameSearch` | Derived on write from `fullName`, never entered (§20.3) |
+| `ImportRow.naturalKey` | Required; unique per `kind` among `APPLIED` rows — this constraint *is* §19.1's idempotency |
+| `Customer.phone` | ≤ 32 chars; unique when present — it is the duplicate check (§6.13) |
+| `Customer.creditLimit` | ≥ 0. Zero means cash only, which is not the same as `isBlocked` |
+| `SaleLine.qty` | > 0. A negative line is not how a return is expressed (§12.4) |
+| `SaleLine.discountAmount` | 0 ≤ *d* ≤ the line total before discount |
+| `Payment.amount` | > 0; a split tender's payments sum to ≥ `Sale.total` (§6.2) |
+| `DebtEntry.amount` | > 0 always — direction lives in `type` (§10.6) |
+| `DebtAllocation.amount` | > 0, and ≤ the remaining balance of its charge |
+| `Shift.openingFloat`, `Shift.countedCash` | ≥ 0. `variance` may be either sign |
+| `User.pinHash` | argon2id output. The PIN is 4–8 digits and is never stored (§16.2) |
+| `StockMovement.sourceId` | Required — a movement with no source is a bug (§10.4) |
+| `StockMovement.reasonCode` | Required when `type = WRITE_OFF`; null for every other type (§13.5) |
+| `SaleReturnLine.qty` | > 0, and ≤ its sale line's quantity less what has already been returned against that line (§12.4) |
+| `SupplierAllocation.amount` | > 0, and ≤ the receipt's unpaid balance — `DebtAllocation`'s rule, mirrored (§10.6) |
+| `Product.defaultSupplierId` | Nullable; when set it must reference an active supplier (§13.3) |
+| `Device.prefix` | Exactly 2 characters, `[A-Z0-9]`, globally unique, immutable once a sale has used it — a reused prefix makes two receipts share a number |
+| `Device.lastSequence` | Monotonic, never reset. The device may be ahead of the server row; the server never rewinds it |
+| `Device.outboxDepth`, `Device.parkedDepth` | ≥ 0. Both are **client-reported** and the server displays them without arithmetic, so a device reporting nonsense shows the owner nonsense — bound them on write |
+| `Sale.shiftId` | Names an `OPEN` shift at every write, and must not change once `status = COMPLETED` (§11, *Lifecycles*) |
+| `Sale.priceBasis` | Set from §6.11 at completion and immutable thereafter. A reprint reads it; it is never recomputed from the current setting |
+| `Session.tokenHash` | Never the token itself. Argon2id, as for a PIN (§16.2) |
+| `Session.mode` | `PRACTICE` sessions may not write to the real database at all (§19.4) |
+| `AuditLog.reason` | Required for every action a person had to justify (§10.7); null otherwise |
+| `Customer.mergedIntoId` | Nullable; when set, `isActive` must be false and the row is read-only (§6.13) |
 
 ---
 
 ## 12. Selling logic
 
 ### 12.1 Checkout
-Target: **scan → line in under 200 ms**; three-item cash sale in under 15 seconds (§20).
+Target: **scan → line in under 200 ms**; three-item cash sale in under 15 seconds (§21).
 
 Finalising commits **one transaction**: sale → lines → payments → stock movements → debt
 charge (if any) → audit row. Printing happens **after** commit.
@@ -930,8 +2047,41 @@ charge (if any) → audit row. Printing happens **after** commit.
 a configurable maximum. Above the cap: admin PIN plus a reason. Uncapped discounting is a
 standard shrinkage route, and the discount-by-worker report exists because of it.
 
+**Receipt numbering.** `Sale.number` is assigned at completion, **on the device**, as
+`{Device.prefix}-{Device.lastSequence}` (§11) — two characters and a monotonic per-device
+counter, both belonging to the till rather than to whoever is signed in on it. It is
+unique across the shop, readable aloud over a phone, and scannable to start a return (§6.5).
+`GoodsReceipt.number` and `PurchaseOrder.number` are server-assigned and sequential instead,
+because receiving is online-only anyway (§14.5).
+
+**It is deliberately not a gapless global sequence.** A gapless number can only be issued by one
+authority, and the till has to complete a sale with that authority unreachable (§14.2, rule 1).
+Numbering per device is what makes an offline sale a first-class sale rather than a provisional
+one waiting for a number.
+
+**And if Simon is ever required to issue the gapless number itself**, the design already
+absorbs it without touching §14: the server hands each device a **block of sequential numbers**
+while it is online, the device spends them offline, and an abandoned block leaves a gap that is
+explainable and auditable rather than a missing sale. `Device.blockStart` and `blockEnd` (§11)
+hold the current allocation; the device asks for the next block when it is running low, which is
+a thing it can do at any point it has a connection rather than at the moment of a sale.
+
+That is what turns §26 Q10 from a question that could rewrite §14's offline design into one that
+picks a numbering mode. Where a fiscal regime requires a gapless sequence, **the ordinary answer
+is that the number comes from the ՀԴՄ and not from Simon** — `Sale.fiscalReceiptId` (§11) is
+reserved for exactly this, and it is why §17 insists
+the adapter seam exists before it is needed. Simon's own number stays the internal reference
+either way. Whether the pilot store's regime demands it is **§26 Q10**, and if the answer is yes
+it changes §14's offline design rather than a field.
+
 **Held sales** persist across app restarts. A parked basket that vanishes because the phone
 locked is a lost sale and a lost user.
+
+**They live on the server when it is reachable** — parking writes the `Sale` in `HELD` status
+(§11), so any till can resume it and a dead battery costs nothing. Offline, the basket is held
+in IndexedDB and promoted on reconnect (§14.4). A `HELD` sale blocks its shift from closing
+until it is completed or voided (§11, *Lifecycles*), because a Z-report with a basket still
+open is not a closed period.
 
 ### 12.2 Debt sale
 Credit-limit check → warn and allow override with reason (rule 1), unless set to strict.
@@ -939,20 +2089,50 @@ Creates a `CHARGE` with an optional due date. The pre-confirmation summary in §
 functional requirement, not decoration.
 
 ### 12.3 Repayment
-Oldest-first allocation, overridable, partial supported. Creates a `PAYMENT` plus
-`DebtAllocation` rows and a cash movement into the shift. Prints a receipt.
+Oldest-first allocation, overridable, partial supported. Creates a `PAYMENT` entry plus
+`DebtAllocation` rows. **Taken in cash, it also writes a `CashMovement` of type `REPAYMENT`** —
+and that row, not the debt entry, is what §12.5 counts, so the drawer and the ledger cannot
+disagree. A card repayment writes no cash movement at all. Prints a receipt.
 
 ### 12.4 Returns
-From the original sale only (blind returns admin-only). Cannot exceed quantity sold less
-already returned. Restock → `SALE_RETURN` at the original unit cost; damaged → `WRITE_OFF`.
-Refunding a debt sale reduces the debt.
+From the original sale only (blind returns admin-only). Each `SaleReturnLine` names the
+`saleLineId` it reverses and **cannot exceed that line's quantity sold, less what has already
+been returned against it** — the check is per line, not per sale, or two half-returns pass a
+whole-sale test.
+
+`restock` is decided per line: back on the shelf → `SALE_RETURN` at `unitCostMdram` copied from
+the original sale line; damaged → `WRITE_OFF` with a `reasonCode` (§13.5). One return can do
+both, which is why the flag is not on the header.
+
+Refunding a debt sale reduces the debt rather than paying out cash: a credit `ADJUSTMENT`
+(§10.6) allocated against the original charge through `DebtAllocation.creditEntryId`. Never a
+negative charge, and never money out of the drawer for goods that were never paid for.
 
 ### 12.5 Shift & cash
 ```
-expected = openingFloat + cashSales + repayments + payIns − payOuts − drops
+expected = openingFloat
+         + cashSales                  Payment.method = CASH, on COMPLETED sales in this shift
+         + Σ CashMovement REPAYMENT   debt repaid in cash (§12.3)
+         + Σ CashMovement PAY_IN      anything else put into the drawer
+         − Σ CashMovement PAY_OUT
+         − Σ CashMovement DROP
 variance = counted − expected
 ```
+
+Every term after `openingFloat` is a query over rows rather than a running total, so the
+drawer can be recomputed from the ledger at any moment (rule 3). `NO_SALE` carries
+`amount = 0` and cannot move the figure.
+
+**Repayments are counted exactly once**, as `REPAYMENT` movements. An earlier form of this
+formula listed `repayments` and `payIns` as separate terms while §12.3 wrote a cash movement —
+which would have overstated expected cash by every repayment taken that day, on the one screen
+§6.6 says is there to catch theft.
+
 Variance is always recorded. X-report mid-shift, Z-report at close.
+
+**A sale that arrived by transfer is listed separately on the Z-report.** A worker reading it
+should be able to see why a sale they never rang up is in their drawer, and the worker who parked
+it should be able to see where it went. Both names are on the audit row (§10.7).
 
 ---
 
@@ -975,27 +2155,76 @@ Receipt (with or without a PO) → costs and landed cost entered → commit post
 Received quantities may differ from ordered; the PO moves to PARTIAL or RECEIVED.
 
 ### 13.3 Reorder logic
-The static threshold is the floor; Simon suggests better values:
+The static `reorderPoint` threshold is the floor. Simon suggests a better value from v1 — the
+owner sees a number and accepts or ignores it, which is what §6.11's "auto from velocity"
+setting and §7.1's day-3 promise depend on. **Turning a suggestion into an actual purchase
+order is v2** (§9), with the PO flow itself:
 
 ```
-reorderPoint ≈ (average daily sales over trailing 30d × supplier leadTimeDays) + safety stock
+reorderPoint ≈ (ProductStats.avgDailyQty30d × supplier leadTimeDays) + safety stock
 ```
 
 Presented to the owner as a plain sentence — *"Սովորաբար վաճառվում է օրական 4, մատակարարը
 բերում է 5 օրում"* — not as a formula. Dead stock is surfaced alongside (§6.9).
 
 ### 13.4 Stocktake
+**v2** (§9); the `STOCKTAKE` movement type exists from v1.
 Snapshot → count → review variances → approve. Approval posts `STOCKTAKE` adjustments,
 valuing shrinkage at cost. Counting may proceed while trading.
 
 ### 13.5 Write-offs
-Explicit reasons: damage, expiry, theft, internal use, sample. Reason codes turn "stock
-disappears" into a chart the owner can act on.
+Explicit reasons, stored as `StockMovement.reasonCode` (§11) and never as free text: damage,
+expiry, theft, internal use, sample. A coded field is what turns "stock disappears" into
+§20.2's chart; a `note` column would only ever produce a list nobody can total.
 
 ### 13.6 Negative stock
 Default **allow with warning** (rule 1). The goods are physically leaving the shop; refusing
-the record does not stop that. The movement is flagged, the product joins a recount list,
-and COGS uses the last known average. Owners may switch to strict.
+the record does not stop that. The movement writes a `ReviewFlag` of type `NEGATIVE_STOCK`
+(§11) — that row *is* the recount list, and it is also the durable state behind §8.5's
+`insufficient-stock` warning, which §15.2 requires to survive a replay. COGS uses the last known
+average. Owners may switch to strict.
+
+### 13.7 Purchase returns
+
+Goods go back to a supplier: wrong item, damaged in transit, over-delivered. §9 puts this in v1
+as "returns both directions", and it is the one v1 document whose costing rule was never
+written down.
+
+**A return names receipt lines, not products.** Each `PurchaseReturnLine` points at the
+`GoodsReceiptLine` it reverses, because the question that matters — *what did this actually
+cost us* — is answerable only against the delivery it came in on. A blind purchase return with
+no receipt is admin-only and values the goods at the current average, exactly as §6.5 treats a
+blind sale return.
+
+**Reverse at the landed cost, not the current average.**
+
+```
+newAvgCost = (stockQty × currentAvgCost − returnQty × receiptLandedUnitCost)
+             ÷ (stockQty − returnQty)
+```
+
+Removing stock at the current average would leave the remaining units valued at a blend that
+includes goods no longer held. Worked through: 10 units at 12 ֏, then a delivery of 10 at 14 ֏
+gives 20 at an average of 13. Return that whole delivery and the shop is back to 10 units that
+cost 12 — which the formula above gives, and removing at 13 does not. Getting this backwards
+does not fail loudly; it quietly misvalues every unit still on the shelf and every margin
+reported after it (§10.5).
+
+The same guards as §10.5 apply: round half-up to a whole milli-dram on store, and if
+`stockQty − returnQty ≤ 0` do not evaluate the formula — leave the average as it stands and flag
+the movement, because an average describing goods the system no longer holds is not evidence
+about anything.
+
+**The freight does not come back.** The receipt's landed cost included an apportioned share of
+the delivery charge (§10.5); the supplier refunds the invoice line and not the freight. That
+difference is a real loss and is recorded as `PurchaseReturn.landedCostLost` rather than
+absorbed silently into the average — it belongs beside the write-offs in §20.2, where the owner
+can see what returning goods actually costs him.
+
+**What commits, in one transaction** (§13.1): the return document → `PURCHASE_RETURN` movements
+with negative `qtyDelta` at the landed cost → the recalculated average → a credit against the
+supplier's payable, allocated to the original receipt like any other settlement (§11
+`SupplierAllocation`) → the audit row.
 
 ---
 
@@ -1018,15 +2247,35 @@ is built so a brief interruption never costs a sale.
 The client generates the sale `id` (UUIDv7) **before** submitting; the server treats it as
 the idempotency key. A replay returns the original document with `200`, never a duplicate and
 never a `409` — the client cannot distinguish "my retry succeeded" from "someone else did
-this" and must not have to. The primary key *is* the idempotency key.
+this" and must not have to.
 
-Applies to every queue-drained endpoint: sales, returns, repayments, cash movements.
+**The key is the id *and the transition it asks for*, not the id alone.** A sale is posted twice
+in ordinary life: once to park it (`HELD`) and once to complete it (`COMPLETED`), and §11's
+lifecycle permits exactly that. Keying on the row's mere existence would make the second post
+look like a retry of the first — the server would return the parked basket, the till would show
+a `200` and a document that looks right, and **the money would never be taken.** So: the same id
+**with the same target status** is a replay; the same id with a *different* status is the next
+transition, validated against §11's *Lifecycles*; an illegal one is `422` (§8.5
+`illegal-transition`).
+
+**That refinement is sales-only, because a sale is the only queue-drained document with a
+lifecycle.** A return, a repayment and a cash movement are written once and never transition
+(§11) — for those three the id alone is the key, exactly as it always was. Applies to every
+queue-drained endpoint: sales, returns, repayments, cash movements; only the first of them can
+be posted twice on purpose.
 
 ### 14.4 Client behaviour
 - **Catalogue cache** in IndexedDB — products, barcodes, prices, customer names and balances.
   A worker can scan and build a basket with the server unreachable.
-- **Outbox queue** — completed sales are written locally first, then drained FIFO and
-  serially. The UI never awaits the network to complete a sale.
+- **Outbox queue** — completed **and parked** sales are written locally first, then drained
+  FIFO and serially. The UI never awaits the network to complete a sale.
+  **One queue, both kinds**, because ordering matters across them: a basket parked before a sale
+  was completed must not overtake it. A parked basket drains as a `status: HELD` post and a
+  completed one as `status: COMPLETED` (§15.3); "promoted on reconnect" (§12.1) means nothing
+  more than reaching the front of this queue.
+  **One queue, two counts.** What the worker and the owner are shown is money in transit, and a
+  parked basket is not that — it is counted apart (§11 `Device.parkedDepth`) so that a basket
+  left on the counter all afternoon, exactly as §6.1 intends, never reads as an unsent sale.
 - Retry with backoff on network/5xx; **never** on other 4xx — park those and surface them.
 - Cached stock and prices are **last-known and must be labelled as such**.
 
@@ -1035,80 +2284,257 @@ Applies to every queue-drained endpoint: sales, returns, repayments, cash moveme
 |:--|:--|:--|
 | Scan, build a basket, take cash | ✅ | Catalogue cached |
 | Complete a cash/card sale | ✅ | Queued, idempotent |
-| Debt sale | ⚠️ capped | Credit limit uncheckable — allow to a cap, flag |
+| Debt sale | ⚠️ capped | The limit cannot be checked offline. Allowed up to the **offline debt cap** — default **20 000 ֏** per customer per outage (§6.11) — then flagged for owner review on sync (§14.6) |
+| Park a basket | ✅ | Queued like anything else — but **no other till can resume it until this one syncs** (§12.1), because until then the basket exists only on this device |
 | Repayment | ✅ | Additive; allocation recomputed on sync |
 | Receiving, stocktake, price change | ❌ | Needs authoritative stock; block clearly |
 | Reports | ❌ | Server-computed |
 
 ### 14.6 Conflicts
-Accept and flag; never reject. Negative stock on sync → flag for recount. Credit limit
-breached by a queued sale → flag for owner review. Deactivated product → accept, flag.
-**Never silently discard a recorded sale.** If one genuinely cannot post, it goes to a
-visible "needs attention" list with a reason.
+Accept and flag; never reject. Each outcome has a named warning type (§8.5) and writes a
+`ReviewFlag` row (§11), returned on the `200` that accepts the sale (§15.2) — a flag that exists
+only in the server's own head is a flag nobody acts on.
+
+| Conflict on sync | Warning type | Where it surfaces |
+|:--|:--|:--|
+| Stock would go negative | `insufficient-stock` | The product joins the recount list (§13.6) |
+| Credit limit breached by a queued sale | `credit-limit-exceeded-on-sync` | The owner's needs-attention list |
+| Product was deactivated meanwhile | `product-deactivated-on-sync` | The owner's needs-attention list |
+
+**Never silently discard a recorded sale.** If one genuinely cannot post, it goes to the same
+visible needs-attention list with a reason.
 
 ---
 
 # Part C — The environment
 
-## 15. Security & access control
+## 15. API contracts
 
-### 15.1 Threat model
-Realistic threats, in order: a worker viewing cost prices or margins; a worker voiding or
+The client and the server are separate artifacts that ship as one release (§22), so the
+contract between them is a rule, not an implementation detail. REST over the shop LAN, JSON,
+same origin in production behind Nginx — with a single exception, the import upload (§15.4),
+which is multipart because it carries a spreadsheet.
+
+### 15.1 Conventions
+
+- **Base path `/api`, always relative.** Never a hardcoded LAN IP — the app would break the
+  moment the router hands out a different lease (§22).
+- **Ids are client-generated UUIDv7 and travel in the body** (§11, §14.3). A `POST` carries the
+  id of the thing being created; the server does not assign it.
+- **Money and quantity are integers on the wire**, exactly as in §10.1 — never a decimal, never
+  a string. A JSON number is a double; drams and milli-drams sit far below 2^53.
+- **Timestamps are RFC 3339 UTC.** Shop-local conversion happens at the edges only (§20.3).
+- **Every list is cursor-paginated** — `?limit=&cursor=`. Offset pagination over an append-only
+  ledger silently skips rows as the ledger grows underneath it.
+- **The server never returns a raw ORM object** (§16.5). Every response passes through an
+  explicit shape, which is what makes the cost-stripping rule enforceable in one place instead
+  of at every endpoint.
+
+### 15.2 Errors — RFC 7807
+
+Every failure returns `application/problem+json` with a machine-readable `type`. The client
+maps `type` to Armenian; the server never sends user-facing prose, because the language of the
+UI is not the API's business (§20.3).
+
+```
+{ "type":   "https://simon.local/errors/credit-limit-exceeded",
+  "title":  "Credit limit exceeded",
+  "status": 422,
+  "customerId": "018f…", "limit": 50000, "current": 45000, "wouldBe": 62000 }
+```
+
+| Status | When | Client behaviour |
+|:--|:--|:--|
+| `400` | Malformed — not valid JSON, or the wrong shape | A bug. Park it in the outbox and surface it (§14.4); never retry |
+| `401` | No session, or expired | Re-authenticate in place; the basket survives (§16.3) |
+| `403` | Authenticated but not permitted | Say what is needed; offer admin re-auth where that would help |
+| `404` | No such record — `not-found` (§8.5) | Because nothing financial is ever deleted (§10.7), a `404` means *never existed*. A retired record still resolves: a product is deactivated, a basket is `VOIDED`, and both open normally |
+| `409` | **Not used.** Never for an idempotent replay (§14.3), and no resource carries a version to conflict on. Listed so it is not reached for by reflex | — |
+| `422` | Valid shape, invalid business state: credit limit, strict-mode negative stock, over-return | Actionable; the till keeps selling (rule 1) |
+| `423` | The account is locked after repeated PIN failures (§16.2) — a *state*, not a rate | Show the minutes remaining; any admin clears it in one action |
+| `429` | Rate limited — too many attempts too fast on the PIN path (§16.2) | Show the wait and count it down |
+| `5xx` | Server or database failure | Retry with backoff; never drop the sale (§14.4) |
+
+**Why there is no optimistic concurrency.** A single writer (§13.1), client-generated ids, and
+an append-only ledger between them remove most of the need. For the little that remains — two
+admins editing one product's price in the same minute — last write wins, and both edits survive
+in `PriceHistory` and `AuditLog` (§10.7). For a shop with one or two admins that is a better
+answer than a conflict dialog nobody can act on, and it is a decision rather than an omission.
+
+**Not every problem is an error.** A request that succeeds while something is wrong with it —
+stock short of what was just sold, a queued sale that breaches a limit it could not check while
+offline (§14.6) — returns `200`
+with a **`warnings[]`** array of `{ type, … }` objects drawn from the same `type` vocabulary as
+§8.5. A warning never blocks; a blocking condition is a `422`. **The same `type` is never both**,
+so a client can never mistake one for the other, and rule 1 cannot be broken by a status code
+chosen carelessly.
+
+**Every warning must correspond to durable state.** A warning is read back from what the
+transaction wrote — the `ReviewFlag` row (§11, §14.6) — never re-evaluated against the
+request. This is what makes a replay (§14.3) reproduce the original
+response rather than a fresh opinion about state that has since moved. It also gives a rule with
+teeth: **a warning with no durable trace is a bug**, because it cannot survive the retry it was
+most likely to be lost in. A recount flag that exists only inside a dropped HTTP response is a
+recount that never happens.
+
+**`422` is the one that matters.** It carries the numbers the user needs in order to decide, as
+fields rather than inside a sentence, so the client can build a screen from them instead of
+printing a paragraph.
+
+### 15.3 The queue-drained endpoints
+
+These four are what §14.3's idempotency rule binds. Each takes a client-generated id, each
+returns the stored document with `200` on replay, and each is safe to send twice.
+
+| Endpoint | Body carries | Commits in one transaction (§13.1) |
+|:--|:--|:--|
+| `POST /api/sales` | `id`, `status` (`HELD` or `COMPLETED`), `shiftId`, lines, payments, `customerId?` | **`HELD`** parks the basket and posts to no ledger at all. **`COMPLETED`** commits sale → lines → payments → stock movements → debt charge → audit, in one transaction |
+| `POST /api/sale-returns` | `id`, `originalSaleId`, lines (each `saleLineId`, `qty`, `restock`), `refundMethod` | return → movements at the **original** unit cost → refund or debt reduction → audit |
+| `POST /api/debt-payments` | `id`, `customerId`, `amount`, `allocations?` | payment entry → allocations → cash movement → audit |
+| `POST /api/cash-movements` | `id`, `shiftId`, `type`, `amount`, `reason` | cash movement → audit |
+
+Each responds with the stored document plus `warnings[]` (§15.2). A replay is detected **by
+primary key *and target status*, inside the transaction that would otherwise write it** (§14.3) —
+a post carrying a different status is a transition, not a retry — — checking first and writing
+second is the same race as §13.1's oversell — and it returns both parts as they were, so the
+second response is indistinguishable from the first.
+
+### 15.4 Everything else
+
+Read paths are ordinary and cacheable. Write paths outside the four above are not queued: they
+need authoritative state, so they fail loudly rather than silently (§14.5).
+
+| Area | Endpoints |
+|:--|:--|
+| Catalogue | `GET /products`, `GET /products/:id`, `GET /products/by-barcode/:code`, `POST`/`PATCH /products`, `POST /products/:id/barcodes`, `POST /products/:id/barcodes/:code/retire` — **never a delete**: a code on a two-year-old label must still resolve (§18, rule 4) |
+| Customers | `GET`/`POST`/`PATCH /customers`, `GET /customers/:id/ledger`, `POST /customers/:id/merge` — re-points every `DebtEntry`, sets the absorbed record's `mergedIntoId` and `isActive = false`, and writes an audit row (§6.13) |
+| Suppliers | `GET`/`POST`/`PATCH /suppliers`, `GET /suppliers/:id/ledger`, `POST /supplier-payments` |
+| Buying | `POST /goods-receipts`, `POST /purchase-returns`, `GET`/`POST /purchase-orders` *(v2, §9)* |
+| Sales *(read)* | `GET /sales?status=&shiftId=&from=&to=`, `GET /sales/:id`, `GET /sales/by-number/:number` — §15.3 creates sales and nothing here read them back. Returns start from the original sale (§6.5), a jammed printer reprints from the sale record (§8.2), held baskets are listed by time (§6.1), and shift close has to find every `DRAFT`/`HELD` one (§11) |
+| Stock | `GET /products/:id/movements`, `POST /adjustments`, `POST /write-offs` — each writes a self-sourced movement (§11) — `POST /stocktakes` *(v2)* |
+| Review | `GET /review-flags?resolved=false`, `POST /review-flags/:id/resolve` — the needs-attention list (§14.6), the recount list (§13.6), and what §8.5's `sync-failed` and §19.5's alerts open onto |
+| Import | `POST /imports` (multipart, returns an `ImportBatch`), `GET /imports/:id` for per-row results (§19.1) |
+| Admin *(`ADMIN` only, every route)* | `GET`/`PATCH /settings` (§6.11), `GET`/`POST`/`PATCH /users` (§7.1, §16.4), `GET`/`POST`/`PATCH /categories`, `GET /audit-log?entityType=&entityId=&from=&to=` — an audit trail nobody can read is a trail nobody is protected by (§10.7). The audit log is gated **as a route**, not stripped field by field, for the reason §16.5 gives |
+| Shift | `POST /shifts`, `POST /shifts/:id/close`, `GET /shifts/:id/x-report`, `GET /shifts/:id/z-report` |
+| Auth | `POST /auth/login`, `POST /auth/logout`, `POST /auth/reauth` (§16.3) |
+| Sessions | `GET /sessions` and `POST /sessions/:id/revoke` — **revoke, not delete**: `Session.revokedAt` (§11) is the record of who was signed in, on which device, until when, and it is what an owner needs after a theft. An `ADMIN` sees who is signed in on what and revokes it, which is what §16.3 means by *revocable*; a dismissed worker's till is otherwise still logged in. `POST /session/mode` enters and leaves practice (§19.4) |
+| Lockout | `POST /auth/unlock` — any `ADMIN` clears another user's lockout in one call (§16.2). `POST /auth/recover` redeems the owner's single-use recovery code when the locked-out person is the only admin, and reissues it |
+| Reports | `GET /reports/:name?from=&to=&groupBy=` — `ADMIN`-gated wherever they carry cost (§16.5) |
+| Sync | `GET /catalogue/snapshot?since=` — rows whose `updatedAt` is newer than `since` (§11); feeds the IndexedDB cache (§14.4) |
+| Health | `GET /health` — §19.5 |
+
+`GET /products/by-barcode/:code` is the hottest path in the system (§11) and the only endpoint
+with a latency budget of its own (§21).
+
+---
+
+## 16. Security & access control
+
+### 16.1 Threat model
+Realistic threats, in order: a worker viewing average cost, margin, or supplier terms — §16.5
+scopes the one narrow exception, `STOCK` entering invoice costs; a worker voiding or
 discounting their own sales to cover cash theft; anyone on the shop Wi-Fi (including
 customers) reaching the API; loss or theft of the host PC; a failed disk with no working
 backup. **Remote attackers are a distant concern — insiders and hardware failure are the
 real ones**, and the controls are aimed at them.
 
-### 15.2 PIN authentication
+### 16.2 PIN authentication
 Workers enter a short PIN on a shared device many times a day; a password would be on a
 sticky note beside the till within a week.
 
 - Verified **server-side** against a slow hash (argon2/bcrypt). Never compared in the client,
   never stored in `localStorage`, never logged.
-- Because the keyspace is tiny: **rate limit** per user and device, **lock** after N failures,
-  and use a real work factor. The login path is not hot; a slow hash costs nothing.
+- Because the keyspace is tiny, the numbers are stated here rather than left to whoever writes
+  the endpoint: the PIN is **4–8 digits**; **5 consecutive failures** lock the user for
+  **15 minutes** (`423`); attempts are limited to **10 per minute per device** (`429`); and the
+  hash is argon2id tuned to cost **≥ 250 ms** on the host. The login path is not hot, so a slow
+  hash costs nothing anyone will notice.
+- **A lockout must never stop the shop** (rule 1). Three ways out, in order of likelihood: any
+  `ADMIN` clears it from the till in one action; the lock expires by itself in 15 minutes; and
+  if the locked-out person *is* the only admin, the owner's recovery code from setup (§7.1)
+  clears it — generated once during the wizard, shown once, stored only as
+  `User.recoveryCodeHash` (§11), single-use, and reissued the moment it is spent. A worker locked out in front of a queue with no route back is precisely the
+  failure rule 1 forbids — and the reason A9 (§24.2) is an assumption worth testing.
 - **PINs are per-user, never shared.** A shared PIN destroys the audit trail, which is the
   entire point of having one.
 
-### 15.3 Sessions
-Opaque server-issued token, per-device, revocable. **Sessions end at shift close** — a till
-left logged in overnight is the most common real breach in retail. Short idle timeout on the
-till, longer on the owner's dashboard. Re-authentication (admin PIN) for: discount above
-threshold, void, price change, stock adjustment, no-sale drawer open.
+### 16.3 Sessions
+Opaque server-issued token, per-device, revocable — a `Session` row (§11) holding the token's
+**hash**, its device, its mode and the shift it belongs to, because every one of those words
+needs somewhere to live. **Sessions end at shift close**: a till left logged in overnight is the
+most common real breach in retail.
 
-### 15.4 Roles
+Idle timeout is **15 minutes on the till** and **8 hours on the owner's dashboard** — short
+because the till is shared and left on a counter, long because the dashboard is one person's own
+machine. **A re-authentication prompt never discards a basket** (§6.1); it sits on top of one.
+Re-authentication (admin PIN) is required for: discount above threshold, blind return (no
+original sale, §6.5), price change, stock adjustment, and opening the drawer outside a sale.
+
+**The session and device rows are written at most once a minute per device, and never inside a
+sale's transaction.** `Session.lastSeenAt` moves only when it is more than 60 seconds stale — a
+15-minute timeout does not need second-level accuracy — and the client reports **both**
+`Device.outboxDepth` and `Device.parkedDepth` (§11) on a one-minute heartbeat, plus once more when
+the queue reaches zero, not on every call. Such a
+write on each
+barcode scan would put a write on the hottest read path in the system (§11) against a single
+writer (§13.1), which is how a till starts returning `SQLITE_BUSY` on the one screen §21 says
+must never show it.
+
+### 16.4 Roles
 | Role | May |
 |:--|:--|
 | `WORKER` | Sell, take repayments, open/close own shift |
-| `STOCK` | Worker, plus receiving, stocktake, write-offs |
+| `STOCK` | Worker, plus receiving, stocktake, write-offs. Enters invoice unit costs; never sees `avgCostMdram`, margin, or supplier terms |
 | `ADMIN` | Everything: cost, margin, prices, users, settings |
 
-### 15.5 Field-level authorization
+### 16.5 Field-level authorization
 The gap easiest to leave open and the most commercially damaging.
 
-Cost, margin, and supplier terms are **stripped server-side** for non-admins. A `WORKER`
-token must not obtain `avgCostMdram` from **any** endpoint — list, search, detail, report,
-export, or an error message echoing the record. Never return a raw ORM object.
+`avgCostMdram`, margin, and supplier payment terms are **stripped server-side** for every
+non-`ADMIN` token — on list, search, detail, report, export, and in any error message that
+echoes the record. Never return a raw ORM object.
 
-**Hiding cost in the UI is not a control.** §25 tests this explicitly.
+**One deliberate exception.** A `STOCK` token may read and write `unitCostMdram` on the
+purchase documents it creates — `GoodsReceiptLine`, `PurchaseOrderLine` — because those
+figures are copied off the paper invoice in the user's hand, and concealing a number someone
+is currently typing is theatre, not a control (§6.7). The exception is scoped to those lines
+only. It never extends to `Product.avgCostMdram`, to `SaleLine.unitCostMdram`, or to any
+margin, COGS, or valuation report. A `WORKER` token gets no cost field anywhere at all.
 
-### 15.6 Network
+**Field-level stripping cannot reach inside an opaque snapshot.** `AuditLog.before` and `after`
+hold whole records as JSON, so an audited price change or stock adjustment carries
+`avgCostMdram` inside a value no field filter inspects. The audit log is therefore **`ADMIN`-only
+as a whole route** (§15.4) rather than stripped field by field — the one place in this system
+where the control is the endpoint and not the shape. **Anything that stores a record snapshot
+inherits that rule**, so a future diff, export or replay feature is gated the same way rather
+than trusted to a filter that was never designed to see inside it.
+
+**Hiding cost in the UI is not a control.** §27 tests this explicitly.
+
+### 16.6 Network
 The API binds `0.0.0.0` to serve phones, which means every device on that Wi-Fi can reach
-it. Mitigations, in order of preference:
+it. One mitigation is required and the rest are defence in depth:
 
-1. A separate SSID or VLAN for staff devices.
-2. WPA2/WPA3 with a password not shared with customers.
-3. TLS with a certificate trusted on staff devices — **also required for camera scanning**
-   (§17).
+1. **TLS with a certificate trusted on staff devices — required, and it ships in v1.** It is also
+   what a secure context needs, so it is what makes camera scanning work at all (§18).
+2. A separate SSID or VLAN for staff devices. The better first line where a shop has one.
+3. WPA2/WPA3 with a password not shared with customers.
 
-If the deployment ships plain HTTP on a shared network, that is an **accepted risk that must
-be written down and shown to the owner**, not an oversight discovered later.
+**Decision (2026-09-10): TLS ships in v1 regardless of how the shop's Wi-Fi is arranged**, which
+is why it heads the list above rather than trailing it. Making it conditional meant §26 Q6's
+answer could add work late, and §18's camera path fails *silently* without a secure context — the
+worst kind of failure to discover in a shop. Doing it unconditionally removes a dependency, fixes
+the camera, and costs one certificate on the host.
+
+**There is no plain-HTTP deployment.** An earlier draft allowed one as a written, accepted risk;
+that escape hatch is closed, because a risk a deployment may accept is a risk every rushed
+deployment will accept.
 
 **CORS is not a security control.** It restricts browsers; `curl` ignores it entirely.
 
 ---
 
-## 16. Regulatory & fiscal compliance (Armenia)
+## 17. Regulatory & fiscal compliance (Armenia)
 
 > **This section must be verified with a practising Armenian accountant or tax adviser
 > before launch.** The general shape below is stated with confidence; specific thresholds,
@@ -1132,7 +2558,7 @@ venture — it can make the software unusable regardless of quality.
 3. **Invoices & waybills.** Confirm obligations around electronic tax invoices for B2B sales
    and goods-movement documentation, and whether Simon must produce or merely export them.
 4. **Record retention.** Confirm the required retention period; it sets the backup policy
-   in §18.2.
+   in §19.2.
 5. **Personal data.** The Nisya ledger holds names, phones, and debts — personal data under
    Armenian law. Confirm consent and retention obligations.
 
@@ -1144,17 +2570,21 @@ fiscalisation into a system that never anticipated it means rewriting the checko
 alongside whatever fiscal device the shop already uses, with integration scheduled for v2.
 **This must be stated to every pilot store in writing.**
 
+That position is a *bet*, not a finding — **A10** in §24.2, alongside the six other fiscal
+assumptions this section's uncertainty forces. §26.1 is how that meeting is run. Nothing in this
+section is confirmed until answers come back and land in §24.2.
+
 ---
 
-## 17. Hardware & peripherals
+## 18. Hardware & peripherals
 
 | Device | Approach |
 |:--|:--|
 | **Barcode scanner** | USB/Bluetooth HID keyboard-wedge. No driver, no integration code, ~15–25k ֏. **Support this first** |
-| **Phone camera** | `html5-qrcode` / `react-zxing`. ⚠️ Requires a **secure context** — on a plain-HTTP LAN IP, camera access fails *silently* on Android and iOS. This constrains §15.6 toward TLS and must be resolved before relying on camera scanning |
+| **Phone camera** | `html5-qrcode` / `react-zxing`. ⚠️ Requires a **secure context** — on a plain-HTTP LAN IP, camera access fails *silently* on Android and iOS. **Resolved 2026-09-10:** TLS ships in v1 (§16.6), so the secure context exists and the camera works. HID remains the primary path |
 | **Receipt printer** | 58/80 mm thermal, ESC/POS. Browsers cannot drive these — **the backend owns printing** (network printer on TCP 9100, or USB on the host). Design it as a service from the start |
 | **Label printer** | Internal barcodes (Code128) for unbarcoded goods. v2 |
-| **Cash drawer** | Opens via the printer's kick-out port |
+| **Cash drawer** | Opens via the printer's kick-out port. **The pulse is a separate ESC/POS command, not a side effect of printing** — the backend owns both (§18, receipt printer) and simply does not emit it on a reprint. Without that separation the reprint offered after a printer jam (§8.2) would open the drawer for anyone, and §16.3's re-authentication for opening it outside a sale would be a control enforced at the API and bypassed at the hardware. A deliberate no-sale open is its own command: re-auth, then a `NO_SALE` movement (§11) |
 | **Scale** | Manual entry in v1; weight-embedded EAN-13 (`2x` prefix) later |
 
 **Internal barcodes.** Goods arriving without a barcode get a generated internal code and a
@@ -1164,15 +2594,24 @@ much of a hardware store's catalogue.
 
 ---
 
-## 18. Data lifecycle
+## 19. Data lifecycle & operations
 
-### 18.1 Onboarding & migration
-See §7.3 for the user-facing design. Technically: CSV/Excel import for products, opening
-stock, customers, and **opening debt balances with their original dates** (posted as
-`OPENING_BALANCE` movements and back-dated `CHARGE` entries so aging is correct on day one).
-Import is idempotent, re-runnable, and reports per-row errors without partially applying.
+### 19.1 Onboarding & migration
+§7.3 has the user-facing design; **this is the normative rule.** CSV/Excel import covers
+products, opening stock, customers, and **opening debt balances with their original dates** —
+posted as `OPENING_BALANCE` movements and back-dated `CHARGE` entries, so aging is correct on
+day one (§10.6).
 
-### 18.2 Backup & restore
+Import is **idempotent, re-runnable, reports per-row errors, and never applies partially.** A
+half-built catalogue is worse than no catalogue, because nobody can tell which half is missing.
+
+The mechanism is `ImportBatch` and `ImportRow` (§11): every row carries a `naturalKey` for its
+kind, and a key already `APPLIED` in any batch is skipped rather than applied again. Without
+that, a second run of the opening-debts file doubles every balance in the shop — and §27.5
+checks those balances against the paper book, where a doubled debt is not a bug the owner
+forgives.
+
+### 19.2 Backup & restore
 "A daily export at 20:00" loses a day of trade and copies a live SQLite file unsafely.
 
 - **Consistent snapshots** via SQLite's backup API or `VACUUM INTO` — never a raw file copy
@@ -1181,28 +2620,137 @@ Import is idempotent, re-runnable, and reports per-row errors without partially 
 - Destinations: local disk **plus** a removable USB drive, matching how these owners already
   think about backups. **Encrypted**, because they contain customer PII.
 - **A one-click restore path and a documented restore drill.** An untested backup is not a
-  backup — the owner should have restored once, in training, before go-live (§25.10).
+  backup — the owner should have restored once, in training, before go-live (§27.10).
 - Separately: human-readable CSV/Excel exports for the accountant. A different job from
   disaster recovery; both are needed.
 
-### 18.3 Growth
-A busy shop reaches ~100k sale lines a year. SQLite handles this comfortably. Log rotation
+### 19.3 Growth
+**The design target is one shop of 500–3,000 products turning over 50–150 sales a day** — which is where a busy shop reaches ~100k sale lines a year *(assumption A7 — §24.2)*. §26 Q3 confirms the pilot sits in that band rather than deciding anything: above it, indexes and query plans want a second look, not a different architecture. SQLite handles this
+comfortably. Log rotation
 matters — this is someone's C: drive, and it holds the database too.
 
 ---
 
-## 19. Reporting & language
+### 19.4 Practice mode data
 
-### 19.1 Owner reporting
+§7.2 promises that practice writes nothing to the real ledgers. How that promise is kept is an
+architectural decision, not a filter.
+
+**A second database file, not an `isPractice` column.** Entering practice mode opens a separate
+SQLite file seeded with a copy of the catalogue — products, barcodes, prices, customers,
+current stock — and every write goes there. Leaving practice mode deletes the file.
+
+A boolean on every transactional row was considered and rejected. It makes correctness depend
+on remembering a `WHERE` clause in every query, report, export and reprojection job, and a
+single omission silently poisons the owner's numbers. That is the same class of mistake as
+§16.5's cost leak, and it has the same answer: make the wrong state unrepresentable rather
+than filtered out (rule 7).
+
+Consequences, all of them requirements:
+
+- **Practice is per-device and per-session, never global.** One worker practising must not put
+  the shop into practice mode. `Session.mode` carries it (§11) and the server routes on that
+  row, so two people on two phones can be in different modes at the same moment.
+- **The outbox is tagged.** A queued practice sale carries the mode and is discarded on exit —
+  never drained into the real database (§14.4). This is the sharpest failure risk in the
+  feature and deserves its own test (§27.19). It is also **excluded from `Device.outboxDepth`**
+  (§11): practice sales are discarded rather than sent, so counting them would give the owner a
+  queue figure that can never reach zero and an §19.5 alert that never clears — which is how a
+  person learns to ignore alerts.
+- **Reports, the fiscal adapter and the cash drawer always act on the real database.** A
+  practice sale prints only a receipt watermarked *ՓՈՐՁՆԱԿԱՆ*, never opens the drawer, and
+  never issues a fiscal receipt (§17, §18).
+- **Entry and exit are audited in the real database** — actor, timestamp, duration — as
+  `AuditLog` rows. Without them, "I was in practice mode" becomes an unfalsifiable excuse for a
+  real discrepancy, which inverts the purpose of §10.7.
+- **Practice cannot be entered with a basket open**, and a real held sale (§6.1) is never
+  visible from inside it. Two baskets that look identical and mean different things is exactly
+  the confusion rule 7 exists to prevent.
+- **No transactional table gains a column for this.** The only row in §11 that knows practice
+  exists is `Session.mode`, and deliberately so: it is already per-device and already read on
+  every request. No sale, movement, debt entry or shift carries a practice flag, which is the
+  entire point of the second file.
+
+---
+
+### 19.5 Diagnosis without remote access
+
+Simon runs on a PC in a back room, with no remote access, by design (§24.1). Everything needed
+to work out what is wrong must therefore be readable by the owner, over the phone, by someone
+who does not know what a log is.
+
+- **`GET /health`** returns, in one payload: version, uptime, database size, WAL checkpoint age,
+  time **and size** of the last successful backup — the newest `OK` row in `BackupRun` (§11);
+  a backup suddenly a tenth of the database is a failed backup that reported success — outbox depth
+  across all devices — **sales awaiting delivery**, with parked baskets counted beside them rather
+  than inside them (§14.4), summed from the `Device` rows each client updates on its heartbeat,
+  one row per till so a phone counts once however many times it has been signed into — and the
+  count of open `LEDGER_CACHE_DRIFT` flags (§10.4, §11). Every figure is a query over a table,
+  because a diagnostic that cannot be recomputed is a rumour. It is the first thing support asks
+  for.
+- **A Diagnostics screen in Settings** renders exactly that, in Armenian, with a **copy** button
+  and a *"save this for support"* that writes a file. Nothing leaves the shop unless the owner
+  sends it himself (§1).
+- **Structured logs** via `pino` to a rotating file on the host (§22): one line per request —
+  method, route, status, duration, user id, and for the four queue-drained endpoints (§15.3) the
+  document id. Never a PIN, never a hash, never a customer's name or phone number.
+- **Log rotation is a requirement, not hygiene.** This is someone's `C:` drive and the database
+  is on it (§19.3).
+- **Three alerts reach the owner in-app**, because nothing else can reach him: no successful
+  backup in 24 hours; ledger-vs-cache drift detected (§10.4); a **sale** older than an hour in any device's outbox — parked
+  baskets are excluded, since one may sit there all afternoon by design (§14.4). Each says what to do, not what happened.
+- **The error boundary offers a recovery, not a stack trace.** A crash on the till offers
+  "return to the sale" and preserves the basket; the trace goes to the log.
+- **The version is on the Settings screen** and every release is a git tag (§22). "Which version
+  are you running?" has to be answerable in five seconds by someone who does not know what a
+  version is.
+
+---
+
+### 19.6 Personal data
+
+The Nisya ledger holds names, phone numbers and debts. That is personal data under Armenian law
+(§17, item 5), and it is the *only* personal data Simon holds — there is no marketing list, no
+purchase profile, no analytics (§1).
+
+- **What is held, and why.** `Customer.fullName` and `phone` identify who owes what; `DebtEntry`
+  rows are financial record. Everything else on the row is operational — a credit limit, a block
+  flag, an activity flag, a merge pointer, a search key (§11) — and there is no marketing list,
+  no purchase profile and no behavioural data of any kind. The owner should be told plainly not
+  to put anything sensitive in the free-text `notes`.
+- **Lawful basis.** Recording a debt is recording a transaction the customer asked for, so the
+  basis is very likely the contract rather than consent — **but this must be confirmed** (§17,
+  item 5) before the first pilot store, not after it.
+- **Retention follows the financial retention period**, not a shorter one. A debt ledger that
+  erases itself on a privacy schedule stops being an accounting record. §17 item 4 sets the
+  period; §19.2's rotation must not undercut it.
+- **Erasure is anonymisation, never deletion** (§6.13). `anonymisedAt` is set, name and phone go
+  null, and the ledger rows with their amounts and dates remain against the anonymised customer.
+  That answers an erasure request without destroying the shop's books, and it is the only way to
+  do both. The row is the one place `fullName` may be null, which §11's validation states
+  explicitly rather than leaving to be discovered.
+- **Backups contain PII and are therefore encrypted** (§19.2). A USB stick of customer debts
+  left in a drawer is the most probable breach in this whole system, and it is absent from
+  §16.1 only because it is a data-handling failure rather than an attack.
+- **Logs never contain PII** (§19.5): no name, no phone, no PIN, no hash. Customer id only.
+- **Export on request** is already built: `GET /customers/:id/ledger` (§15.4) returns everything
+  held about one person, and the Diagnostics screen can write it to a file to hand over.
+
+---
+
+## 20. Reporting & language
+
+### 20.1 Owner reporting
 Per §5.3 and §6.10. Every figure drills to its source events (rule 3).
 
-### 19.2 Report catalogue
+### 20.2 Report catalogue
 Sales by period/product/category/worker · **margin by product** · COGS and stock valuation
-at cost · **debtor aging 0–30/31–60/61–90/90+** · supplier payables · stock movement history
-· shift Z-reports with variances · discount by worker · write-offs by reason · stock turnover
-and dead stock. All exportable.
+at cost · **debtor aging 0–30/31–60/61–90/90+** · supplier payables · **item history** — what
+changed, when and who, per product, and never called a movement anywhere the owner can see it
+(§4.3, §6.16) · shift Z-reports with variances · discount by worker · write-offs by reason · stock turnover
+and dead stock · **the audit trail**, filtered by person, date or record (§10.7). All exportable.
 
-### 19.3 Armenian language & search
+### 20.3 Armenian language & search
 - Full Armenian UI. **All strings in resource files** — none hardcoded in components. The
   backend returns machine-readable error `type` values; the client maps them to Armenian.
 - **Search must tolerate Latin-typed Armenian.** Workers frequently type on a Latin keyboard
@@ -1227,38 +2775,70 @@ and dead stock. All exportable.
 
 # Part D — Delivery
 
-## 20. Non-functional requirements
+## 21. Non-functional requirements
 
 | Area | Requirement |
 |:--|:--|
 | Scan latency | Barcode → line rendered **< 200 ms** (p95) |
 | Checkout | 3-item cash sale completable in **< 15 s** |
-| App start | Interactive **< 3 s** on a mid-range Android |
-| Concurrency | 3 workers + owner dashboard, no lock contention |
+| App start | Interactive **< 3 s** (cold, p95) on the reference device |
+| Concurrency | 3 tills selling simultaneously plus the owner's dashboard: **no `SQLITE_BUSY` ever surfaced to a user**, p95 write transaction **< 50 ms**, measured over 10 minutes of continuous three-device selling |
 | Availability | Selling continues through a LAN drop (§14) |
-| Durability | **Zero acknowledged sales lost.** RPO ≤ 1 hour, RTO ≤ 1 hour |
+| Durability | **A sale acknowledged to the worker is never lost to a client, app, or network failure** (§14.2). Against loss of the host itself the bound is the backup interval, not zero: RPO ≤ 1 hour in trading hours, RTO ≤ 1 hour (§19.2) |
 | Devices | Android Chrome (primary), iOS Safari, desktop Chrome/Firefox |
-| Accessibility | Touch targets ≥ 48 px; readable in poor light; one-handed; adjustable text size |
-| Correctness | Money, costing, allocation, rounding under unit + property tests; ledger-vs-cache reconciliation in CI |
+| Accessibility | **WCAG 2.2 AA.** Touch targets ≥ 48 px; contrast ≥ 4.5:1 for text and ≥ 3:1 for UI components and the status strip; the full till flow reachable one-handed; text scalable to 200% with no loss of function or content |
+| Correctness | Money, costing, allocation, rounding under unit + property tests; ledger-vs-cache reconciliation in CI; **a lint rule that fails the build on a float literal in money or quantity code** — which is what §23.1's "no float anywhere in the tree" is checked by, and what §25 counts on |
 
-### 20.1 Learnability targets
+**The reference device** is a mid-range Android phone no newer than three years old, on the
+shop's own Wi-Fi, with the catalogue at pilot size. **Every number in this section is measured
+there** — a budget measured on a desktop over localhost is always flattering and always wrong.
+
+### 21.1 Learnability targets
 Measured with real users during the pilot, not estimated:
 
-| Metric | Target |
-|:--|:--|
-| Time for a new worker to complete their first unaided sale | **< 10 minutes** |
-| Worker training to productive | **< 15 minutes** (§7.6) |
-| Owner setup to first real sale | **< 30 minutes** |
-| Taps for a 1-item cash sale | **≤ 4** (scan, pay, cash, done) |
-| Worker error rate at end of week 1 | **< 2%** of sales needing correction |
-| Owner able to answer "what did I earn today" unaided | **week 1** |
+| Metric | Paper baseline | Target |
+|:--|:--|:--|
+| Time for a new worker to complete their first unaided sale | Immediate — a notebook needs no training | **< 10 minutes** |
+| Worker training to productive | None | **< 15 minutes** (§7.6) |
+| Owner setup to first real sale | None | **< 30 minutes** |
+| Taps for a 1-item cash sale | Two written lines | **≤ 4** (scan, pay, cash, done) |
+| Worker error rate at end of week 1 | Unknown — the notebook does not record its own mistakes | **< 2%** of sales needing correction |
+| Owner able to answer "what did I earn today" unaided | Not at all, or a monthly estimate from the accountant | **week 1** |
 
-**Measure on a real low-end device over shop Wi-Fi**, never on a desktop over localhost —
-that number is always flattering and always wrong.
+Simon starts behind paper on the first three rows and ahead on the last three. That trade is
+the whole product, and stating the baseline is what makes it arguable rather than assumed.
+
+On the reference device (§21). A learnability number produced at a desk is not a learnability
+number.
+
+### 21.2 Adoption & business KPIs
+
+§21.1 asks whether a person *can* use Simon. These ask whether the shop *does*, and whether it
+was worth what it cost. Each baseline is captured at a named moment — go-live, migration day, or
+during the pilot's parallel fortnight (§23) when both systems run side by side — and the rows
+that have no baseline to capture say so. The fortnight remains the only honest chance to measure
+the notebook, and it does not come round again.
+
+| KPI | Baseline | Target | Measured by |
+|:--|:--|:--|:--|
+| Share of sales rung through Simon rather than paper | 0% at go-live | **> 95% by week 4** | Simon's count against the worker's notebook, daily through the parallel fortnight |
+| Worker still using Simon unprompted | **n/a** — the notebook has no equivalent to stop using | **week 4, without being asked** | Observation. The single most informative number here (H2, §24.3) |
+| Owner opens the dashboard | **n/a** — there is no dashboard to open today | **≥ 5 days a week by month 2** | Session log (§19.5) |
+| Debt over 90 days as a share of total debt | Captured from the paper book on migration day, before the first sync | **falls across three months** | §20.2's aging report (H3, §24.3) |
+| Write-offs discovered per month | **0 discoverable** — the notebook cannot answer this question at all | **surfaced at all**, then falling | §13.5 reason codes |
+| Time from shift close to knowing the day's profit | Never, or the accountant's monthly visit | **< 1 minute, the same evening** | §6.9 |
+| Shop still using Simon at month 3 | **n/a** — retention has no "before" | **yes** | The only retention number that matters at this scale |
+| Support calls per shop per month | **n/a** — measured from go-live; month 1 sets the reference | **< 2 by month 3** | Support log (§26 Q8) |
+
+**Every KPI above has a baseline, a capture point, or a stated reason it cannot have one.** The
+four marked *n/a* measure behaviour that does not exist before Simon does — there is no prior
+value for "still using it" — and the rest are captured at a named moment: go-live, migration
+day, or during the parallel fortnight. A blank in this column would mean the KPI was not thought
+through; an explicit *n/a* means it was.
 
 ---
 
-## 21. Architecture
+## 22. Architecture
 
 Constraints retained: **decoupled client–server, local-only, no Next.js, no SSR.**
 
@@ -1271,9 +2851,12 @@ Constraints retained: **decoupled client–server, local-only, no Next.js, no SS
             /jobs      backup, cache reconciliation, reorder stats
 /frontend   React + Vite, SPA (no SSR), Tailwind, vite-plugin-pwa
             IndexedDB catalogue cache + outbox queue
-/docs       this PRD, ADRs, operator runbook
+/docs       this PRD — ADRs and the operator runbook are Phase 1 deliverables
 ```
 
+- **`/docs` holds this PRD, and nothing else yet.** One document is the source of truth; the
+  ADRs and the operator runbook are Phase 1 deliverables (§23), and §27.10's restore drill
+  cannot be rehearsed until the runbook exists.
 - **One repository, npm workspaces.** Frontend, backend, and `packages/shared` ship as a
   single artifact — Docker Compose behind one Nginx, later one Tauri executable. A shop
   installs "Simon 1.4.0", not a frontend and a backend with separate versions.
@@ -1293,59 +2876,296 @@ module built on §10.1.
 
 ---
 
-## 22. Roadmap
+## 23. Roadmap
 
-| Phase | Contents | Exit criterion |
+| Phase | Release | Contents | Exit criterion |
+|:--|:--|:--|:--|
+| **0 — Foundations** | v1 | Monorepo split, Prisma schema, money/quantity/UoM domain modules with tests, auth & roles, audit log | Domain tests green; a movement can be posted and replayed. **§26 Q7 is answered** (2026-09-10): the schema carries a nullable `locationId`, so this phase is no longer gated |
+| **1 — Sell** | v1 | Catalogue, barcode (HID + camera), till, split tender, held sales, shifts with denomination counting, receipt printing. **Plus §2.5's five shop visits, the first ADRs, and the operator runbook** | A real sale completes end-to-end on a phone in the shop, **and §2.4's rows read *observed* rather than *inferred*** |
+| **2 — Trust** | v1 | Customers, debt ledger, allocation, repayments, aging, credit limits | Owner reconciles the digital ledger against the paper Nisya book |
+| **3 — Buy** | v1 | Suppliers, receiving, landed cost, weighted average, payables, purchase returns | Margin report matches a hand-calculated check |
+| **4 — Control** | v1 | Owner home with drill-down, reports, write-offs, velocity low-stock suggestions, backup/restore drill | Owner runs a month-end unaided |
+| **5 — Adopt** | v1 | Setup wizard, CSV import, quick-add, practice mode, embedded help, PWA polish, offline queue | Pilot store runs a full month with no manual intervention, **and §21.1 and §21.2 hold figures measured in the shop** |
+| **6 — Extend** | v2 | Stocktake sessions, purchase orders and automatic reordering, label printing, multi-location, Tauri packaging, fiscal adapter (§17) | Fiscal receipts issue from Simon; the owner counts stock without closing the shop |
+
+Phases 0–5 are v1 exactly as §9 defines it; phase 6 is §9's v2 list. **§9 is the authority on
+what ships in a release; this table only orders the building.**
+
+### 23.1 Build order and dependencies
+
+The table above orders **features** — things a shopkeeper can see. This orders **code**, and the
+two lists are not the same, because several phases sit on one foundation.
+
+Six layers. Nothing may depend on a layer below it in this table, and §22 gives the test for
+whether the layering is right: **can the rule be unit-tested with no HTTP and no database?**
+
+| Layer | What | Specified in | Needs | Done when |
+|:--|:--|:--|:--|:--|
+| **0 — Arithmetic** | Integer money, quantities, UoM conversion, tax extraction, weighted average, debt allocation. Pure functions in `packages/shared` and `/backend/domain` | §10.1, §10.2, §10.3, §10.5, §10.6, §10.8 | nothing | Property tests green on every rule, no float anywhere in the tree, and **§27.4** — the margin on a product restocked twice reproduces by hand |
+| **1 — Schema** | All 37 models, the field conventions, the validation rules, the four lifecycles — and the second database file practice mode writes into | §11, §19.4 | layer 0, for units and scales | A movement can be posted and replayed (Phase 0's exit), and **§27.21** — `decimalPlaces` will not change once movements exist |
+| **2 — Services** | Transactional use cases: checkout, debt sale, repayment, returns, receiving, purchase returns, write-offs, shift close. Then the non-transactional ones: catalogue and opening-debt import, the reorder-stats job, and every report query | §13.1 **first**, then §12.1–§12.5, §13.2, §13.3, §13.5–§13.7, §10.4, §10.7, §19.1, §20.2 | layer 1 | Each commits in one transaction and is testable with no HTTP: **§27.2, §27.3, §27.5, §27.6, §27.7, §27.18, §27.20, §27.22, §27.23** — all provable before a screen exists |
+| **3 — HTTP** | Routes, Zod validation, RFC 7807 errors, response shaping | §15.1–§15.4, and **§16.5 built into the shaping from the very first endpoint** | layer 2 | **§27.9** — a `WORKER` token gets no cost field from any route |
+| **4 — Access** | PIN, sessions, devices, roles, re-authentication, audit — and `Session.mode`, which is what keeps practice per-device rather than shop-wide | §16.2–§16.4, §16.6, §10.7, §19.4 | layers 1 and 3 | **§27.9** and **§27.19** (practice leaves the real database untouched), plus every lockout path in §16.2 |
+| **5 — Client** | Outbox, IndexedDB cache, the sixteen screens, the four input paths, the setup wizard and quick-add, Armenian | §14.3–§14.6, §6, §7.1, §7.4, §18, §20.3 | layer 3 | **§27.1** and **§27.8**, plus the whole usability set **§27.11–§27.17** — all of it in a shop, none of it at a desk |
+| **6 — Operations** | Backup, the restore drill, diagnostics, packaging | §19.2, §19.5, §22 | layer 1 — **except diagnostics**, which is an endpoint and a screen, so 3 and 5 | **§27.10** — restored onto a different machine, by the owner |
+
+**Every criterion in §27 belongs to at least one layer above**, and most belong below layer 5.
+No number appears in that sentence deliberately: it said "twenty-two" for eleven versions after
+§27 grew to twenty-three, and a claim with a count in it is a claim that rots quietly. §27.9 belongs to two on purpose — the response shaping (layer 3) and the role
+system (layer 4) are two halves of one test, and passing it needs both. That is the point of the
+column: §27.4's hand-calculated margin and §27.7's shift arithmetic are proofs about layer 0 and
+layer 2, and waiting for a screen to run them means finding an error in the costing after
+everything is already built on it.
+
+Layer 6 is the one row that bundles unlike work: backup and packaging need nothing but the
+schema and can start early, while §19.5's diagnostics are `GET /health` and a screen in Settings
+and cannot start until there is an API to ask and somewhere to show the answer. Scheduling them
+together is how two thirds of that row stalls.
+
+**Three things sit across the layers rather than in one.** They are not rows because giving them
+a row would suggest a phase where you do them:
+
+- **Error handling (§8, §8.5).** Every layer raises them, layer 3 fixes the `type` values, and
+  layer 5 renders them. The catalogue is frozen from layer 3 onward — an error type is a contract.
+- **Personal data (§19.6).** A constraint on layers 1 and 2: which fields exist, which go null on
+  erasure, and what never reaches a log.
+- **The budgets (§21).** Measured at layer 5 on a real device, but *earned* at layers 0–3. A scan
+  budget missed at layer 5 is almost never a client problem.
+
+**Three things that cannot be retrofitted.** Each costs nothing in layer order and a migration
+afterwards:
+
+1. **Integer money (§10.1).** A float that reaches the database is not a bug fix, it is a data
+   migration over records whose true values are already lost.
+2. **Field stripping (§16.5).** It belongs in layer 3's response shaping, in **one** place. Added
+   per-endpoint later it will be missed on one of them, and that one is the leak.
+3. **The append-only ledger (§10.4).** A mutable `stockQty` written first cannot be made
+   rebuildable later, because the movements that would rebuild it were never recorded.
+
+**What is blocked, and by what.** **Nothing, as of 2026-09-10.** Q7 was answered; Q1, Q2 and
+Q10 were unblocked by making the design absorb every answer rather than commit to one — a price
+basis that is a setting (§10.8), a numbering scheme that supports pre-allocated blocks (§12.1),
+and a fiscal adapter seam that has been reserved since v2 was written (§17). Each still *matters*,
+and getting one wrong still costs a setting, a mode or a repositioning — but none of them now
+stops anyone starting. Q11–Q14
+change a setting rather than a design, and the remaining six can be answered while building.
+
+| Question | Blocks | Latest it can be answered |
 |:--|:--|:--|
-| **0 — Foundations** | Monorepo split, Prisma schema, money/quantity/UoM domain modules with tests, auth & roles, audit log | Domain tests green; a movement can be posted and replayed |
-| **1 — Sell** | Catalogue, barcode (HID + camera), till, split tender, held sales, shifts with denomination counting, receipt printing | A real sale completes end-to-end on a phone in the shop |
-| **2 — Trust** | Customers, debt ledger, allocation, repayments, aging, credit limits | Owner reconciles the digital ledger against the paper Nisya book |
-| **3 — Buy** | Suppliers, receiving, landed cost, weighted average, payables, purchase returns | Margin report matches a hand-calculated check |
-| **4 — Control** | Owner home with drill-down, reports, stocktake, write-offs, reorder suggestions, backup/restore drill | Owner runs a month-end unaided |
-| **5 — Adopt** | Setup wizard, CSV import, quick-add, practice mode, embedded help, PWA polish, offline queue, Tauri, fiscal adapter (§16) | Pilot store runs a full month with no manual intervention |
+| ~~**Q7**~~ — second shop within a year? | §11's schema: whether `StockMovement` carries a nullable `locationId` | **Answered 2026-09-10** — it does. Phase 0 unblocked |
+| **Q2** — tax regime, prices inclusive? | Nothing. §10.8 supports both bases and §6.11 picks between them | Before the pilot — a wrong setting misprices everything |
+| **Q10** — gapless receipt number? | Nothing. §12.1 supports device prefixes and pre-allocated blocks | Before the pilot |
+| **Q1** — ՀԴՄ obligation? | Nothing in the build — the adapter seam exists either way (§17). It blocks **launch**, not work | Before the pilot store sells anything |
+
+Q1, Q2 and Q10 are one conversation (§26.1). Q7 was answered on 2026-09-10.
+
+---
 
 **Pilot before scale.** One friendly store, running Simon in parallel with paper for two
 weeks. Adoption by an actual worker under real queue pressure is the only meaningful
 validation; everything before that is a hypothesis.
 
+**The parallel fortnight has a job beyond validation, and it happens once.** It is the only
+window in which the paper baseline can be measured, because afterwards there is no paper to
+measure. Before it starts, someone must be named as responsible for capturing:
+
+- **the one baseline that disappears if it is not taken** — the 90-day debt share, read off the
+  paper book on migration day, before the first sync. Every other row in §21.2 already states
+  its baseline or has none to state; this is the only one the shop can lose;
+- **every §21.2 KPI's actual value** at the horizon its target names — week 4, month 2, month 3
+  — including the four whose baseline is *n/a*, because having no baseline is not a reason to
+  go unmeasured;
+- the §21.1 timings, on the reference device, with the worker who actually works there;
+- and the answers to A1, A2, A5 and A6 (§24.2), which the fortnight either confirms or breaks.
+
+**A pilot that ships working software and no numbers has half failed**, and the half it failed
+is the half that cannot be repeated.
+
+Phase 5 does not exit until **§21.1's six timings and all eight §21.2 KPIs hold values measured
+in the shop**, and §21.2's single capturable baseline — the 90-day debt share on migration day —
+is a number. An *n/a* in the baseline column excuses the baseline, never the measurement.
+
+**"The table has no blanks" is not the test.** A table can be filled in from a desk; an earlier
+form of this gate said exactly that and could be satisfied by editing the document instead of
+running the pilot.
+
 ---
 
-## 23. Risks
+## 24. Assumptions, hypotheses & constraints
 
-| Risk | Impact | Mitigation |
-|:--|:--|:--|
-| **Fiscal/ՀԴՄ non-compliance** | Product unusable or illegal | Resolve §16 before build completes; adapter reserved in the schema |
-| **Worker rejects it under queue pressure** | No adoption; data rots | Sub-15-second checkout as a hard requirement; practice mode; pilot with a real worker |
-| **Catalogue never gets populated** | System unusable | CSV import + quick-add at checkout (§7.3) |
-| **Owner stops trusting the numbers** | Reverts to paper | Every figure drills to source events (rule 3) |
-| Camera scanning needs a secure context | Core feature fails silently on phones | HID scanner primary; solve TLS early (§17) |
-| Host PC dies | Total data loss, business stops | Tested restore, USB backups, spare-machine runbook |
-| Money handled as floats | Books stop reconciling | §10.1, enforced by lint rule and domain tests |
-| Shop Wi-Fi open to customers | API exposed to strangers | Staff SSID/VLAN, real auth, documented accepted risk |
-| Too many settings | Owner cannot configure it, or misconfigures it | §6.11 — every setting must justify itself |
+The distinction is the point. A **constraint** is fixed and we design around it. An
+**assumption** is a belief we are betting on and have not tested — if it is wrong, something
+in this document is wrong with it. An **open question** (§26) is a thing we know we do not
+know. This section exists to stop the middle category quietly hardening into the first,
+which is what happens to an assumption written in the indicative mood.
+
+### 24.1 Constraints — fixed; design around them
+
+| Constraint | Consequence |
+|:--|:--|
+| 100% self-hosted; no vendor cloud, no subscription dependency | No remote telemetry, no remote support session, no server-side model. Diagnosis happens over the phone (§26 Q8) |
+| One shop, one host PC, one SQLite database in v1 | A single writer; §13.1's transaction discipline is not a preference |
+| Armenian UI; English code, schema and commits | Every string in a resource file (§20.3), and a native reviewer on the critical path (§26 Q9) |
+| The worker's device is a cheap Android phone on shop Wi-Fi | §21's budgets are measured there, never on localhost |
+| Money and quantity are integers (§10.1–10.2) | Unfixable once real data exists. This is the reason `packages/shared` exists (§22) |
+| Decoupled client–server, no SSR, no Next.js | §22 |
+| An ՀԴՄ obligation may exist and is not yet established | §17. The fiscal adapter seam is reserved whether or not it is ever used |
+
+### 24.2 Assumptions — beliefs we are betting on
+
+Each is stated as a bet, with what it would cost to be wrong and where it gets tested. The
+pilot (§23) is the harness for all of them. **✓ confirmed · ~ partly settled · no marker still
+open** — and a confirmed bet keeps its row, because knowing what was once uncertain is how the
+next person judges whether it is still true.
+
+| # | Assumption | If it is wrong | Falsified by |
+|:--|:--|:--|:--|
+| **A1** | Most deliveries arrive with a paper invoice and no prior order (§6.7) | Receiving is built around the wrong primary path and the PO flow moves into v1 | Pilot: receipts with a PO vs. without, over two weeks |
+| **A2** | A worker will not type a catalogue in advance, but will build one at the till (§7.3) | Onboarding stalls in week one — the most likely single cause of pilot failure (§25) | Pilot: products created by quick-add vs. import, days 1–14 |
+| **A3** | Shelf prices in the pilot store are tax-inclusive (§10.8) | A setting, and one receipt layout that already exists in both forms. **It was a rewrite until 3.41** — the cheapness was bought, not inherent | §26 Q2, before the pilot |
+| **A4** | A short PIN on a shared device is an acceptable audit anchor for the owner (§16.2) | The audit trail is worthless and identity needs to be per-device or biometric | Pilot: whether PINs stay per-user, or get shared within a week |
+| **A5** | A hardware store's stock is largely unbarcoded, making quick tiles and internal codes core rather than convenience (§6.1, §18) | Quick tiles are dead weight, and camera scanning plus TLS become urgent (§16.6) | Pilot: share of sale lines added by tile vs. by scan |
+| **A6** | Weighted average is accurate enough at this scale that no owner asks for FIFO (§10.5) | Lot tracking becomes necessary — expensive, and it touches every movement | Pilot: whether the owner's hand-check of margin (§27.4) reconciles |
+| **A7** | ~100k sale lines a year is the realistic ceiling and SQLite is comfortable there (§19.3) | Query plans and storage need revisiting. Not architectural | §26 Q3, at setup |
+| **A8** ✓ | The shop has, or will buy, an HID scanner and a thermal printer (§18) | v1 would be camera-only — survivable now that TLS ships in v1 regardless (§16.6), where once it was a launch blocker | **Confirmed 2026-09-10** (§26 Q5) |
+| **A9** ~ | A worker who is locked out (§16.2) or stuck can reach someone who can help within minutes | Rule 1 is violated in exactly the situation it exists for | **Partly settled 2026-09-10** (§26 Q8): the maintainer answers the phone. Whether that is *within minutes* is still the pilot's to prove |
+| **A10** | Simon is not and cannot be the fiscal device; it runs beside whatever certified ՀԴՄ the shop has (§17) | The adapter moves from v2 into v1 and checkout gains a device call after commit — or, worse, Simon sits beside the till instead of being it | §26 Q1 |
+| **A11** | A gapless receipt number, where one is required, comes from the ՀԴՄ and not from Simon (§12.1) | §14's entire offline design changes: receipts print unnumbered until sync, or the till stops when the server is unreachable | §26 Q10, before layer 5 |
+| **A12** ✓ | One shop is the whole of v1 — but the schema carries a nullable `locationId` from the start regardless (§11) | Nothing at all, if we carry the field. A migration over a year of movements, if we skip it | **Confirmed 2026-09-10** (§26 Q7) |
+| **A13** | Tax appears on the receipt only where the shop is VAT-registered; the rate is a setting, not a constant (§10.8) | A setting default, not a code change | §26 Q11 |
+| **A14** | B2B tax invoices and waybills are **exported, never produced** (§20.2) | A new v2 feature rather than a change to an existing one | §26 Q12, before the pilot |
+| **A15** | Retention follows the longest applicable financial-record period, and backup rotation exceeds it (§19.2, §19.6) | One setting in §19.2 | §26 Q13, before the first backup rotation |
+| **A16** | The lawful basis for the Nisya ledger is the transaction itself, not consent (§19.6) | A consent step appears the first time a worker records a debt for someone — a change to §6.3 | §26 Q14, before the first pilot store |
+
+**A3 and A10–A16 are the fiscal bets, and they are unlike everything above them.** Every other
+assumption in this table is falsified by watching the pilot; these are settled by one
+conversation with an adviser, and four of them block the build (§23.1). They sit here because
+this is where the document keeps its bets, and §26.1 is how the conversation that settles them
+is run. **One document, one truth: the bet is recorded here, the answer strikes it here.**
+
+### 24.3 Hypotheses — the product bets
+
+The claims the venture rests on. None is testable by unit test; all are testable by pilot.
+
+- **H1 — Explainability creates trust.** An owner who can drill any number to the events
+  behind it will believe the software (rule 3). *Tested by §27.14, and by whether he stops
+  keeping the paper book in parallel after the pilot fortnight.*
+- **H2 — Speed decides adoption.** A worker abandons anything slower than paper under a
+  queue (§2.3). *Tested by §21's checkout budget on a real device, and by whether Գոռ is
+  still using Simon in week four without being asked to.*
+- **H3 — The aged-debt line at the moment of decision is the core value** (§6.3). *Tested by
+  whether the pilot store's 90-day-plus debt falls over three months.*
+- **H4 — Self-hosting is an advantage, not an apology** (§1). *Tested by whether it comes up
+  as a reason to buy or a reason to hesitate, across the first ten sales conversations.*
 
 ---
 
-## 24. Open questions
+## 25. Risks
+
+Likelihood is judged for the pilot store over its first year: **Certain** · **Likely** ·
+**Possible** · **Unlikely**. Ordered by likelihood × impact, so the top row is where attention
+goes first.
+
+| Risk | Likelihood | Impact | Mitigation |
+|:--|:--|:--|:--|
+| **Fiscal/ՀԴՄ non-compliance** | **Likely** while §17 is unresolved | Fatal — product unusable or illegal | Resolve §17 before build completes; the adapter seam is already reserved in the schema |
+| **Catalogue never gets populated** | **Likely** — it is how these rollouts usually die | Fatal — the system is unusable | CSV import plus quick-add at checkout (§7.3); tracked as A2 (§24.2) |
+| **Host PC dies** | **Likely** across three years | Fatal without a tested backup; survivable with one | Hourly snapshots, USB copies, rehearsed restore, spare-machine runbook (§19.2) |
+| **Worker rejects it under queue pressure** | **Possible** | Fatal — no adoption, and the data rots | Sub-15-second checkout as a hard requirement; practice mode; pilot with a real worker (H2, §24.3) |
+| **Owner stops trusting the numbers** | **Possible** — one unexplainable figure is enough | Severe — reverts to paper | Every figure drills to its source events (rule 3, H1) |
+| Shop Wi-Fi open to customers | **Likely** — it is the normal state of a shop | Moderate — the API is still reachable by strangers, even encrypted | **TLS in v1** (§16.6), plus staff SSID/VLAN and real auth as defence in depth. Impact stays moderate rather than low: TLS protects the transport, not the fact that the door is on the street, and §16.1 ranks insiders above remote attackers anyway |
+| Camera scanning needs a secure context | **Closed 2026-09-10** | — | TLS ships in v1 unconditionally (§16.6), which is what a secure context needs. HID remains the primary path (§18) |
+| Too many settings | **Possible** | Moderate — misconfigured, or never configured | §6.11 — every setting must justify its existence |
+| Money handled as floats | **Unlikely** — designed against from day one | Fatal — the books stop reconciling | §10.1, enforced by a lint rule and property tests (§21) |
+
+---
+
+## 26. Open questions
+
+Q1, Q2 and Q10 are the three that still block the build (§23.1); Q7 was the fourth and is
+answered. The working assumption standing in for each until it is answered is **A3 and A10–A16**
+in §24.2, and §26.1 is how the conversation that settles them is run. Q2 matters more than its position suggests: §10.8's whole
+design rests on shelf prices being tax-inclusive. That used to be the one assumption with no
+safe middle; since 3.41 both bases are supported and a wrong answer costs a setting, so ask it
+carefully rather than anxiously.
 
 1. **Fiscal:** is the pilot store obliged to use an ՀԴՄ, and can Simon drive or integrate
-   with one? *(blocks §16 — highest priority)*
+   with one? *(blocks §17 — highest priority)*
 2. **Tax regime:** VAT, turnover, or micro? Are shelf prices tax-inclusive?
 3. **Scale:** how many products, workers, tills, and daily transactions in the pilot store?
 4. **Existing data:** what format is the current product list and debt book in?
 5. **Hardware budget:** can the shop buy an HID scanner and a thermal printer, or must v1 be
-   camera-only?
+   camera-only? — **ANSWERED 2026-09-10: both.** A8 confirmed. The HID wedge stays the primary
+   path (§18) and camera scanning stays a secondary route for the aisle, so §16.6's TLS work is
+   driven by the threat model rather than by the scanner.
 6. **Network:** is there staff/guest Wi-Fi separation, and who administers it?
-7. **Multi-location:** a second shop within a year? *(Changes whether stock is keyed by
-   location from the start — cheap now, expensive later.)*
-8. **Support:** who fixes it at 9 p.m. on a Saturday when the host PC will not boot? The
-   support model is a product requirement, not an afterthought.
-9. **Language:** who reviews and owns the Armenian copy? (§4.2 — this cannot be left to the
-   engineers.)
+7. **Multi-location:** a second shop within a year? — **ANSWERED 2026-09-10: carry the field
+   regardless.** A12 confirmed. v1 is single-shop, and `StockMovement.locationId` exists from
+   Phase 0 as a nullable column nobody writes (§11). A second shop then becomes a feature rather
+   than a migration over a year of movements. **This unblocks Phase 0** (§23.1).
+8. **Support:** who fixes it at 9 p.m. on a Saturday when the host PC will not boot? —
+   **ANSWERED 2026-09-10: the maintainer, by phone.** A9 confirmed for the pilot. This is what
+   §19.5 was designed for — an owner reading numbers down a phone line — and it makes §22's
+   operator runbook load-bearing rather than optional, because the person on the phone cannot
+   see the machine. It does not scale past a few shops, and §25 should be re-read when it must.
+9. **Language:** who reviews and owns the Armenian copy? — **ANSWERED 2026-09-10: the document
+   owner reviews and signs off every string.** §4.2's warning stands — the Armenian in this
+   document is still indicative until that review happens — but it now has a name against it
+   rather than being nobody's job. Strings live in resource files (§20.3), so review can trail
+   implementation without blocking it.
+10. **Receipt numbering:** must Simon's own sale number be a gapless sequence, or does the
+    gapless number come from the ՀԴՄ? *(§12.1. If Simon must issue it, an offline sale cannot
+    have one at the moment it is made, and §14's guarantee that selling continues through a LAN
+    drop is what has to give. Ask this in the same conversation as Q1.)*
+11. **Tax on the receipt:** is it broken out, and at what rate? *(§10.8. Decides the receipt
+    layout and whether a tax line appears at all — falsifies A13.)*
+12. **B2B documents:** are electronic tax invoices or goods waybills required, and must Simon
+    produce them or merely export the data? *(§17 item 3. Falsifies A14; if Simon must issue
+    them, that is a new v2 feature.)*
+13. **Record retention:** how long must sales and debt records be kept? *(§17 item 4. Sets
+    backup rotation in §19.2 and the erasure rule in §19.6 — falsifies A15.)*
+14. **Personal data:** is the lawful basis for the Nisya ledger the transaction itself, or is
+    consent required? *(§17 item 5, §19.6. Falsifies A16; if consent is needed, a step appears
+    in §6.3.)*
+
+Q11–Q14 came back into this register when `docs/fiscal-brief.md` was folded in (3.25 and 3.26):
+they are the questions that falsify A13–A16, and an assumption whose falsification route does
+not exist is not a bet, it is an unexamined belief with a serial number.
+
+### 26.1 How these get answered
+
+Q1, Q2 and Q10 are **one conversation**, about 45 minutes, with an accountant or tax adviser who
+works with small retail in Armenia. Q7 was never a fiscal question and is already answered
+(2026-09-10); Q3, Q4 and Q6 are the ones still waiting on §2.5's shop visits.
+
+**Take in the assumptions, not the blanks.** A3 and A10–A16 (§24.2) are the working position on
+every one of these questions, each with its confidence and what it costs to be wrong. An adviser
+corrects a proposal in minutes and composes an answer from scratch in an hour.
+
+**Do not ask about** how stock is valued, how debts are aged, how the software is hosted, or how
+backups work. All decided, and none of it needs an adviser's time.
+
+**Leave with:**
+
+- a yes or no on **Q1**, and if yes, whether Simon may drive the device;
+- a yes or no on **Q10**, and if yes, who issues the number;
+- the regime from **Q2**, and whether shelf prices are tax-inclusive;
+- the four confirming answers — **Q11** tax on the receipt, **Q12** B2B documents, **Q13**
+  retention period, **Q14** lawful basis. Each is a sentence from the adviser and a setting for
+  us; none is worth a second meeting;
+- ideally, the name of the ՀԴՄ the pilot shop already has, and who installed it.
+
+**Say out loud** what §17 already commits to in writing: until integration exists Simon is an
+internal management system standing beside whatever fiscal device the shop has, and is not
+discharging a fiscal obligation on anyone's behalf.
+
+**Every answer lands in two places.** The question is struck from §26, and the assumption it
+settles is confirmed or corrected in §24.2 — that pair is the record. Anything unresolved stays
+here with a named owner and a date, never as a note to revisit.
 
 ---
 
-## 25. v1 acceptance criteria
+## 27. v1 acceptance criteria
 
 Simon v1 is done when, **in a real store**:
 
@@ -1363,7 +3183,9 @@ Simon v1 is done when, **in a real store**:
 7. Shift close computes expected cash, records the counted variance, and produces a Z-report.
 8. Selling continues through a two-minute Wi-Fi outage, and every queued sale syncs **exactly
    once**, with no duplicates.
-9. A worker's session cannot obtain cost price or margin from **any** API endpoint.
+9. A `WORKER` session obtains no cost field from **any** API endpoint, and a `STOCK` session
+   obtains no `avgCostMdram`, margin, or supplier terms from any endpoint — including on a
+   re-read of the goods receipt it entered a moment ago (§16.5).
 10. The database is restored from backup **onto a different machine, by the owner**,
     following the runbook.
 
@@ -1379,7 +3201,27 @@ Simon v1 is done when, **in a real store**:
     confirmed (§8.1).
 17. The full till flow is operable **one-handed**, with touch targets ≥ 48 px throughout.
 
+**Catalogue, tax & practice**
+18. A 20% VAT receipt shows a tax figure equal to the sum of its lines' tax and **already
+    inside** the total; the same basket in a turnover-tax shop shows no tax line and an
+    identical total (§10.8).
+    **And under a tax-exclusive basis** the same basket prints subtotal, tax and total as three
+    lines that add up, with a **larger** total than the inclusive case — then, after the setting
+    is switched back, that sale reprints exactly as it was rung up (§11 `Sale.priceBasis`).
+19. A full shift spent in practice mode leaves the real database with **no sale, no stock
+    movement and no debt entry** — and exactly two `AuditLog` rows, recording that practice
+    was entered and left (§19.4).
+20. Two customer records for one person are merged, and the merged ledger's balance **and its
+    aging** equal the sum of the two originals (§6.13).
+21. `decimalPlaces` cannot be changed on a product that has stock movements (§6.12).
+22. Returning a delivery to a supplier restores the weighted average to what it was before that
+    delivery arrived, and credits the **invoice** amount while recording the unrefunded freight
+    separately (§13.7).
+23. A basket parked on one till and completed on another reconciles against the **second** till's
+    drawer, is listed as a transfer on that Z-report, and leaves an audit row naming both shifts
+    (§12.1, §12.5, §10.7).
+
 ---
 
-*Sections 16 (fiscal/tax) and 24 (open questions) must be resolved with local professional
+*Sections 17 (fiscal/tax) and 26 (open questions) must be resolved with local professional
 advice before commercial launch. Everything else in this document is a build instruction.*
