@@ -16,7 +16,8 @@
     "typecheck": "npm run typecheck --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "check:prd": "python3 scripts/check-prd.py"
   },
   "devDependencies": {
     "typescript": "~6.0.2",

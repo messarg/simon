@@ -131,3 +131,30 @@ IP.
 - [ ] Feature files earned, not boilerplate
 - [ ] Refactor preserves behaviour, proven by tests
 - [ ] Moves and logic changes in separate commits
+
+
+## Keeping the PRD's indexes honest
+
+`docs/prd.md` carries three indexes that must agree, and they are edited in different places:
+
+| Index | Holds |
+|---|---|
+| §9 FR index | every requirement, and which §27 criterion verifies it |
+| §23.1 build order | every criterion, and which layer proves it |
+| §27 | the criteria themselves |
+
+**Adding a model to §11 or a criterion to §27 means updating the sections that index them.**
+Between 2026-09-10 and 09-12 that step was missed five times in three review rounds — a stale
+model count, eleven criteria with no requirement, eleven with no build layer, a criterion
+assigned to one layer when it needed two, and a cross-reference to a setting that did not
+exist. Every one was silent, and every one was found only by reading the whole document again.
+
+Run `npm run check:prd` after any edit to §9, §11, §23.1 or §27. It asserts that every criterion
+has both a requirement and a layer, that no index cites something that does not exist, and that
+no FR id is referenced without being defined. It also warns about count claims of the
+"All 37 models" kind, which §23.1's own prose correctly predicts will rot.
+
+A criterion that deliberately has no requirement is declared in the PRD itself, in the
+`<!-- prd-check: criteria-without-requirement = ... -->` comment beside the prose that justifies
+it — so the exemption and its reasoning live together, and the tool honours it. Add to that
+comment rather than weakening the check.
