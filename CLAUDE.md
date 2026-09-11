@@ -162,5 +162,5 @@ Spawn via the Agent tool for deep or parallel work. Definitions in `.claude/agen
 
 - `.idea/` is gitignored (JetBrains is in use), as is `.claude/settings.local.json`.
 - `.claude/settings.json` denies reading `.env*`, `**/*.db` and `**/backups/**` — shop data and secrets stay out of context.
-- The default branch is `master`; work happens on `development`. Releases are git tags — Simon is installed per shop, so there is no staging or production server to push to.
+- Work happens on `development`, and local `origin/HEAD` points there. `master` is retained and fast-forwarded from `development`, never committed to directly. **GitHub's repository default is still `master`**, so a PR opened on github.com bases on `master` unless changed, and `git remote set-head origin --auto` will snap `origin/HEAD` back — verify with `git ls-remote --symref origin HEAD` rather than trusting the local ref. Releases are git tags — Simon is installed per shop, so there is no staging or production server to push to.
 - Project instructions live in **this file only**. There is no `.claude/CLAUDE.md`.
