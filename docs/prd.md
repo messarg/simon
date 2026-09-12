@@ -1,19 +1,22 @@
 # Product Requirements Document — Simon
 
 **Product:** Simon (Սիմոն) — trade management for small retail
-**Document version:** 3.62 — see the revision history below
+**Document version:** 3.65 — see the revision history below
 **Primary market:** Small & medium retail and hardware stores in Armenia
 **UI language:** Armenian. Code, schema, API, comments, commits: English.
 **Currency:** Armenian Dram (AMD, ֏)
 **Type:** Full PRD
 **Document owner:** messarg
-**Last updated:** 2026-09-12
+**Last updated:** 2026-09-13
 **Status:** §17 (fiscal) and §26 (open questions) need local professional advice before launch.
 
 ### Revision history
 
 | Version | Date | Change |
 |:--|:--|:--|
+| **3.65** | 2026-09-13 | **Rule 1's exceptions collected, in §3.1.** *"The queue never stops"* is the first design rule, the one §2.3 hangs the adoption case on, and it is cited throughout this document — while its exceptions were argued in eight separate sections and gathered in none. A reader could not answer *"when may Simon refuse a sale?"* without grepping, and an implementer building the till met each refusal wherever it happened to be written. §14.5 collected the **offline** cases and stopped there, saying nothing about the online ones: an unset tax regime, an empty settings cache, strict negative stock, a discount above the offline ceiling, no open shift — plus three that refuse the *credit* while leaving cash available: a blocked customer, a strict credit limit, the offline debt cap. §3.1 is that table, and it does one thing beyond listing: it names **three families** a legitimate refusal belongs to — *the shop is not yet trading*, *the owner deliberately opted out*, *a bounded allowance reached its bound*. A proposed refusal fitting none of the three is rule 1 failing and should be designed away rather than documented. That test is the point of the table; the list is what makes the test usable. §9's fan-out table gains §3.1 as an observer, so adding a refusal means adding a row the way adding a feature means adding an FR. *Found by auditing §3's ten rules against the specification as it now stands rather than as it stood in 3.22; rule 3 was checked against 3.63's frozen `expectedCash` and is clean, since §12.5 scopes the recompute claim to an open shift and states late arrivals beside the closed figure.* |
+| **3.64** | 2026-09-12 | **§27.7 could not fail on arithmetic, only on absence.** It read *"shift close computes expected cash, records the counted variance, and produces a Z-report"* — three activities and **no values**, which a shift close built on a wrong formula satisfies completely. §12.5's expected-cash formula is the most demonstrably error-prone rule in this document, and **§12.5 itself records two occasions when it was wrong**: repayments counted twice, which would have overstated the drawer by every repayment of the day, and a refund term that did not exist, which closed a shift 8 000 ֏ short and made an honest worker explain the software's arithmetic. Both landed on §6.6, the screen this document says exists to catch theft. §27.25 was added later and asserts a real figure for the refund term alone; **the base formula had no criterion asserting a number at all**. §27.7 now carries a worked table with every term present exactly once — 20 000 float, 147 000 cash sales, 15 000 repayment, 5 000 pay-in, less 8 000 refund, 12 000 pay-out and a 50 000 drop, expecting **117 000** — and names the two wrong answers the historical bugs produce: **132 000** for the double-counted repayment, **125 000** for the missing refund. A test written from figures can fail; a test written from activities cannot. Found by applying §27.22's own standard — *"an acceptance criterion that cannot fail is not one"* — to every criterion in §27 rather than to the one it was written about. §27.7 is one of the original ten and predates that insight entirely |
+| **3.63** | 2026-09-12 | **Two rules that assumed the server knows something it does not.** **`Shift.expectedCash` and `variance` were stored and recomputable with nothing saying which wins.** §12.5 insists the drawer *"can be recomputed from the ledger at any moment"*; §11 stores both and explained neither, in a field list that takes the trouble to explain `countedBreakdown` and `unsyncedAtClose`. Recompute a closed shift and a `ShiftLateArrival` moves a figure that was counted, printed and signed — the exact rewrite §12.5's late-arrival rule exists to forbid, reached by obeying §12.5's own sentence one step too far. They are now **computed live while `OPEN` or `CLOSING` and frozen at `CLOSED`**, declared the way `Sale.priceBasis` is declared, and deliberately **not** drift-checked: a closed shift's figure is a historical fact, so a mismatch against a replay is the late arrivals doing their job. **And a basket parked offline did not block its shift from closing, one sentence after §12.1 said why it could not.** §12.1 read *"offline, the basket is held in IndexedDB and promoted on reconnect. A `HELD` sale blocks its shift from closing"* — the server cannot block on a document it has never received, and §14.4 keeps parked baskets out of the unsynced-sales count **on purpose**, so §6.6's acknowledgement never mentions them either. The guard now blocks on baskets **the server has**; a basket arriving `HELD` against a `CLOSED` shift is `held-basket-after-close` (§8.5, §14.6), resumable by any open shift or voidable from the needs-attention list. It posted no money, so the Z-report stands — what it lacked was an exit, since the `VOIDED` guard defers to a shift block that has already happened. Found by auditing the four lifecycle guards against what the server can actually see; `Sale`, `PurchaseOrder` and `Stocktake` are clean |
 | **3.62** | 2026-09-12 | **§11's validation forbade the row 3.61 required to post.** 3.61 made a queued over-return accept-and-flag rather than park — and left `SaleReturnLine.qty` reading *"≤ its sale line's quantity **less what has already been returned** against that line"*, which §11's own preamble promises becomes a Zod rule and a `CHECK`. Built faithfully, that row **rejects the exact document §14.6 says must post**, and the cash-gone-no-record failure 3.61 fixed returns through the database instead of through a status code. The row is now split: the `CHECK` is *≤ the quantity sold*, and *less what has already been returned* is a **counter rule**, because a till cannot know what another till returned. `SaleReturnTender`'s `DEBT_REDUCTION` bound is split the same way. **This is 3.50's `Sale.shiftId` defect again** — a validation row written for the online case against a queue-drained path added elsewhere — in the same table, twelve revisions later. So §9's fan-out table gains the question that would have caught both: category 1 now asks not only *can the schema represent it?* but **does any validation rule forbid what this now permits?** Every accept-and-flag decision made in this round of work — credit limit on sync, customer blocked on sync, strict stock, over-cap discount, over-return — updated the sections that *describe* the behaviour and skipped §11; two of the five left a constraint that contradicted the new rule. **An accept-and-flag decision is a schema change by default.** The other three were audited and are clean: `creditLimit ≥ 0` and `discountAmount ≤ line total` are sanity bounds rather than the policy that was relaxed, and negative stock has no constraint to contradict |
 | **3.61** | 2026-09-12 | **Reverses 3.60's judgment on `return-exceeds-sold`, which was wrong.** §14.5 lets a worker take a return offline against a sale made on that device, and §12.4's per-line check is *"less what has already been returned against it"* — a quantity the till **cannot know**, because the sale may have synced and been partly returned on another till. The worker refunds cash from the drawer **at the counter**. On drain the check fails, §8.5 returned a flat `422`, and §14.4 parks it and never retries: **the cash gone, the goods back on the shelf, and nothing recording either** — surfacing as an unexplained shortfall on §6.6, the one screen §2.3 says must never look like an accusation. `return-exceeds-sold` is now **online only**, with `return-exceeds-sold-on-sync` as a warning, a §14.6 row and a `ReviewFlag` value; §12.4's check **binds the counter, not the queue**, in the same words §13.6 uses for strict stock. **3.60 had recorded the opposite as a deliberate decision**, reasoning that a return refunding more than was sold is *money leaving twice, not a stale document*. That is sound for an **online** attempt, where the refusal precedes any movement of money, and backwards for a queued one, where the money moved first — refusing to record a refund does not un-pay it. The 3.60 entry is corrected in place rather than deleted, because a wrong judgment recorded as settled is worse than none: it stops the next reader re-examining it. **The rule in §14.4 gave the right answer and was under-applied**: it was run against §8.5's eleven status codes and not against §14.5's twelve offline rows, which is where the question *what does the till not know when it decides this?* actually bites |
 | **3.60** | 2026-09-12 | **The rule 3.59 wrote down found two defects older than itself.** §14.4's new principle — *a status that parks must be reachable only for documents that were never valid* — was applied to all eleven `422`s in §8.5, and two of them had been wrong since v3.49. **`customer-blocked` was a flat `422`** with no on-sync variant, while §14.6 accepted and flagged the *credit limit* — the other half of the same family of control (§6.3, §6.13). An admin blocking someone mid-afternoon stranded every queued debt sale to that customer on every offline till, permanently, with the goods already gone. There is now `customer-blocked-on-sync`, a §14.6 row and a `ReviewFlag` value — and **`isBlocked` joins the catalogue cache**, so the common case is refused at the counter where a refusal is useful rather than in a list an hour later. **And strict stock mode was binding the queue.** §6.11 lets a shop refuse a sale that would drive stock negative; §8.5 returned `insufficient-stock-strict` as a `422`, so in those shops every offline sale that outran stock parked — against §13.6's own argument that *"refusing the record does not stop"* goods leaving. Strict mode now binds **the counter, never the queue**: by the time a queued sale drains, the refusal it exists to make has already been overtaken. `return-exceeds-sold` was audited and **wrongly left as it is** — see 3.61, which reverses it. The reasoning given (*money leaving twice, not a stale document*) describes an **online** attempt, where the refusal happens before any money moves; it is backwards for a queued return, where the cash left the drawer at the counter before the check could run. **Both defects had been read past four times**; neither row is wrong on its own, and until 3.59 nothing in the document told a reader to hold §8.5 against the queue |
@@ -529,6 +532,45 @@ customer. The default path should need the fewest taps; everything else is one t
 
 **10. Speed is a feature of trust.** Fast software feels reliable. A spinner during
 checkout does more damage than a missing report.
+
+### 3.1 When rule 1 yields
+
+Rule 1 is the rule this product rests on — §2.3 hangs the whole adoption case on it — and it is
+cited throughout this document. It also has exceptions, each argued where it appears and, until
+now, **collected nowhere**. A reader could not answer *"when may Simon refuse a sale?"* without
+reading eight sections, and an implementer building the till met each one wherever it happened to
+be written. This is the table that answers it.
+
+**A sale cannot be completed at all:**
+
+| Refused when | Specified in | Why this is not rule 1 failing |
+|:--|:--|:--|
+| No tax regime is set | §10.8, §7.1 | The shop is not trading yet. Guessing a rate writes a wrong `taxRateBp` onto a line §10.8 makes immutable — booking a number nobody chose is not degrading gracefully |
+| The settings cache is empty on a till that has never synced | §14.4 | The same: a device being set up is not a till in service |
+| Stock would go negative **and the shop is in strict mode** | §13.6, §6.11 | The owner's deliberate opt-out. The default is warn-and-allow, because the goods are leaving either way |
+| A discount exceeds the **offline discount ceiling** | §6.11, §14.5 | A bounded allowance whose bound was reached. Below the ceiling it completes and is flagged on sync |
+| No shift is open | §8.5 `shift-not-open` | The basket survives (§6.6) and opening a shift is two taps. Nothing is lost and nothing waits on the network |
+
+**A sale on credit is refused; the same basket still sells for cash:**
+
+| Refused when | Specified in | Why this is not rule 1 failing |
+|:--|:--|:--|
+| The customer is blocked | §6.3, §6.13 | The *sale* is not blocked, the *credit* is. Only an admin unblocks; discovered on sync it is flagged, never reversed (§14.6) |
+| The credit limit is exceeded **in strict mode** | §12.2, §6.11 | The owner's opt-out again. The default warns and allows an admin override with a reason |
+| The **offline debt cap** is reached | §6.11, §14.5 | A bounded allowance while the limit is uncheckable. Take cash, or wait for the connection |
+
+**Three families, and naming them is the point.** Every refusal above is one of: *the shop is not
+yet trading*, *the owner deliberately opted out*, or *a bounded allowance reached its bound*. A
+proposed refusal that fits none of those three is rule 1 failing, and should be designed away
+rather than documented. That test is what this table is for.
+
+**Operations blocked offline are a different thing and live in §14.5** — receiving, stocktake, a
+price change, reports, printing, the cash drawer, a return against a sale made on another device.
+None of them is a sale, nobody is standing at the counter with money, and rule 1 does not reach
+them.
+
+**Adding a refusal means adding a row here**, the way adding a feature means adding a row to §9's
+requirement index.
 
 ---
 
@@ -1566,6 +1608,7 @@ The client maps `type` to a resource key; the server never sends user-facing pro
 | `credit-limit-exceeded-on-sync` | **warning on `200`** | «Պարտքը գերազանցել է սահմանաչափը» | Nothing at the till. The sale posts and goes to the owner's needs-attention list (§14.6) |
 | `product-deactivated-on-sync` | **warning on `200`** | «Ապրանքն այլևս ակտիվ չէ» | Nothing at the till. The sale posts; the owner reviews the product (§14.6) |
 | `return-exceeds-sold` | `422` | «Վերադարձը գերազանցում է վաճառվածը» | Reduce the quantity; the original sale's remaining amount is shown. **Online only** — see the row below |
+| `held-basket-after-close` | **warning on `200`** | «Չավարտված զամբյուղ՝ փակված հերթափոխից» | Nothing at the till that sent it. The basket posts `HELD`, posted no money, and joins the owner's needs-attention list, where any open shift can resume it or void it (§12.1, §14.6) |
 | `return-exceeds-sold-on-sync` | **warning on `200`** | «Վերադարձը գերազանցել է վաճառվածը» | Nothing at the till. The refund already left the drawer, so the return posts and goes to the owner's needs-attention list (§14.6). Refusing to record a refund does not un-pay it |
 | ~~`sale-already-returned`~~ | **struck** | — | **Removed 2026-09-12.** It was a per-*sale* block, and §12.4 is emphatic that the check is *"per line, not per sale, or two half-returns pass a whole-sale test"* — so a customer could not bring a second item back on Thursday. Its guidance ("open the existing return") assumed one return per sale, which §6.5 and §27.6 both contradict. `return-exceeds-sold` already covers the only case it could legitimately fire on. A frozen `type` that contradicts a settled rule is a build instruction someone will follow, which is why it is struck here rather than left to be noticed |
 | `price-changed-on-sync` | **warning on `200`** | «Գինը փոխվել է այս վաճառքից հետո» | Nothing at the till. The sale stands at the price the customer was quoted; the owner reviews it (§14.6, §15.3) |
@@ -1671,7 +1714,7 @@ answer, and so a requirement cannot quietly lose its acceptance criterion during
 | **FR-SELL-02** | Four first-class input paths: HID, camera, quick tiles, search | §6.1 | §27.1 |
 | **FR-SELL-03** | Quick tiles auto-populated from sales velocity | §6.1 | — |
 | **FR-SELL-04** | Quantity keypad honours the product's `decimalPlaces` | §6.1, §10.2 | — |
-| **FR-SELL-05** | Held sales survive an app restart and are resumable from any till, moving to the shift that completes them | §12.1, §11 `Sale.shiftId` | §27.23 |
+| **FR-SELL-05** | Held sales survive an app restart and are resumable from any till, moving to the shift that completes them; one parked offline cannot block its shift from closing and is flagged on arrival rather than rejected | §12.1, §11 `Sale.shiftId`, §14.6 | §27.23 |
 | **FR-SELL-06** | Split tender across cash, card and debt in any combination | §6.2, §11 | §27.2 |
 | **FR-SELL-07** | Change computed and shown as the largest figure on screen | §6.2 | §27.1 |
 | **FR-SELL-08** | Discounts capped by role; admin PIN plus a reason above the cap | §12.1, §16.3 | §27.16 |
@@ -1754,7 +1797,7 @@ a rule reminds you they exist.
 | **2. The rules** | §10, §12–§14, §16, §19 — whichever section specifies it | Is the behaviour written once, where it will be read? |
 | **3. The interfaces** | §15 the endpoint · §16.5 what it strips | Can a client reach it, and does it leak cost? |
 | **4. The surfaces** | §6 the screen and the journey · §8.5 the error type | Can a person do it, and see it fail? |
-| **5. The observers** | §10.7 audit · §20.2 report · §9 this index · §27 acceptance · §23.1 layer · §24.2 assumption · §21 budget · §26.2 decision | **Who watches it, and will the trail explain itself in six months?** |
+| **5. The observers** | §10.7 audit · §20.2 report · §9 this index · §27 acceptance · §23.1 layer · §24.2 assumption · §21 budget · §26.2 decision · **§3.1 if it refuses a sale** | **Who watches it, and will the trail explain itself in six months?** |
 
 **Category 1's second question was added late, and it earned its place.** Every time a rule moved
 from *blocking* to *flagging* — a credit limit breached on sync, a customer blocked while a till
@@ -2213,12 +2256,12 @@ states it as a linked line rather than having its variance silently rewritten. `
 actor the movement already carries would be a value stored twice, and several items written off
 together are simply several movements: §20.2 aggregates movements, not documents. A movement of
 any **other** type with no source is a bug. `reasonCode` is required when `type = WRITE_OFF` and null otherwise — free text cannot be charted, and §20.2's "write-offs by reason" is the whole point of §13.5 |
-| **ReviewFlag** | `id`, `type` (NEGATIVE_STOCK/CREDIT_LIMIT_ON_SYNC/PRODUCT_DEACTIVATED_ON_SYNC/LEDGER_CACHE_DRIFT/PRICE_CHANGED_ON_SYNC/DEVICE_CLOCK_SKEW/COST_VARIANCE/DISCOUNT_ABOVE_CAP_ON_SYNC/TAX_RATE_CHANGED_ON_SYNC/CUSTOMER_BLOCKED_ON_SYNC/RETURN_EXCEEDS_SOLD_ON_SYNC), `sourceType`, `sourceId`, `productId?`, `customerId?`, `note`, `createdAt`, `resolvedAt?`, `resolvedBy?` | **The durable state behind every warning.** §15.2 requires a warning to be read back from what the transaction wrote rather than re-derived; this is that row. One model serves §13.6's recount list, §14.6's needs-attention list, §19.5's owner alerts and §8.5's warning types, whose names it mirrors. `LEDGER_CACHE_DRIFT` is what §10.4 means by "surfaces drift rather than silently correcting it" — a discovered mismatch has to land somewhere a person will see it, and it now covers `avgCostMdram` as well as `stockQty`. `PRICE_CHANGED_ON_SYNC` carries §15.3's price-drift outcome: an offline till quotes from a cache that may be days old, and the sale is accepted at the quoted price and flagged rather than refused after the goods have gone. `DEVICE_CLOCK_SKEW` is raised when a device's `createdAt` differs from the server's `receivedAt` beyond a threshold — unmodelled, skew corrupts aging buckets, shift attribution and daily reports at once, and does it silently. `COST_VARIANCE` fires when a receipt's unit cost is far from the last one for that product (§13.2): the `STOCK` role types the number that moves the owner's margin and is structurally unable to see the result, so the check has to live where the typing happens. `DISCOUNT_ABOVE_CAP_ON_SYNC` is the durable half of §14.5's offline discount allowance — re-auth is impossible with the LAN down (§16.2), so a discount between the ordinary cap and §6.11's offline ceiling completes at the counter and lands here instead of being refused. Like the offline debt cap it trades a control for a sale, and it is read in §20.2's discount-by-worker report as well as the needs-attention list, because a control that relaxes offline is a control a worker can learn to relax |
+| **ReviewFlag** | `id`, `type` (NEGATIVE_STOCK/CREDIT_LIMIT_ON_SYNC/PRODUCT_DEACTIVATED_ON_SYNC/LEDGER_CACHE_DRIFT/PRICE_CHANGED_ON_SYNC/DEVICE_CLOCK_SKEW/COST_VARIANCE/DISCOUNT_ABOVE_CAP_ON_SYNC/TAX_RATE_CHANGED_ON_SYNC/CUSTOMER_BLOCKED_ON_SYNC/RETURN_EXCEEDS_SOLD_ON_SYNC/HELD_BASKET_AFTER_CLOSE), `sourceType`, `sourceId`, `productId?`, `customerId?`, `note`, `createdAt`, `resolvedAt?`, `resolvedBy?` | **The durable state behind every warning.** §15.2 requires a warning to be read back from what the transaction wrote rather than re-derived; this is that row. One model serves §13.6's recount list, §14.6's needs-attention list, §19.5's owner alerts and §8.5's warning types, whose names it mirrors. `LEDGER_CACHE_DRIFT` is what §10.4 means by "surfaces drift rather than silently correcting it" — a discovered mismatch has to land somewhere a person will see it, and it now covers `avgCostMdram` as well as `stockQty`. `PRICE_CHANGED_ON_SYNC` carries §15.3's price-drift outcome: an offline till quotes from a cache that may be days old, and the sale is accepted at the quoted price and flagged rather than refused after the goods have gone. `DEVICE_CLOCK_SKEW` is raised when a device's `createdAt` differs from the server's `receivedAt` beyond a threshold — unmodelled, skew corrupts aging buckets, shift attribution and daily reports at once, and does it silently. `COST_VARIANCE` fires when a receipt's unit cost is far from the last one for that product (§13.2): the `STOCK` role types the number that moves the owner's margin and is structurally unable to see the result, so the check has to live where the typing happens. `DISCOUNT_ABOVE_CAP_ON_SYNC` is the durable half of §14.5's offline discount allowance — re-auth is impossible with the LAN down (§16.2), so a discount between the ordinary cap and §6.11's offline ceiling completes at the counter and lands here instead of being refused. Like the offline debt cap it trades a control for a sale, and it is read in §20.2's discount-by-worker report as well as the needs-attention list, because a control that relaxes offline is a control a worker can learn to relax |
 | **Customer** | `id`, `fullName`, `nameSearch`, `phone`, `discountBp`, `creditLimit`, `isBlocked`, `isActive`, `mergedIntoId?`, `anonymisedAt?`, `notes` | `nameSearch` is the same normalised/transliterated form `Product` carries (§20.3) — a worker types `Dav` to find `Դավիթ` on §6.3, which is the screen the product exists for, and Latin-typed search cannot be product-only. `anonymisedAt` marks an erasure (§19.6): name and phone go null and the ledger stays. Limit + block are the controls; nothing else stops unbounded debt. `isActive` because §6.13 does not offer deletion, and `mergedIntoId` because a merged record must leave a forwarding address — an old receipt naming the absorbed customer still has to resolve |
 | **DebtEntry** | `id`, `customerId`, `type`, `amount`, `saleId?`, `dueDate?`, `reversesId?`, `createdAt`, `userId` | §10.6. `reversesId` because §8.2's fix for a debt sale on the wrong customer is an admin correction, and §10.7 requires a correction to be a **linked** reversing document rather than two rows that happen to cancel out |
 | **DebtAllocation** | `id`, `creditEntryId`, `chargeEntryId`, `amount` | Enables aging. `creditEntryId` points at either a `PAYMENT` or a credit `ADJUSTMENT` — a refund onto a debt is the latter (§12.4), and naming the field after payments alone would have made that look irregular. **This is a derived projection, not a ledger row** (§10.6) — the same standing as `Product.stockQty`, and the only member of the debt model that is not append-only. It is recomputed from charges, payments and overrides, never hand-edited, and drift-checked like §10.4's caches. That is what makes §14.5's *"allocation recomputed on sync"* legal instead of a contradiction, and it is why two offline tills allocating against one charge can no longer produce a row that breaks its own `CHECK` |
 | **AllocationOverride** | `id`, `creditEntryId`, `chargeEntryId`, `amount`, `userId`, `createdAt` | **The stored intent behind a hand-made allocation** — *"this one, not that one; that job isn't paid yet."* Append-only and audited, because it is a decision a person made; the `DebtAllocation` rows it steers are derived from it. Without it, a manual override would have to be expressed by editing the projection, which is the thing a projection may never be |
-| **Shift** | `id`, `userId`, `openedAt`, `closedAt?`, `openingFloat`, `expectedCash`, `countedCash`, `countedBreakdown`, `variance`, `status` (OPEN/CLOSING/CLOSED), `unsyncedAtClose`, `notes` | `countedBreakdown` stores the denomination counts from §6.6. `unsyncedAtClose` records how many sales were still queued when the shift closed, so the Z-report can state it — a Z-report that silently omits sales is worse than one that admits to them (§6.6) |
+| **Shift** | `id`, `userId`, `openedAt`, `closedAt?`, `openingFloat`, `expectedCash`, `countedCash`, `countedBreakdown`, `variance`, `status` (OPEN/CLOSING/CLOSED), `unsyncedAtClose`, `notes` | `countedBreakdown` stores the denomination counts from §6.6. `unsyncedAtClose` records how many sales were still queued when the shift closed, so the Z-report can state it — a Z-report that silently omits sales is worse than one that admits to them (§6.6). **`expectedCash` and `variance` are computed live while the shift is `OPEN` or `CLOSING`, and frozen at `CLOSED`** — after that the stored value is the figure that was counted, printed and signed, and it is never recomputed, exactly as `Sale.priceBasis` is never recomputed from the current setting (§10.8). A `ShiftLateArrival` is stated beside it and never folded into it (§12.5). **They are deliberately not drift-checked** (§10.4): a closed shift's stored figure is a historical fact rather than a cache, so a mismatch against a replay is the late arrivals doing their job, not drift. Every other duplicated value in this system is declared somewhere; these two were the exception |
 | **CashMovement** | `id`, `shiftId`, `type` (PAY_IN/PAY_OUT/DROP/NO_SALE/REPAYMENT/REFUND), `amount`, `reason`, `userId` | Cash leaves the drawer for non-sale reasons constantly; unmodelled, it destroys every reconciliation. **`NO_SALE` carries `amount = 0`** — it records only that the drawer was opened outside a sale, which is the classic cover for taking cash and the reason §16.3 re-authenticates it. **`REFUND` is cash leaving the drawer for a sale return** (§12.4), and it exists because §12.5's formula had no term for one: a shift taking a single 8 000 ֏ cash refund closed 8 000 ֏ short, and «Տարբերություն −8 000 ֏» appeared on the one screen §6.6 says exists to catch theft. It is its own type rather than a `PAY_OUT` with a reason, because §20.2 must be able to separate refunds from supplier payments — folding them together would cost the shrinkage report its most important category |
 | **ShiftLateArrival** | `id`, `shiftId`, `sourceType`, `sourceId`, `amount`, `arrivedAt` | **A sale, repayment or cash movement that reached the server after its shift had closed.** It posts normally and keeps naming the closed shift — what this row adds is that the Z-report can *say so* as a linked line («+31 000 ֏ ստացվել է փակումից հետո») rather than a closed period's variance being silently rewritten or the money going missing from the sales report. `Shift.unsyncedAtClose` records how many were outstanding; this records what actually arrived, which is the difference between a count and a reconciliation. `amount` is signed, because a late `REFUND` reduces the drawer |
 | **User** | `id`, `name`, `pinHash`, `recoveryCodeHash?`, `role`, `isActive`, `failedAttempts`, `lockedUntil`, `coachMarksSeen` | §16.2, §16.4. `recoveryCodeHash` exists only on `ADMIN` rows: generated at setup (§7.1), shown once, hashed like a PIN, single-use and regenerated after use. It is the third way out of a lockout when the locked-out person is the only admin. `coachMarksSeen` lists the screens this person has already been shown (§7.5) — per user, not per device, because Գոռ should not be taught the till again just because he picked up the other phone |
@@ -2274,7 +2317,7 @@ referenced.
 | `DRAFT` | `HELD` | Պահել — park the basket | Basket not empty |
 | `HELD` | `DRAFT` | Resumed | **Any open shift** — that is the point of parking it on the server (§12.1). The sale belongs to the shift that *completes* it, which is the one §12.5 reconciles |
 | `DRAFT` / `HELD` | `COMPLETED` | Payment covers the total | Σ payments ≥ `total`; commits per §13.1 |
-| `DRAFT` / `HELD` | `VOIDED` | Abandoned by the worker | Never automatic: a shift **blocks** on open baskets rather than voiding them (§6.6, §8.5 `shift-has-open-baskets`) |
+| `DRAFT` / `HELD` | `VOIDED` | Abandoned by the worker | Never automatic: a shift **blocks** on open baskets rather than voiding them (§6.6, §8.5 `shift-has-open-baskets`) — **except one that arrived after its shift closed**, which nothing blocked and which is voidable from the needs-attention list (§12.1, §14.6) |
 | `COMPLETED` | — | **Terminal** — corrected only by a linked `SaleReturn` | — |
 
 `COMPLETED` and `VOIDED` are both terminal. There is deliberately no edge out of `COMPLETED`.
@@ -2286,7 +2329,7 @@ referenced.
 | — | `OPEN` | Worker opens with a counted float | No other `OPEN` shift for this user |
 | `OPEN` | `CLOSING` | Close begun; expected cash computed | Unsynced sales acknowledged (§6.6) |
 | `CLOSING` | `OPEN` | Cancelled | Nothing counted yet |
-| `CLOSING` | `CLOSED` | Counted, variance recorded, Z-report issued | Every `DRAFT`/`HELD` sale **whose `shiftId` is this shift** is completed, voided, **or has been resumed on another till** — which moves it off this shift (§11 `Sale.shiftId`). One till's open basket never blocks another till's close |
+| `CLOSING` | `CLOSED` | Counted, variance recorded, Z-report issued | Every `DRAFT`/`HELD` sale **whose `shiftId` is this shift and which the server has** is completed, voided, **or has been resumed on another till** — which moves it off this shift (§11 `Sale.shiftId`). One till's open basket never blocks another till's close. **A basket parked offline and not yet drained cannot be seen and does not block** (§12.1); it arrives afterwards and is flagged rather than rejected (§14.6) |
 | `CLOSED` | — | **Terminal** — sessions bound to it end (§16.3). A document arriving afterwards posts against it and writes a `ShiftLateArrival` (§11); it never reopens the shift, never rewrites the printed Z-report's variance, and is never rejected — §14.2's first guarantee outranks a tidy period | — |
 
 **PurchaseOrder** *(v2, §9)* — `DRAFT` → `OPEN` → `PARTIAL` → `RECEIVED`, with `CANCELLED`
@@ -2433,9 +2476,20 @@ locked is a lost sale and a lost user.
 
 **They live on the server when it is reachable** — parking writes the `Sale` in `HELD` status
 (§11), so any till can resume it and a dead battery costs nothing. Offline, the basket is held
-in IndexedDB and promoted on reconnect (§14.4). A `HELD` sale blocks its shift from closing
-until it is completed or voided (§11, *Lifecycles*), because a Z-report with a basket still
-open is not a closed period.
+in IndexedDB and promoted on reconnect (§14.4). A `HELD` sale **the server knows about** blocks
+its shift from closing until it is completed or voided (§11, *Lifecycles*), because a Z-report
+with a basket still open is not a closed period.
+
+**A basket parked on a till that has not synced since is the exception, and it cannot be
+otherwise**: the server cannot block on a document it has never received, and §14.4 deliberately
+counts parked baskets apart from unsynced sales so that one left on the counter all afternoon
+never reads as money in transit — which means §6.6's acknowledgement never mentions it either.
+The shift closes. When the basket finally drains it arrives `HELD` against a `CLOSED` shift, and
+that is **not** an error: it posted nothing, so nothing is wrong with the Z-report. It joins the
+needs-attention list as `held-basket-after-close` (§8.5, §14.6), where it can be resumed by any
+open shift — the `HELD → DRAFT` guard already allows exactly that — or voided. Without that
+disposition it would sit `HELD` against a closed shift with no exit, since the `VOIDED` guard
+defers to a shift block that has already happened.
 
 ### 12.2 Debt sale
 Credit-limit check → warn and allow override with reason (rule 1), unless set to strict.
@@ -2503,8 +2557,15 @@ variance = counted − expected
 ```
 
 Every term after `openingFloat` is a query over rows rather than a running total, so the
-drawer can be recomputed from the ledger at any moment (rule 3). `NO_SALE` carries
-`amount = 0` and cannot move the figure.
+drawer can be recomputed from the ledger at any moment (rule 3) — **while the shift is open**.
+`NO_SALE` carries `amount = 0` and cannot move the figure.
+
+**At `CLOSED` the figure stops being a query and becomes a record.** `Shift.expectedCash` and
+`Shift.variance` freeze there (§11), because the Z-report has been printed and signed and the
+whole point of the late-arrival rule below is that it is not rewritten. Recomputing a closed
+shift from the ledger would give a different answer the moment anything arrived late — which is
+the failure this section exists to prevent, reached by obeying the sentence above one step too
+far.
 
 **Repayments are counted exactly once**, as `REPAYMENT` movements. An earlier form of this
 formula listed `repayments` and `payIns` as separate terms while §12.3 wrote a cash movement —
@@ -2825,7 +2886,7 @@ be posted twice on purpose.
 | Scan, build a basket, take cash | ✅ | Catalogue cached |
 | Complete a cash/card sale | ✅ | Queued, idempotent |
 | Debt sale | ⚠️ capped | The limit cannot be checked offline. Allowed up to the **offline debt cap** — default **20 000 ֏** per customer per outage (§6.11) — then flagged for owner review on sync (§14.6) |
-| Park a basket | ✅ | Queued like anything else — but **no other till can resume it until this one syncs** (§12.1), because until then the basket exists only on this device |
+| Park a basket | ✅ | Queued like anything else — but **no other till can resume it until this one syncs** (§12.1), because until then the basket exists only on this device. For the same reason it **cannot block its shift from closing**: the server has never seen it. It arrives afterwards, posts `HELD`, and is flagged rather than rejected (§14.6) |
 | Repayment | ✅ | Additive; allocation is a projection and is re-derived on sync (§10.6) |
 | Sale return, against a sale made on **this** device | ✅ | Queue-drained and idempotent (§14.3). The original sale is in local state, so §6.5's "start from the original" holds. **What the till cannot know is what anyone else returned against that line** — the sale may have synced and been partly returned elsewhere. It refunds anyway, and the excess is flagged on sync rather than parked (§12.4, §14.6), because the cash left the drawer at the counter |
 | Sale return, against any **other** sale | ❌ | The catalogue cache holds products and customers, not sales (§15.4) — there is nothing to start from. Block clearly rather than offer a blind return, which is admin-only for good reason (§6.5) |
@@ -2846,6 +2907,7 @@ only in the server's own head is a flag nobody acts on.
 |:--|:--|:--|
 | Stock would go negative | `insufficient-stock` | The product joins the recount list (§13.6). **In strict shops too** — strict mode (§6.11) binds what a till may complete **at the counter**, not what the server may accept **from a queue**. By the time a queued sale drains, the refusal strict mode exists to make has already been overtaken: the goods left the shop, and §13.6's own argument is that *"refusing the record does not stop that"*. A strict shop that parked every offline sale outrunning its stock would lose exactly the sales it most needs recorded |
 | Credit limit breached by a queued sale | `credit-limit-exceeded-on-sync` | The owner's needs-attention list |
+| A basket parked offline arrives after its shift closed | `held-basket-after-close` | The owner's needs-attention list. The server could not block on a basket it had never received (§12.1), and the basket posted nothing, so the Z-report stands; it is resumable by any open shift or voidable from the list |
 | A queued return exceeds what is left on the line | `return-exceeds-sold-on-sync` | The owner's needs-attention list. Another till returned against that line while this one was offline; the cash has already gone (§12.4), so the record follows the money rather than the rule |
 | Customer blocked while the till was offline | `customer-blocked-on-sync` | The owner's needs-attention list. The block and the limit are one family of control (§6.3, §6.13) and §14.6 handled only one of them: a block applied mid-afternoon would otherwise have stranded every queued debt sale to that customer on every offline till |
 | Product was deactivated meanwhile | `product-deactivated-on-sync` | The owner's needs-attention list |
@@ -3972,6 +4034,10 @@ already decided, and when?"*.
 | 2026-09-12 | That band is **the range of landed costs actually paid for the product** | §13.7 | Replaced `[0, max(…)]`, which admitted the exact figure §27.22 requires it to refuse |
 | 2026-09-12 | **An offline discount above the cap is accepted on sync** up to §6.11's ceiling and flagged, not `422`-parked | §15.3, §14.5, §14.6 | §14.2's first guarantee, which the unconditional `422` had broken through the outbox |
 | 2026-09-12 | **Journeys are numbered once, in §6** | §5.4, §6 | Two sets both starting at J1, disagreeing about J3 |
+| 2026-09-13 | **§3.1 collects every condition under which a sale is refused**, and names the three families a legitimate refusal belongs to | §3.1, §9 | Rule 1 is the rule the product rests on and its exceptions were argued in eight places and collected in none |
+| 2026-09-12 | **§27.7 asserts a worked expected-cash figure**, and names the wrong answers the two historical bugs produce | §27.7, §12.5 | It asserted three activities and no values, so a wrong §12.5 formula passed it completely |
+| 2026-09-12 | **`Shift.expectedCash` and `variance` freeze at `CLOSED`**, computed live before that, never drift-checked | §11, §12.5 | Stored and recomputable with nothing saying which wins; a late arrival would have moved a printed, signed figure |
+| 2026-09-12 | **A basket parked offline cannot block its shift from closing**, and arrives flagged rather than rejected | §12.1, §11, §14.6 | The server cannot block on a document it has never received, and §14.4 keeps parked baskets out of the unsynced-sales count on purpose |
 | 2026-09-12 | **§11's validation rows split into `CHECK` and counter rule** where the counter rule is uncheckable offline; §9 gains *"does any validation rule forbid what this now permits?"* | §11, §9 | An accept-and-flag decision is a schema change by default, and §11 had been missed on four of the five made this session |
 | 2026-09-12 | **A queued return that exceeds the line is flagged, not parked** — reverses the judgment recorded in 3.60 | §12.4, §8.5, §14.6 | The refund leaves the drawer at the counter; parking the record leaves the cash gone and nothing accounting for it |
 | 2026-09-12 | **A customer block discovered on sync is a flag, not a park**; `isBlocked` joins the catalogue cache | §8.5, §14.6, §14.4 | The block and the limit are one family and §14.6 handled only the limit — a block applied mid-afternoon stranded every queued debt sale |
@@ -4030,7 +4096,27 @@ Simon v1 is done when, **in a real store**:
 5. Debtor aging matches the owner's paper Nisya book after migration.
 6. A partial return restocks the correct quantity and reverses cost at the **original** unit
    cost.
-7. Shift close computes expected cash, records the counted variance, and produces a Z-report.
+7. Shift close computes expected cash, records the counted variance, and produces a Z-report —
+   **against a worked figure, with every term in §12.5's formula present exactly once**:
+
+   | Term | ֏ |
+   |:--|--:|
+   | opening float | 20 000 |
+   | + cash sales | 147 000 |
+   | + repayment in cash | 15 000 |
+   | + pay-in | 5 000 |
+   | − cash refund | 8 000 |
+   | − pay-out | 12 000 |
+   | − drop to the safe | 50 000 |
+   | **= expected** | **117 000** |
+
+   Counted at 117 000 the variance is **zero**; counted at 116 500 it is **−500**, recorded, and a
+   note is prompted (§6.6). *The two wrong answers matter as much as the right one, because both
+   have actually been in this document (§12.5): a repayment counted twice gives **132 000**, and a
+   missing refund term gives **125 000**. A test built from a criterion without figures would have
+   passed on either.* An earlier wording asserted only that close *"computes expected cash, records
+   the counted variance, and produces a Z-report"* — three activities and no values, which a shift
+   close built on a wrong formula satisfies completely.
 8. Selling continues through a two-minute Wi-Fi outage, and every queued sale syncs **exactly
    once**, with no duplicates.
 9. A `WORKER` session obtains no cost field from **any** API endpoint, and a `STOCK` session
