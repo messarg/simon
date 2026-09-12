@@ -79,8 +79,16 @@ sale. Failed print → offer reprint from the sale record; the sale itself is al
 
 The realistic support scenario. Provide:
 
-- **A health/diagnostics screen** the owner can read over the phone: version, DB size, last
-  backup time and result, pending queue depth, ledger-vs-cache drift, disk free.
+- **Two endpoints, not one** (PRD §19.5). `GET /health` is the **liveness probe** the client
+  polls to decide online/offline — unauthenticated, status and version only, nothing more.
+  `GET /diagnostics` is everything else and is **`ADMIN`-only**: version, DB size, WAL age, last
+  backup time/result/size, whether a backup passphrase is set (never the passphrase), pending
+  queue depth with parked baskets counted separately, ledger-vs-cache drift, disk free, and the
+  three installation settings (tax regime, price basis, `shop.timezone`).
+  **Do not merge them.** The probe has to answer a client that cannot authenticate; the payload is
+  the shop's business, on a LAN the threat model treats as hostile (PRD §16.1). Neither figure is
+  a cost field, so the field-stripping rule never looks at them — the gate is the route.
+- **A diagnostics screen in Settings** rendering that payload in Armenian, readable down a phone.
 - **An export-diagnostics button** producing one file (recent logs + counts, PII scrubbed) the
   owner can send.
 - Version and build stamp visible in the UI — "which version are you on?" must not require a

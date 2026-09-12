@@ -17,7 +17,7 @@ failure — not remote attackers.
 
 ## Always read first
 
-- `docs/prd.md` §15 (security), §16.5 (personal data)
+- `docs/prd.md` §16 (security & access control), §16.5 (field-level authorization), §19.6 (personal data)
 - `.claude/skills/auth/SKILL.md`
 - `.claude/skills/backend-api/SKILL.md` — field-level projection
 

@@ -75,8 +75,9 @@ npm run build                   # check the printed chunk sizes
 - SQLite is fast; the failure mode is **lock contention**, not query speed. Keep write
   transactions short and free of I/O (see the `backend-api` skill).
 - WAL mode lets reads proceed during a write — verify it is actually on.
-- Index the hot paths: barcode (unique), `StockMovement(productId, createdAt)`,
-  `Sale(completedAt)`, `DebtEntry(customerId, createdAt)`.
+- Index the hot paths: barcode (unique), **`StockMovement(productId, seq)`** — the replay order,
+  never `createdAt` (PRD §10.4) — `Sale(businessDate)`, `Sale(completedAt)`,
+  `DebtEntry(customerId, createdAt)`, `ReviewFlag(resolvedAt, type)`.
 - Watch N+1 in list endpoints with `include`.
 - Reports over a year of movements should be **precomputed or paginated**, never a full
   table scan on the owner's dashboard load.

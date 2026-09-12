@@ -134,6 +134,25 @@ Platform skills:
 | `perf` | Scan latency, bundle, re-renders, SQLite contention |
 | `observability` | Error boundaries, logging, error UX, diagnostics |
 
+Vendored reference skills — third-party, checked in, **reference material rather than authority**.
+Installed with `npx skills add <owner/repo> -s <skill> --copy` and pinned in `skills-lock.json`:
+
+| Skill | Source | Use when | Read the override note first |
+|---|---|---|---|
+| `node` | `mcollina/skills` | Node 22 native TypeScript, type stripping, ESM, async patterns, graceful shutdown, profiling | `backend-api` |
+| `prisma-client-api` | `prisma/skills` | Queries, filters, `select`/`include`, `$transaction` | `backend-api` |
+| `prisma-cli` | `prisma/skills` | `migrate`, `generate`, `validate` | `backend-api` |
+| `prisma-database-setup` | `prisma/skills` | **`references/sqlite.md` only** — the other providers do not apply | `backend-api` |
+| `prisma-upgrade-v7` | `prisma/skills` | Only if we adopt Prisma 7, which requires a driver adapter | `backend-api` |
+| `sqlite-best-practices` | `erayack/sqlite-best-practices` | Pragmas, indexing, query plans, `EXPLAIN QUERY PLAN` | `backend-api` |
+
+**When they conflict, the order is `docs/prd.md` → Simon's own skill → the vendored skill.** These
+are generic and Simon is not: none of them knows about integer drams, the `seq` replay order, a
+single-writer file, or a shop with one PC. `backend-api` has a table of exactly which pages to
+ignore and which Simon overrides — read it before following vendored advice. They are also not
+maintained here: `npx skills update` pulls upstream changes, which may silently reintroduce advice
+we have overridden.
+
 ## Spec tooling
 
 Two generic toolkits live in `.claude/`, wired as slash commands whose bodies delegate to a `SKILL.md`:
@@ -151,7 +170,8 @@ Spawn via the Agent tool for deep or parallel work. Definitions in `.claude/agen
 |---|---|
 | `pos-domain` | Money, costing, stock and debt ledgers, shifts, returns — the arithmetic |
 | `offline` | Outbox, idempotency, sync conflicts, barcode input, PWA |
-| `backend` | Express, Prisma, SQLite, transactions, validation, authorization |
+| `backend` | Express, Prisma, SQLite, transactions, validation, authorization — routes and services |
+| `database` | Prisma schema and migrations, indexes, query plans, pragmas, cache-drift jobs — what is stored and how it is read |
 | `auth` | PIN login, sessions, roles, field-level access, audit |
 | `data` | HTTP services, TanStack Query, forms |
 | `ui` | Components, styling, responsive, a11y, Armenian, audits |
@@ -161,6 +181,10 @@ Spawn via the Agent tool for deep or parallel work. Definitions in `.claude/agen
 ## Conventions
 
 - `.idea/` is gitignored (JetBrains is in use), as is `.claude/settings.local.json`.
+- **`skills-lock.json` is committed.** It pins the vendored skills above to a resolved version, so
+  a fresh clone gets the same reference material. Vendored skills are copied (`--copy`), not
+  symlinked into `node_modules`, because they are read by a human and by an agent long after any
+  install step.
 - `.claude/settings.json` denies reading `.env*`, `**/*.db` and `**/backups/**` — shop data and secrets stay out of context.
 - Work happens on `development`, and local `origin/HEAD` points there. `master` is retained and fast-forwarded from `development`, never committed to directly. **GitHub's repository default is still `master`**, so a PR opened on github.com bases on `master` unless changed, and `git remote set-head origin --auto` will snap `origin/HEAD` back — verify with `git ls-remote --symref origin HEAD` rather than trusting the local ref. Releases are git tags — Simon is installed per shop, so there is no staging or production server to push to.
 - Project instructions live in **this file only**. There is no `.claude/CLAUDE.md`.

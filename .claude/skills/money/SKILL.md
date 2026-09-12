@@ -72,8 +72,26 @@ export function roundHalfUp(numerator: number, denominator: number): number {
    magnitude as the sale of 12.5. Banker's rounding is wrong here — the receipt must mirror
    the original sale exactly or a partial return leaves a one-dram ghost balance.
 3. **Cash rounding is a separate, visible line.** If the store rounds cash to the nearest
-   10 ֏, the sale carries `roundingAdjustment` so `sum(lines) + rounding == total` always
-   holds. Never fold it into a line.
+   10 ֏, the sale carries `roundingAdjustment`. Never fold it into a line.
+4. **The identity depends on the price basis, and there are two of them** (PRD §10.1, §10.8).
+   `sum(lines) + rounding == total` is true only when no sale-level discount was given, and
+   §12.1 offers them:
+
+   ```
+   subtotal = Σ lineTotal                       already-rounded line totals
+
+   tax-inclusive   total = subtotal − discountTotal + roundingAdjustment
+   tax-exclusive   total = subtotal − discountTotal + taxTotal + roundingAdjustment
+   ```
+
+   `Sale.priceBasis` records which one the sale used, so a reprint reproduces the sale rather
+   than recomputing it. Inclusive, `taxTotal` is a memo already inside `total` and never a term.
+5. **A value rounds in its own right when it is stored in an `Int` column of its own** (PRD
+   §10.1) — that rule, not a list to memorise. Currently: the stored weighted average,
+   `SaleLine.lineTax`, `GoodsReceiptLine.landedUnitCostMdram`, `SaleReturnLine.discountShare`,
+   and each `SaleReturnTender.amount`. Having been rounded there, none is re-rounded downstream.
+   A new stored figure joins them by satisfying the rule, not by being added here — §10.1 said
+   "exactly two" for several versions while five qualified, and this line said "five" for one.
 
 ### Integer overflow
 
@@ -110,8 +128,16 @@ export function newAverageCost(
 export function apportionByValue(lineValues: Dram[], cost: Dram): Dram[] { /* ... */ }
 ```
 
-Apportionment **must** sum exactly to the input cost. Distribute the rounding remainder to
-the largest line rather than letting it vanish; assert the sum in a test.
+Apportionment **must** sum exactly to the input amount. Round each share half-up, sum the
+rounded shares, and give the difference to the **largest share**; ties go to the earliest by
+`id`, which is time-sortable, so two implementations agree rather than depending on row order.
+Assert the sum in a test.
+
+**One remainder rule, four callers** (PRD §10.1). The same function serves a receipt's landed
+cost across its lines, a sale-level discount across returned lines
+(`SaleReturnLine.discountShare`), a refund across the tenders the sale was paid with
+(`SaleReturnTender.amount`), and a sale's `roundingAdjustment` across returned lines. Writing a
+second apportioner for any of them is how the two end up rounding differently.
 
 ## Unit of measure
 
@@ -165,7 +191,9 @@ in the project.
 
 - [ ] No `float`/decimal money in Prisma schema — `Int` only
 - [ ] No arithmetic on money outside `domain/money.ts`
-- [ ] Rounding applied exactly once, at the line total
-- [ ] `unitCost` snapshotted onto the sale line
+- [ ] Rounding applied exactly once, at the line total — the five stored-`Int` values above excepted
+- [ ] `unitCost` snapshotted onto the sale line, and `null` cost stays `null`, never `0`
 - [ ] Landed cost apportioned before WAC update, and sums exactly
-- [ ] `sum(lines) + rounding === total` asserted in a test
+- [ ] The identity for the sale's `priceBasis` asserted in a test — **both** forms, and with a
+      sale-level discount present, which is the case the old one-line identity got wrong
+- [ ] Every apportionment goes through one function, remainder to the largest share

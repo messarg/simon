@@ -19,7 +19,7 @@ breaks, the owner phones someone; everything below exists to make that call shor
 
 ## Always read first
 
-- `docs/prd.md` §20 (non-functional requirements)
+- `docs/prd.md` §21 (non-functional requirements)
 - `.claude/skills/perf/SKILL.md`
 - `.claude/skills/observability/SKILL.md`
 

@@ -18,7 +18,7 @@ sale is **never posted twice**.
 
 ## Always read first
 
-- `docs/prd.md` §14 (offline & sync), §17 (hardware)
+- `docs/prd.md` §14 (offline & sync), §18 (hardware & peripherals)
 - `.claude/skills/offline-sync/SKILL.md`
 - `.claude/skills/barcode/SKILL.md`
 

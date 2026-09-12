@@ -18,7 +18,7 @@ not through a browser.
 ## Always read first
 
 - `.claude/skills/testing/SKILL.md`
-- `docs/prd.md` §25 (v1 acceptance criteria) — the E2E shortlist
+- `docs/prd.md` §27 (v1 acceptance criteria) — the E2E shortlist
 - `.claude/skills/money/SKILL.md` and `ledger/SKILL.md` — the invariants to assert
 
 ## Non-negotiable constraints

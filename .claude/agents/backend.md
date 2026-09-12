@@ -17,7 +17,8 @@ Self-hosted on the shop PC. No cloud, no SSR, no serverless — and no ops team 
 
 ## Always read first
 
-- `docs/prd.md` §11 (domain model), §13.1 (atomicity), §15 (security), §21 (architecture)
+- `docs/prd.md` §11 (domain model), §13.1 (atomicity), §15 (API contracts), §16 (security & access
+  control), §22 (architecture)
 - `.claude/skills/backend-api/SKILL.md`
 - `.claude/skills/ledger/SKILL.md` — transaction rules
 - `backend/prisma/schema.prisma`
