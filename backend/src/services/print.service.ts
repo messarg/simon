@@ -11,6 +11,7 @@ import { loadSaleReturn } from "./sale-return.service.ts";
 import { loadSale } from "./sale.service.ts";
 import { readSettings } from "./settings.service.ts";
 import { shiftReport } from "./shift.service.ts";
+import { customerProjection } from "./debt.service.ts";
 
 const WIDTH = 32;
 const money = (n: number) => groupDigits(n).replace(/\u00a0/g, " ");
@@ -70,6 +71,17 @@ export async function printReturnReceipt(db: Db, returnId: string) {
   for (const t of saleReturn.tenders) lines.push(row(t.method === "CASH" ? R.cash : t.method === "CARD" ? R.card : R.debt, `-${money(t.amount)}`));
   lines.push(row(R.total, `-${money(saleReturn.total)}`));
   return send(`return-${returnId}`, lines);
+}
+
+export async function printRepaymentReceipt(db: Db, paymentId: string) {
+  const settings = await readSettings(db);
+  const entry = await db.debtEntry.findUnique({ where: { id: paymentId }, include: { customer: true, user: { select: { name: true } } } });
+  if (!entry || entry.type !== "PAYMENT") throw problem("not-found");
+  const { outstanding } = await customerProjection(db, entry.customerId);
+  const lines = [settings["shop.name"], rule, row(R.repayment, when(entry.createdAt, settings["shop.timezone"])), `${R.customer}: ${entry.customer.fullName ?? "—"}`, `${R.cashier}: ${entry.user.name}`, rule,
+    row(entry.method === "CARD" ? R.card : R.cash, money(entry.amount)), rule,
+    outstanding >= 0 ? row(R.remaining, money(outstanding)) : row(R.credit, money(-outstanding))];
+  return send(`repayment-${paymentId}`, lines);
 }
 
 export async function printShiftReport(db: Db, shiftId: string) {

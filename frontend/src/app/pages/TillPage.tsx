@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { EmptyState, MoneyText, QuantitySheet, ReauthSheet } from "@/components/shared";
 import { Button } from "@/components/ui/button.tsx";
 import { Sheet } from "@/components/ui/sheet.tsx";
+import { DebtPanel } from "@/features/debt/DebtPanel.tsx";
 import { ReturnsSheet } from "@/features/returns/ReturnsSheet.tsx";
 import { basketStore, basketTotals, discountState, taxRateFor, useBasket, type BasketLine } from "@/features/till/basket.ts";
 import { CameraSheet } from "@/features/till/CameraSheet.tsx";
@@ -132,12 +133,12 @@ export function TillPage() {
     <div className="flex min-h-0 flex-1 flex-col md:flex-row">
       <section className="flex min-h-0 flex-1 flex-col">
         <div className="flex items-center gap-1 overflow-x-auto border-b border-border bg-card px-2 py-1.5">
-          <Button variant="ghost" size="sm" onClick={() => setSheet("held")}><PauseCircle />{t("till.held")}{parkedHere > 0 ? ` · ${parkedHere}` : ""}</Button>
-          <Button variant="ghost" size="sm" onClick={() => { setReturnNumber(null); setSheet("returns"); }}><Undo2 />{t("till.returns")}</Button>
-          <Button variant="ghost" size="sm" disabled={!hasLines} onClick={() => setSheet("discount")}><Percent />{t("till.discount")}</Button>
+          <Button variant="ghost" size="sm" className="shrink-0" onClick={() => setSheet("held")}><PauseCircle />{t("till.held")}{parkedHere > 0 ? ` · ${parkedHere}` : ""}</Button>
+          <Button variant="ghost" size="sm" className="shrink-0" onClick={() => { setReturnNumber(null); setSheet("returns"); }}><Undo2 />{t("till.returns")}</Button>
+          <Button variant="ghost" size="sm" className="shrink-0" disabled={!hasLines} onClick={() => setSheet("discount")}><Percent />{t("till.discount")}</Button>
           <span className="flex-1" />
-          {hasLines && <Button variant="ghost" size="sm" onClick={() => void hold()} disabled={!shiftOpen}><Clock />{t("till.hold")}</Button>}
-          {hasLines && <Button variant="ghost" size="sm" aria-label={t("till.clear")} onClick={() => { const snapshot = basket; basketStore.clear(); toast(t("till.basketCleared"), { duration: 5000, action: { label: t("common.undo"), onClick: () => basketStore.replace(snapshot) } }); }}><Trash2 /></Button>}
+          {hasLines && <Button variant="ghost" size="sm" className="shrink-0" onClick={() => void hold()} disabled={!shiftOpen}><Clock />{t("till.hold")}</Button>}
+          {hasLines && <Button variant="ghost" size="sm" className="shrink-0" aria-label={t("till.clear")} onClick={() => { const snapshot = basket; basketStore.clear(); toast(t("till.basketCleared"), { duration: 5000, action: { label: t("common.undo"), onClick: () => basketStore.replace(snapshot) } }); }}><Trash2 /></Button>}
         </div>
 
         {!shiftQuery.isLoading && !shiftOpen && (
@@ -244,7 +245,8 @@ export function TillPage() {
         open={sheet === "pay"}
         onOpenChange={(o) => setSheet(o ? "pay" : null)}
         total={totals.total}
-        onComplete={(payments) => completeSale(basketStore.get(), settings, shift!.id, payments)}
+        onComplete={(payments, debt) => completeSale(basketStore.get(), settings, shift!.id, payments, debt)}
+        renderDebt={settings.debtBookEnabled ? ({ debtAmount, onBack, onChosen }) => <DebtPanel debtAmount={debtAmount} settings={settings} onBack={onBack} onComplete={onChosen} /> : undefined}
       />
     </div>
   );

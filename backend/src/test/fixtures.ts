@@ -32,7 +32,11 @@ let seq = 0;
 export function saleBody(opts: {
   shiftId: string;
   lines: Array<{ product: FixtureProduct; qty: number; unitPriceMdram?: number; discountAmount?: number; priceOverridden?: boolean; taxRateBp?: number }>;
-  payments?: Array<{ method: "CASH" | "CARD"; amount?: number; tenderedAmount?: number }>;
+  payments?: Array<{ method: "CASH" | "CARD" | "DEBT"; amount?: number; tenderedAmount?: number }>;
+  customerId?: string;
+  limitGrant?: string;
+  limitReason?: string;
+  dueDate?: string;
   status?: "HELD" | "COMPLETED";
   saleDiscount?: number;
   basis?: PriceBasis;
@@ -59,13 +63,33 @@ export function saleBody(opts: {
   });
   const now = new Date().toISOString();
   return {
-    id: opts.id ?? uuidv7(), status, shiftId: opts.shiftId, number: status === "COMPLETED" ? `${opts.prefix ?? "AA"}-${++seq}` : null, customerId: null,
+    id: opts.id ?? uuidv7(), status, shiftId: opts.shiftId, number: status === "COMPLETED" ? `${opts.prefix ?? "AA"}-${++seq}` : null, 
     priceBasis: basis, cashRoundingStep: opts.rounding ?? 1, saleDiscount: opts.saleDiscount ?? 0, discountReason: null,
     lines, payments, total: totals.total, createdAt: opts.createdAt ?? now, sentAt: now, queued: opts.queued ?? false,
     reauthGrant: opts.reauthGrant ?? null, overrideReason: opts.overrideReason ?? null,
+    customerId: opts.customerId ?? null, limitGrant: opts.limitGrant ?? null, limitReason: opts.limitReason ?? null, dueDate: opts.dueDate ?? null,
   };
 }
 
 export const post = (t: TestApp, path: string, body: unknown, role: Role = "WORKER", token?: string) =>
   request(t.app).post(`/api${path}`).set(bearer(token ?? t.tokens[role])).send(body as object);
 export const get = (t: TestApp, path: string, role: Role = "WORKER") => request(t.app).get(`/api${path}`).set(bearer(t.tokens[role]));
+
+export async function makeCustomer(t: TestApp, fullName: string, phone: string | null = null, role: Role = "WORKER") {
+  const res = await request(t.app).post("/api/customers").set(bearer(t.tokens[role])).send({ id: uuidv7(), fullName, phone });
+  if (res.status !== 201) throw new Error(`customer failed ${res.status} ${JSON.stringify(res.body)}`);
+  return res.body as { id: string; fullName: string };
+}
+
+const daysAgo = (n: number) => new Date(Date.now() - n * 86_400_000).toISOString();
+
+/** A charge with its original date, as an opening-debt import writes one (§19.1). */
+export async function backdatedCharge(t: TestApp, customerId: string, amount: number, days: number) {
+  const id = uuidv7();
+  await t.db.debtEntry.create({ data: { id, customerId, type: "CHARGE", amount, createdAt: daysAgo(days), userId: t.users.ADMIN.id } });
+  return id;
+}
+
+export function repayment(customerId: string, amount: number, method: "CASH" | "CARD", shiftId: string | null, queued = false) {
+  return { id: uuidv7(), customerId, amount, method, shiftId, createdAt: new Date().toISOString(), queued };
+}

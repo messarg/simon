@@ -8,19 +8,37 @@ import { useEffect, useRef } from "react";
 
 export const SCAN_MAX_GAP_MS = 50;
 export const SCAN_MIN_LENGTH = 4;
+/** A pause this long means a person, not a scanner: whatever came before is not part of the next code. */
+export const SCAN_RESET_MS = 1000;
 
-export interface ScanBuffer { chars: string; last: number; }
+export interface ScanBuffer { chars: string; times: number[]; last: number; }
 
-/** Pure step: returns the completed code on Enter, or null. Exported for tests. */
+export const newScanBuffer = (): ScanBuffer => ({ chars: "", times: [], last: 0 });
+
+function median(values: number[]) {
+  const sorted = [...values].sort((a, b) => a - b);
+  return sorted[Math.floor(sorted.length / 2)];
+}
+
+/**
+ * Pure step: returns the completed code on Enter, or null. Exported for tests.
+ *
+ * Decides by the burst's *median* key gap, not by any single gap: a busy main thread or a
+ * Bluetooth stutter can delay one key past 50 ms, and treating that as the start of a new code
+ * drops the digits before it — a scan that silently turns into an unknown barcode.
+ */
 export function feed(buf: ScanBuffer, key: string, at: number): string | null {
-  if (at - buf.last > SCAN_MAX_GAP_MS) buf.chars = "";
+  if (at - buf.last > SCAN_RESET_MS) { buf.chars = ""; buf.times = []; }
   buf.last = at;
   if (key === "Enter") {
     const code = buf.chars;
+    const gaps = buf.times.slice(1).map((t, i) => t - buf.times[i]);
     buf.chars = "";
-    return code.length >= SCAN_MIN_LENGTH ? code : null;
+    buf.times = [];
+    if (code.length < SCAN_MIN_LENGTH || gaps.length === 0) return null;
+    return median(gaps) <= SCAN_MAX_GAP_MS ? code : null;
   }
-  if (key.length === 1) buf.chars += key;
+  if (key.length === 1) { buf.chars += key; buf.times.push(at); }
   return null;
 }
 
@@ -35,7 +53,7 @@ export function useScanner(onScan: (code: string) => void, enabled = true) {
   useEffect(() => { handler.current = onScan; }, [onScan]);
   useEffect(() => {
     if (!enabled) return;
-    const buf: ScanBuffer = { chars: "", last: 0 };
+    const buf = newScanBuffer();
     let lastCode = "";
     let lastAt = 0;
     const onKey = (e: KeyboardEvent) => {

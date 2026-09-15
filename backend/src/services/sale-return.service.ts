@@ -14,6 +14,7 @@ import type { Db } from "../lib/db.ts";
 import { problem } from "../lib/problem.ts";
 import { clock } from "../lib/time.ts";
 import { writeAudit } from "./audit.service.ts";
+import { touchCustomer } from "./debt.service.ts";
 import { consumeGrant } from "./auth.service.ts";
 import { raiseFlag, warningsFor } from "./review-flag.service.ts";
 import type { Actor } from "./sale.service.ts";
@@ -84,7 +85,6 @@ export async function submitSaleReturn(db: Db, actor: Actor, body: SaleReturnBod
       }
       total = result.total;
       tenders = result.tenders;
-      if (tenders.some((t) => t.method === "DEBT_REDUCTION")) throw problem("not-permitted", { reason: "debt-book-not-available" });
     }
 
     await tx.saleReturn.create({
@@ -105,6 +105,16 @@ export async function submitSaleReturn(db: Db, actor: Actor, body: SaleReturnBod
     for (const t of tenders) {
       await tx.saleReturnTender.create({ data: { id: uuidv7(), returnId: body.id, method: t.method, amount: t.amount } });
       if (t.method === "CASH") cashOut += t.amount;
+    }
+    const debtBack = tenders.filter((t) => t.method === "DEBT_REDUCTION").reduce((a, t) => a + t.amount, 0);
+    if (debtBack > 0 && body.originalSaleId) {
+      // A credit ADJUSTMENT aimed at the original charge — never a negative charge, never cash (§12.4).
+      const charge = await tx.debtEntry.findFirst({ where: { saleId: body.originalSaleId, type: "CHARGE", reversesId: null } });
+      if (!charge) throw problem("illegal-transition", { reason: "no-charge-for-sale" });
+      const adjustmentId = uuidv7();
+      await tx.debtEntry.create({ data: { id: adjustmentId, customerId: charge.customerId, type: "ADJUSTMENT", amount: debtBack, method: null, saleId: body.originalSaleId, createdAt: nowIso, userId: actor.userId } });
+      await tx.allocationOverride.create({ data: { id: uuidv7(), creditEntryId: adjustmentId, chargeEntryId: charge.id, amount: debtBack, userId: actor.userId, createdAt: nowIso } });
+      await touchCustomer(tx, charge.customerId);
     }
     if (cashOut > 0) {
       await tx.cashMovement.create({

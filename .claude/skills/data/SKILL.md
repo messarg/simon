@@ -20,8 +20,9 @@ allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 > - Offline-capable reads fall back to IndexedDB (`lib/local-db.ts`): the catalogue (`lib/catalogue.ts`,
 >   synced by `?since=`), client settings (`app/settings.ts`) and the current shift (`app/shift.ts`).
 >   A till with no settings cache refuses to price rather than guessing (§14.4).
+> - Customers are cached like the catalogue (`lib/customers.ts`, `GET /customers/snapshot?since=`); `Customer.updatedAt` is touched on every debt entry so balances resync. Repayments go through the outbox as `debt-payment`; the offline debt cap sums debt already queued for that customer (`queuedDebtFor`).
 > - Query keys in use: `["settings","client"]`, `["shifts","current",userId]`, `["products",…]`,
->   `["sales","held"]`, `["sales","recent"]`, `["users"]`, `["devices"]`, `["sessions"]`.
+>   `["sales","held"]`, `["sales","recent"]`, `["customers","list",q]`, `["customers",id,"ledger"]`, `["shifts",id,"cash-movements"]`, `["users"]`, `["devices"]`, `["sessions"]`.
 
 # TanStack
 

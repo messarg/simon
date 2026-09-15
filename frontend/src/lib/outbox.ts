@@ -122,11 +122,11 @@ async function afterSync(item: OutboxItem, response: unknown) {
   if (!item.afterSync) return;
   const body = item.body as { id: string };
   if (item.afterSync.print) {
-    const payload = item.kind === "sale" ? { saleId: body.id } : { saleReturnId: body.id };
+    const payload = item.kind === "sale" ? { saleId: body.id } : item.kind === "debt-payment" ? { debtPaymentId: body.id } : { saleReturnId: body.id };
     http.post("/print/receipt", payload, { timeoutMs: 8000 }).catch(() => toast.error(t("payment.printFailed"), { action: { label: t("payment.reprint"), onClick: () => void http.post("/print/receipt", payload) } }));
   }
   if (item.afterSync.drawer) {
-    const type = item.kind === "sale" ? "Sale" : item.kind === "sale-return" ? "SaleReturn" : "CashMovement";
+    const type = item.kind === "sale" ? "Sale" : item.kind === "sale-return" ? "SaleReturn" : item.kind === "debt-payment" ? "DebtEntry" : "CashMovement";
     http.post("/cash-drawer/open", { document: { type, id: body.id } }, { timeoutMs: 5000 }).catch(() => toast.error(t("payment.drawerFailed")));
   }
 }

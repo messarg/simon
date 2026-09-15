@@ -10,19 +10,21 @@ import { adjustCachedStock } from "@/lib/catalogue.ts";
 import { nextReceiptNumber } from "@/lib/device.ts";
 import { money } from "@/lib/format.ts";
 import { outbox } from "@/lib/outbox.ts";
+import { adjustCachedBalance } from "@/lib/customers.ts";
+import type { DebtChoice } from "@/types/debt.ts";
 import { basketStore, basketTotals, type Basket } from "./basket.ts";
 
 export interface TenderInput {
-  method: "CASH" | "CARD";
+  method: "CASH" | "CARD" | "DEBT";
   amount: number;
   tenderedAmount?: number;
 }
 
-function bodyFor(basket: Basket, settings: ClientSettings, shiftId: string, status: "HELD" | "COMPLETED", number: string | null, payments: TenderInput[]): SaleBody {
+function bodyFor(basket: Basket, settings: ClientSettings, shiftId: string, status: "HELD" | "COMPLETED", number: string | null, payments: TenderInput[], debt?: DebtChoice | null): SaleBody {
   const totals = basketTotals(basket, settings);
   const now = new Date().toISOString();
   return {
-    id: basket.id, status, shiftId, number, customerId: null, priceBasis: settings.priceBasis, cashRoundingStep: settings.cashRoundingStep,
+    id: basket.id, status, shiftId, number, customerId: debt?.customerId ?? null, limitGrant: debt?.limitGrant ?? null, limitReason: debt?.limitReason ?? null, dueDate: debt?.dueDate ?? null, priceBasis: settings.priceBasis, cashRoundingStep: settings.cashRoundingStep,
     saleDiscount: totals.discountTotal, discountReason: basket.discountReason,
     lines: basket.lines.map((l, i) => ({
       id: l.id, productId: l.productId, qty: l.qty, uom: l.uom, factorToStockUom: l.factorToStockUom, unitPriceMdram: l.unitPriceMdram,
@@ -34,15 +36,17 @@ function bodyFor(basket: Basket, settings: ClientSettings, shiftId: string, stat
   };
 }
 
-export async function completeSale(basket: Basket, settings: ClientSettings, shiftId: string, payments: TenderInput[]) {
+export async function completeSale(basket: Basket, settings: ClientSettings, shiftId: string, payments: TenderInput[], debt?: DebtChoice | null) {
   const number = await nextReceiptNumber();
-  const body = bodyFor(basket, settings, shiftId, "COMPLETED", number, payments);
+  const body = bodyFor(basket, settings, shiftId, "COMPLETED", number, payments, debt);
   const change = payments.filter((p) => p.method === "CASH").reduce((a, p) => a + ((p.tenderedAmount ?? p.amount) - p.amount), 0);
   await outbox.enqueue("sale", basket.id, body, {
     afterSync: { print: true, drawer: payments.some((p) => p.method === "CASH") },
     label: `№ ${number} · ${money(body.total)}`,
   });
   await adjustCachedStock(basket.lines.filter((l) => l.trackStock).map((l) => ({ productId: l.productId, delta: -(l.qty * l.factorToStockUom) })));
+  const debtAmount = payments.filter((p) => p.method === "DEBT").reduce((a, p) => a + p.amount, 0);
+  if (debt && debtAmount > 0) await adjustCachedBalance(debt.customerId, debtAmount);
   basketStore.clear();
   return { id: body.id, number, total: body.total, change };
 }

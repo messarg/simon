@@ -7,10 +7,11 @@ import { problem } from "../lib/problem.ts";
 import { isAdmin, shapeSale } from "../lib/shape.ts";
 import { clock } from "../lib/time.ts";
 import { openDrawer } from "../services/drawer.service.ts";
-import { printReturnReceipt, printSaleReceipt, printShiftReport } from "../services/print.service.ts";
+import { printRepaymentReceipt, printReturnReceipt, printSaleReceipt, printShiftReport } from "../services/print.service.ts";
 import { loadSaleReturn, returnableLines, submitSaleReturn } from "../services/sale-return.service.ts";
 import { loadSale, resumeSale, saleInclude, submitSale, voidSale } from "../services/sale.service.ts";
-import { beginClose, cancelClose, closeShift, currentShift, openShift, shiftReport, submitCashMovement } from "../services/shift.service.ts";
+import { beginClose, cancelClose, closeShift, currentShift, openShift, reverseCashMovement, shiftCashMovements, shiftReport, submitCashMovement } from "../services/shift.service.ts";
+import { ReverseCashMovementBody } from "@simon/shared";
 
 export function sellRoutes() {
   const r = Router();
@@ -117,6 +118,19 @@ export function sellRoutes() {
   r.get("/shifts/:id/x-report", reportRoute);
   r.get("/shifts/:id/z-report", reportRoute);
 
+  r.get("/shifts/:id/cash-movements", async (req, res) => {
+    const a = auth(req);
+    const report = await shiftReport(a.db, String(req.params.id));
+    if (report.shift.userId !== a.userId && !isAdmin(a.role)) throw problem("not-permitted");
+    res.json({ items: await shiftCashMovements(a.db, String(req.params.id)) });
+  });
+  r.post("/cash-movements/:id/reverse", async (req, res) => {
+    const a = auth(req);
+    const { reason } = ReverseCashMovementBody.parse(req.body);
+    const m = await reverseCashMovement(a.db, actor(req), String(req.params.id), reason);
+    res.json({ id: m.id, reversesId: m.reversesId, type: m.type, amount: m.amount });
+  });
+
   r.post("/cash-movements", async (req, res) => {
     const a = auth(req);
     const m = await submitCashMovement(a.db, actor(req), CashMovementBody.parse(req.body));
@@ -126,8 +140,9 @@ export function sellRoutes() {
   // ── Printing and the drawer (host-owned, §18) ──────────────────────────────
   r.post("/print/receipt", async (req, res) => {
     const a = auth(req);
-    const body = z.object({ saleId: z.string().uuid().optional(), saleReturnId: z.string().uuid().optional() }).refine((b) => Boolean(b.saleId) !== Boolean(b.saleReturnId)).parse(req.body);
-    const out = body.saleId ? await printSaleReceipt(a.db, body.saleId) : await printReturnReceipt(a.db, body.saleReturnId!);
+    const body = z.object({ saleId: z.string().uuid().optional(), saleReturnId: z.string().uuid().optional(), debtPaymentId: z.string().uuid().optional() })
+      .refine((b) => [b.saleId, b.saleReturnId, b.debtPaymentId].filter(Boolean).length === 1).parse(req.body);
+    const out = body.saleId ? await printSaleReceipt(a.db, body.saleId) : body.saleReturnId ? await printReturnReceipt(a.db, body.saleReturnId) : await printRepaymentReceipt(a.db, body.debtPaymentId!);
     res.json({ printed: out.printed });
   });
   r.post("/print/x-report", async (req, res) => {
@@ -143,7 +158,7 @@ export function sellRoutes() {
   r.post("/cash-drawer/open", async (req, res) => {
     const a = auth(req);
     const body = z.object({
-      document: z.object({ type: z.enum(["Sale", "SaleReturn", "CashMovement"]), id: z.string().uuid() }).nullish(),
+      document: z.object({ type: z.enum(["Sale", "SaleReturn", "CashMovement", "DebtEntry"]), id: z.string().uuid() }).nullish(),
       purpose: z.enum(["document", "float", "close", "no-sale"]).optional(),
       reauthGrant: z.string().nullish(), reason: z.string().max(240).nullish(),
     }).parse(req.body);

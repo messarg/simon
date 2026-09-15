@@ -9,7 +9,7 @@ import request from "supertest";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { COST_KEYS } from "../lib/shape.ts";
 import { bearer, createTestApp, type TestApp } from "../test/app.ts";
-import { makeProduct, openShift, post, saleBody } from "../test/fixtures.ts";
+import { makeCustomer, makeProduct, openShift, post, saleBody } from "../test/fixtures.ts";
 
 function collectGetPaths(app: TestApp["app"]): string[] {
   const out = new Set<string>();
@@ -51,7 +51,8 @@ describe("§27.9 cost sweep", () => {
     const shiftId = await openShift(t, "WORKER");
     const sale = saleBody({ shiftId, lines: [{ product: p, qty: 1000 }] });
     await post(t, "/sales", sale);
-    ids = { product: p.id, sale: sale.id, shift: shiftId, code: "123", number: sale.number! };
+    const customer = await makeCustomer(t, "Սմբատ");
+    ids = { product: p.id, sale: sale.id, shift: shiftId, code: "123", number: sale.number!, customer: customer.id };
   });
   afterAll(async () => { await t.close(); });
 
@@ -61,6 +62,7 @@ describe("§27.9 cost sweep", () => {
       if (p.startsWith("/products/:id") || p === "/products") return p.replace(":id", ids.product);
       if (p.startsWith("/sales/:id")) return p.replace(":id", ids.sale);
       if (p.startsWith("/shifts/:id")) return p.replace(":id", ids.shift);
+      if (p.startsWith("/customers/:id")) return p.replace(":id", ids.customer);
       if (p.includes(":code")) return p.replace(":code", ids.code);
       if (p.includes(":number")) return p.replace(":number", ids.number);
       return p.replace(/:id/g, t.users.WORKER.id);

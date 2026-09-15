@@ -8,5 +8,5 @@ export const receiptHy = {
   cashier: "Գանձապահ", xReport: "X-հաշվետվություն", zReport: "Z-հաշվետվություն", openingFloat: "Սկզբնական գումար",
   cashSales: "Կանխիկ վաճառք", cardSales: "Քարտով վաճառք", repayments: "Պարտքի մարում", payIns: "Մուտք", refunds: "Վերադարձ",
   payOuts: "Ելք", drops: "Հանված պահարան", expected: "Պետք է լինի", counted: "Հաշվված", variance: "Տարբերություն",
-  lateArrival: "ստացվել է փակումից հետո", transferIn: "Ընդունված այլ հերթափոխից", transferOut: "Փոխանցված", reprint: "ԿՐԿՆՕՐԻՆԱԿ",
+  lateArrival: "ստացվել է փակումից հետո", repayment: "Պարտքի մարում", customer: "Հաճախորդ", remaining: "Մնացած պարտք", credit: "Կանխավճար", transferIn: "Ընդունված այլ հերթափոխից", transferOut: "Փոխանցված", reprint: "ԿՐԿՆՕՐԻՆԱԿ",
 } as const;

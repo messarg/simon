@@ -97,3 +97,15 @@ export function shapeMovement(m: { id: string; seq: number; type: string; qtyDel
   const base = { id: m.id, seq: m.seq, type: m.type, qtyDelta: m.qtyDelta, balanceAfter: m.balanceAfter, sourceType: m.sourceType, sourceId: m.sourceId, reasonCode: m.reasonCode, note: m.note, createdAt: m.createdAt, userName: m.user?.name ?? null };
   return isAdmin(role) ? { ...base, unitCostMdram: m.unitCostMdram } : base;
 }
+
+type CustomerRow = { id: string; fullName: string | null; nameSearch: string; phone: string | null; discountBp: number; creditLimit: number; isBlocked: number; isActive: number; mergedIntoId: string | null; anonymisedAt: string | null; notes: string; updatedAt: string };
+
+/** A worker sees who owes what and the limit on the debt sale screen; the discount and notes are the owner's (§6.15). */
+export function shapeCustomer(c: CustomerRow, role: Role, figures?: { outstanding: number; oldestChargeDays: number | null; overdue: number; lastSaleAt?: string | null }) {
+  const base = {
+    id: c.id, fullName: c.fullName, nameSearch: c.nameSearch, phone: c.phone, creditLimit: c.creditLimit, isBlocked: bool(c.isBlocked),
+    isActive: bool(c.isActive), mergedIntoId: c.mergedIntoId, anonymised: c.anonymisedAt !== null, updatedAt: c.updatedAt,
+    ...(figures ? { outstanding: figures.outstanding, oldestChargeDays: figures.oldestChargeDays, overdue: figures.overdue, lastSaleAt: figures.lastSaleAt ?? null } : {}),
+  };
+  return isAdmin(role) ? { ...base, discountBp: c.discountBp, notes: c.notes } : base;
+}

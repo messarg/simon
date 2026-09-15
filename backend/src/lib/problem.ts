@@ -13,7 +13,7 @@ const STATUS: Record<ErrorType, number> = {
   "credit-limit-exceeded": 422, "customer-blocked": 422, "insufficient-stock-strict": 422,
   "return-exceeds-sold": 422, "discount-above-cap": 422, "tax-regime-not-set": 422,
   "shift-not-open": 422, "shift-has-open-baskets": 422, "duplicate-barcode": 422,
-  "immutable-after-movements": 422, "illegal-transition": 422, "setup-required": 422,
+  "immutable-after-movements": 422, "illegal-transition": 422, "setup-required": 422, "duplicate-phone": 422,
   "pin-incorrect": 401, "session-expired": 401, "reauth-required": 403, "account-locked": 423,
   "too-many-attempts": 429, "not-permitted": 403, "not-found": 404,
   "malformed-request": 400, "internal-error": 500,

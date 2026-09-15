@@ -18,7 +18,7 @@ import type { Actor } from "./sale.service.ts";
 import { readSettings } from "./settings.service.ts";
 
 export interface DrawerRequest {
-  document?: { type: "Sale" | "SaleReturn" | "CashMovement"; id: string } | null;
+  document?: { type: "Sale" | "SaleReturn" | "CashMovement" | "DebtEntry"; id: string } | null;
   purpose?: "document" | "float" | "close" | "no-sale";
   reauthGrant?: string | null;
   reason?: string | null;
@@ -42,6 +42,11 @@ export async function openDrawer(db: Db, actor: Actor, req: DrawerRequest) {
         const ret = await tx.saleReturn.findUnique({ where: { id }, include: { tenders: true } });
         if (!ret) throw problem("not-found");
         document = { kind: "return", hasCash: ret.tenders.some((t) => t.method === "CASH") };
+      } else if (type === "DebtEntry") {
+        const entry = await tx.debtEntry.findUnique({ where: { id } });
+        if (!entry) throw problem("not-found");
+        const cash = await tx.cashMovement.findFirst({ where: { sourceType: "DebtEntry", sourceId: id, type: "REPAYMENT" } });
+        document = { kind: "repayment", hasCash: Boolean(cash) };
       } else {
         const m = await tx.cashMovement.findUnique({ where: { id } });
         if (!m) throw problem("not-found");

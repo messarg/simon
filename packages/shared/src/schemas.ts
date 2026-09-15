@@ -54,6 +54,11 @@ export const SaleBody = z.object({
   queued: z.boolean(),
   reauthGrant: z.string().nullish(),
   overrideReason: text(240).nullish(),
+  /** Debt sale (§12.2): an optional promised date — it never moves aging (§10.6). */
+  dueDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullish(),
+  /** Admin re-auth for going over the customer's credit limit, and the reason typed (§6.3). */
+  limitGrant: z.string().nullish(),
+  limitReason: text(240).nullish(),
 });
 export type SaleBody = z.infer<typeof SaleBody>;
 export type SaleLineBody = z.infer<typeof SaleLineBody>;
@@ -91,6 +96,46 @@ export const CashMovementBody = z.object({
   queued: z.boolean(),
 });
 export type CashMovementBody = z.infer<typeof CashMovementBody>;
+
+export const DebtPaymentBody = z.object({
+  id,
+  customerId: id,
+  amount: pos,
+  method: z.enum(["CASH", "CARD"]),
+  /** Required for cash: the drawer it went into (§12.3). */
+  shiftId: id.nullish(),
+  /** A person's choice of which charges this settles; otherwise oldest-first (§10.6). */
+  allocations: z.array(z.object({ chargeEntryId: id, amount: pos })).max(200).optional(),
+  createdAt: iso,
+  queued: z.boolean(),
+});
+export type DebtPaymentBody = z.infer<typeof DebtPaymentBody>;
+
+export const ReverseDebtPaymentBody = z.object({
+  reauthGrant: z.string().min(1),
+  reason: text(240).min(1),
+  /** Re-enter the same money against the right customer, in the same act (§8.2). */
+  reenterCustomerId: id.nullish(),
+});
+
+export const CreateCustomerBody = z.object({
+  id,
+  fullName: text(120).min(1),
+  phone: z.string().trim().max(32).nullish(),
+});
+export type CreateCustomerBody = z.infer<typeof CreateCustomerBody>;
+
+export const UpdateCustomerBody = z.object({
+  fullName: text(120).min(1).optional(),
+  phone: z.string().trim().max(32).nullish(),
+  creditLimit: nonNeg.optional(),
+  isBlocked: z.boolean().optional(),
+  discountBp: int.min(0).max(10_000).optional(),
+  notes: text(1000).optional(),
+  isActive: z.boolean().optional(),
+});
+
+export const ReverseCashMovementBody = z.object({ reason: text(240).min(1) });
 
 export const OpenShiftBody = z.object({ id, openingFloat: nonNeg });
 export const BeginCloseBody = z.object({ unsyncedAtClose: nonNeg.max(100_000) });

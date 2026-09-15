@@ -13,7 +13,7 @@ export const ERROR_TYPES = [
   "discount-above-cap", "tax-regime-not-set", "shift-not-open", "shift-has-open-baskets",
   "duplicate-barcode", "immutable-after-movements", "pin-incorrect", "account-locked",
   "too-many-attempts", "not-permitted", "session-expired", "not-found", "malformed-request",
-  "illegal-transition", "internal-error", "setup-required", "reauth-required",
+  "illegal-transition", "internal-error", "setup-required", "reauth-required", "duplicate-phone",
 ] as const;
 export type ErrorType = (typeof ERROR_TYPES)[number];
 

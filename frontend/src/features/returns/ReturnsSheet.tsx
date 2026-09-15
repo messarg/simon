@@ -35,7 +35,7 @@ export function ReturnsSheet({ open, onOpenChange, shiftId, initialNumber }: { o
   const [sale, setSale] = useState<SaleDetail | null>(null);
   const [selected, setSelected] = useState<Record<string, { qty: number; restock: boolean }>>({});
   const [reason, setReason] = useState("");
-  const [done, setDone] = useState<{ cash: number; card: number } | null>(null);
+  const [done, setDone] = useState<{ cash: number; card: number; debt: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const recent = useQuery({
@@ -81,7 +81,8 @@ export function ReturnsSheet({ open, onOpenChange, shiftId, initialNumber }: { o
     await outbox.enqueue("sale-return", id, { id, originalSaleId: sale.id, shiftId, reason: reason.trim(), lines, createdAt: now, sentAt: now, queued: false }, {
       dependsOn: outbox.has(sale.id) ? [sale.id] : [], afterSync: { print: true, drawer: cash > 0 }, label: `${t("returns.title")} ← ${sale.number} · ${money(preview.total)}`,
     });
-    setDone({ cash, card: preview.tenders.filter((x) => x.method === "CARD").reduce((a, x) => a + x.amount, 0) });
+    const sum = (m: string) => preview.tenders.filter((x) => x.method === m).reduce((a, x) => a + x.amount, 0);
+    setDone({ cash, card: sum("CARD"), debt: sum("DEBT_REDUCTION") });
     toast.success(t("returns.done"));
   };
 
@@ -97,6 +98,7 @@ export function ReturnsSheet({ open, onOpenChange, shiftId, initialNumber }: { o
           <Undo2 className="mx-auto mb-3 size-14 text-primary" aria-hidden />
           {done.cash > 0 && <><div className="text-muted-foreground">{t("returns.refundCash")}</div><MoneyText amount={done.cash} className="text-6xl font-bold" /></>}
           {done.card > 0 && <div className="mt-3 text-lg">{t("returns.refundCard")}: <MoneyText amount={done.card} className="font-semibold" /></div>}
+          {done.debt > 0 && <div className="mt-3 text-lg">{t("returns.refundDebt")}: <MoneyText amount={done.debt} className="font-semibold" /></div>}
           <Button size="xl" className="mt-6 w-full" onClick={() => close(false)}>{t("common.done")}</Button>
         </div>
       ) : connection === "offline" ? (
@@ -173,7 +175,7 @@ export function ReturnsSheet({ open, onOpenChange, shiftId, initialNumber }: { o
           {preview && (
             <div className="rounded-lg bg-muted p-3">
               {preview.tenders.map((x) => (
-                <div key={x.method} className="flex justify-between"><span>{x.method === "CASH" ? t("returns.refundCash") : t("returns.refundCard")}</span><MoneyText amount={x.amount} className="font-semibold" /></div>
+                <div key={x.method} className="flex justify-between"><span>{x.method === "CASH" ? t("returns.refundCash") : x.method === "DEBT_REDUCTION" ? t("returns.refundDebt") : t("returns.refundCard")}</span><MoneyText amount={x.amount} className="font-semibold" /></div>
               ))}
               <div className="mt-1 flex justify-between border-t border-border pt-1 text-lg font-semibold"><span>{t("returns.total")}</span><MoneyText amount={preview.total} /></div>
             </div>

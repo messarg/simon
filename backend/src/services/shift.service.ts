@@ -60,8 +60,10 @@ export async function shiftFigures(db: Db | Tx, shiftId: string): Promise<ShiftF
   const sales = await db.sale.findMany({ where: { shiftId, status: "COMPLETED" }, select: { id: true, payments: { select: { method: true, amount: true } } } });
   const counted = sales.filter((s) => !lateSourceIds.has(s.id));
   const sum = (method: string) => counted.reduce((a, s) => a + s.payments.filter((p) => p.method === method).reduce((b, p) => b + p.amount, 0), 0);
-  const movements = (await db.cashMovement.findMany({ where: { shiftId }, select: { id: true, type: true, amount: true, sourceId: true } }))
-    .filter((m) => !lateSourceIds.has(m.id) && !lateSourceIds.has(m.sourceId));
+  const all = await db.cashMovement.findMany({ where: { shiftId }, select: { id: true, type: true, amount: true, sourceId: true, reversesId: true } });
+  // A mistyped movement and its linked reversal both stand in the ledger and both leave the sum (§10.7).
+  const reversed = new Set(all.filter((m) => m.reversesId).map((m) => m.reversesId as string));
+  const movements = all.filter((m) => !m.reversesId && !reversed.has(m.id) && !lateSourceIds.has(m.id) && !lateSourceIds.has(m.sourceId));
   const byType = (t: CashMovementType) => movements.filter((m) => m.type === t).reduce((a, m) => a + m.amount, 0);
   const cashSales = sum("CASH");
   return {
@@ -148,6 +150,45 @@ export async function shiftReport(db: Db, shiftId: string) {
     lateArrivals: lateArrivals.map((l) => ({ sourceType: l.sourceType, sourceId: l.sourceId, amount: l.amount, arrivedAt: l.arrivedAt })),
     transfers,
   };
+}
+
+/** The drawer's rows with where each came from, so every figure drills to its events (§27.45). */
+export async function shiftCashMovements(db: Db, shiftId: string) {
+  const rows = await db.cashMovement.findMany({ where: { shiftId }, orderBy: { createdAt: "asc" }, include: { user: { select: { name: true } } } });
+  const reversed = new Set(rows.filter((m) => m.reversesId).map((m) => m.reversesId as string));
+  const debtIds = rows.filter((m) => m.sourceType === "DebtEntry").map((m) => m.sourceId);
+  const returnIds = rows.filter((m) => m.sourceType === "SaleReturn").map((m) => m.sourceId);
+  const debts = new Map((await db.debtEntry.findMany({ where: { id: { in: debtIds } }, include: { customer: { select: { id: true, fullName: true } } } })).map((d) => [d.id, d]));
+  const returns = new Map((await db.saleReturn.findMany({ where: { id: { in: returnIds } }, include: { originalSale: { select: { number: true } } } })).map((r) => [r.id, r]));
+  return rows.map((m) => ({
+    id: m.id, type: m.type, amount: m.amount, reasonCode: m.reasonCode, reason: m.reason, createdAt: m.createdAt, userName: m.user.name,
+    reversesId: m.reversesId, reversed: reversed.has(m.id),
+    source: m.sourceType === "DebtEntry"
+      ? { type: "DebtEntry", id: m.sourceId, customerId: debts.get(m.sourceId)?.customer.id ?? null, customerName: debts.get(m.sourceId)?.customer.fullName ?? null }
+      : m.sourceType === "SaleReturn"
+        ? { type: "SaleReturn", id: m.sourceId, originalSaleId: returns.get(m.sourceId)?.originalSaleId ?? null, originalSaleNumber: returns.get(m.sourceId)?.originalSale?.number ?? null }
+        : { type: m.sourceType, id: m.sourceId },
+  }));
+}
+
+/** A mistyped pay-in, pay-out or drop is corrected by a linked reversal, then the right one (§8.2, §10.7). */
+export async function reverseCashMovement(db: Db, actor: Actor, movementId: string, reason: string) {
+  const settings = await readSettings(db);
+  return db.$transaction(async (tx) => {
+    const m = await tx.cashMovement.findUnique({ where: { id: movementId }, include: { shift: true } });
+    if (!m) throw problem("not-found");
+    if (!["PAY_IN", "PAY_OUT", "DROP"].includes(m.type) || m.reversesId) throw problem("illegal-transition", { type: m.type });
+    if (m.userId !== actor.userId && actor.role !== "ADMIN") throw problem("not-permitted");
+    if (await tx.cashMovement.findFirst({ where: { reversesId: m.id } })) throw problem("illegal-transition", { reason: "already-reversed" });
+    if (m.shift.status === "CLOSED") throw problem("shift-not-open");
+    const id = uuidv7();
+    const now = clock.now();
+    const row = await tx.cashMovement.create({
+      data: { id, shiftId: m.shiftId, businessDate: businessDate(now, settings["shop.timezone"]), type: m.type, amount: m.amount, reasonCode: m.reasonCode, reason: reason.normalize("NFC"), sourceType: "CashMovement", sourceId: id, userId: actor.userId, reversesId: m.id, createdAt: now.toISOString() },
+    });
+    await writeAudit(tx, { userId: actor.userId, action: "cashMovement.reverse", entityType: "CashMovement", entityId: m.id, before: { type: m.type, amount: m.amount }, after: { reversalId: id } });
+    return row;
+  });
 }
 
 export async function submitCashMovement(db: Db, actor: Actor, body: CashMovementBody) {

@@ -16,5 +16,7 @@ export default defineConfig({
     // Service and route tests each open a SQLite file; keep them off one another's writer.
     fileParallelism: true,
     testTimeout: 20_000,
+    // Setup hooks hash PINs with argon2 and open SQLite files; under a full parallel run that alone can pass 10 s.
+    hookTimeout: 30_000,
   },
 });

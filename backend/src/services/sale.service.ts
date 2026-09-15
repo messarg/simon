@@ -16,6 +16,7 @@ import { clock } from "../lib/time.ts";
 import type { Role } from "@simon/shared";
 import { writeAudit } from "./audit.service.ts";
 import { consumeGrant } from "./auth.service.ts";
+import { customerProjection, touchCustomer } from "./debt.service.ts";
 import { raiseFlag, warningsFor } from "./review-flag.service.ts";
 import { readSettings } from "./settings.service.ts";
 import { postMovement } from "./stock-ledger.service.ts";
@@ -28,11 +29,10 @@ export interface Actor {
   deviceId: string;
 }
 
-type PendingFlag = { type: ReviewFlagType; productId?: string | null; note?: unknown };
+type PendingFlag = { type: ReviewFlagType; productId?: string | null; customerId?: string | null; note?: unknown };
 
 export async function submitSale(db: Db, actor: Actor, body: SaleBody) {
   if (body.status === "COMPLETED" && !body.number) throw problem("malformed-request", { field: "number" });
-  if (body.payments.some((p) => p.method === "DEBT")) throw problem("not-permitted", { reason: "debt-book-not-available" });
   if (new Set(body.lines.map((l) => l.id)).size !== body.lines.length) throw problem("malformed-request", { field: "lines.id" });
 
   const settings = await readSettings(db);
@@ -128,10 +128,41 @@ export async function submitSale(db: Db, actor: Actor, body: SaleBody) {
       throw problem("malformed-request", { field: "payments", expected: totals.total });
     }
 
+    // ── Debt: block and limit, refused at the counter and flagged from the queue (§12.2, §14.6) ──
+    const debtAmount = completing ? payments.filter((p) => p.method === "DEBT").reduce((a, p) => a + p.amount, 0) : 0;
+    let chargeCustomerId: string | null = null;
+    let limitAdminId: string | null = null;
+    let limitFigures: { limit: number; current: number; wouldBe: number } | null = null;
+    if (debtAmount > 0) {
+      if (!settings["debt.enabled"]) throw problem("not-permitted", { reason: "debt-book-disabled" });
+      if (!body.customerId) throw problem("malformed-request", { field: "customerId" });
+      let customer = await tx.customer.findUnique({ where: { id: body.customerId } });
+      // A merged record leaves a forwarding address; a queued sale naming it follows it (§11).
+      if (customer?.mergedIntoId) customer = await tx.customer.findUnique({ where: { id: customer.mergedIntoId } });
+      if (!customer || customer.anonymisedAt) throw problem("not-found", { entity: "Customer" });
+      chargeCustomerId = customer.id;
+      if (customer.isBlocked === 1) {
+        if (!body.queued) throw problem("customer-blocked", { customerId: customer.id });
+        flags.push({ type: "CUSTOMER_BLOCKED_ON_SYNC", customerId: customer.id });
+      }
+      const current = (await customerProjection(tx, customer.id)).outstanding;
+      limitFigures = { limit: customer.creditLimit, current, wouldBe: current + debtAmount };
+      if (limitFigures.wouldBe > customer.creditLimit) {
+        if (body.queued) {
+          flags.push({ type: "CREDIT_LIMIT_EXCEEDED_ON_SYNC", customerId: customer.id, note: limitFigures });
+        } else {
+          const strict = settings["debt.strictLimit"];
+          limitAdminId = strict ? null : consumeGrant(body.limitGrant, "creditLimitOverride");
+          if (!limitAdminId) throw problem("credit-limit-exceeded", { customerId: customer.id, ...limitFigures, strict });
+          if (!body.limitReason?.trim()) throw problem("malformed-request", { field: "limitReason" });
+        }
+      }
+    }
+
     // ── Write the document ────────────────────────────────────────────────────
     const nowIso = now.toISOString();
     const header = {
-      number: completing ? body.number! : null, shiftId: body.shiftId, userId: actor.userId, customerId: body.customerId ?? null,
+      number: completing ? body.number! : null, shiftId: body.shiftId, userId: actor.userId, customerId: chargeCustomerId ?? body.customerId ?? null,
       status: body.status, subtotal: totals.subtotal, discountTotal: totals.discountTotal, discountReason: body.discountReason ?? null,
       taxTotal: totals.taxTotal, priceBasis: body.priceBasis, roundingAdjustment: totals.roundingAdjustment, total: totals.total,
       businessDate: businessDate(now, settings["shop.timezone"]), completedAt: completing ? nowIso : null,
@@ -184,6 +215,14 @@ export async function submitSale(db: Db, actor: Actor, body: SaleBody) {
         await writeAudit(tx, { userId: actor.userId, action: "sale.discountAboveCap", entityType: "Sale", entityId: body.id, after: { discount, base, authorisedBy: adminId }, reason: reason! });
       }
       if (late) await tx.shiftLateArrival.create({ data: { id: uuidv7(), shiftId: body.shiftId, sourceType: "Sale", sourceId: body.id, amount: totals.total, arrivedAt: nowIso } });
+      if (chargeCustomerId) {
+        const chargeId = uuidv7();
+        await tx.debtEntry.create({ data: { id: chargeId, customerId: chargeCustomerId, type: "CHARGE", amount: debtAmount, method: null, saleId: body.id, dueDate: body.dueDate ?? null, createdAt: nowIso, userId: actor.userId } });
+        await touchCustomer(tx, chargeCustomerId);
+        if (limitAdminId) {
+          await writeAudit(tx, { userId: actor.userId, action: "debt.creditLimitOverride", entityType: "DebtEntry", entityId: chargeId, before: limitFigures, after: { authorisedBy: limitAdminId, customerId: chargeCustomerId }, reason: body.limitReason! });
+        }
+      }
     }
     for (const f of flags) await raiseFlag(tx, { ...f, sourceType: "Sale", sourceId: body.id });
     return body.id;

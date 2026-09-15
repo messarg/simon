@@ -28,6 +28,22 @@ export interface CachedProduct {
   updatedAt: string;
 }
 
+export interface CachedCustomer {
+  id: string;
+  fullName: string | null;
+  nameSearch: string;
+  phone: string | null;
+  outstanding: number;
+  oldestChargeDays: number | null;
+  overdue: number;
+  creditLimit: number;
+  isBlocked: boolean;
+  isActive: boolean;
+  anonymised: boolean;
+  lastSaleAt: string | null;
+  updatedAt: string;
+}
+
 export type OutboxKind = "sale" | "sale-return" | "cash-movement" | "debt-payment";
 export type OutboxState = "pending" | "held" | "parked";
 
@@ -55,6 +71,7 @@ export interface OutboxItem {
 
 interface SimonDB extends DBSchema {
   catalogue: { key: string; value: CachedProduct; indexes: { byBarcode: string } };
+  customers: { key: string; value: CachedCustomer };
   settings: { key: string; value: unknown };
   outbox: { key: string; value: OutboxItem; indexes: { byEnqueuedAt: string } };
   basket: { key: string; value: unknown };
@@ -64,14 +81,18 @@ interface SimonDB extends DBSchema {
 let dbPromise: Promise<IDBPDatabase<SimonDB>> | null = null;
 
 export function localDb() {
-  dbPromise ??= openDB<SimonDB>("simon", 1, {
-    upgrade(db) {
-      const catalogue = db.createObjectStore("catalogue", { keyPath: "id" });
-      catalogue.createIndex("byBarcode", "barcodes", { multiEntry: true });
-      db.createObjectStore("settings");
-      db.createObjectStore("outbox", { keyPath: "id" }).createIndex("byEnqueuedAt", "enqueuedAt");
-      db.createObjectStore("basket");
-      db.createObjectStore("meta");
+  dbPromise ??= openDB<SimonDB>("simon", 2, {
+    upgrade(db, oldVersion) {
+      if (oldVersion < 1) {
+        const catalogue = db.createObjectStore("catalogue", { keyPath: "id" });
+        catalogue.createIndex("byBarcode", "barcodes", { multiEntry: true });
+        db.createObjectStore("settings");
+        db.createObjectStore("outbox", { keyPath: "id" }).createIndex("byEnqueuedAt", "enqueuedAt");
+        db.createObjectStore("basket");
+        db.createObjectStore("meta");
+      }
+      // v2 — Phase 2: customers, names and last-known balances for the debt sale screen (§14.4).
+      if (oldVersion < 2) db.createObjectStore("customers", { keyPath: "id" });
     },
   });
   return dbPromise;

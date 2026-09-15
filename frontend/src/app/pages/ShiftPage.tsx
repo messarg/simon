@@ -9,6 +9,7 @@ import { EmptyState, Keypad, MoneyText } from "@/components/shared";
 import { Button } from "@/components/ui/button.tsx";
 import { CashMovementSheet, type MovementType } from "@/features/shift/CashMovementSheet.tsx";
 import { CloseShift } from "@/features/shift/CloseShift.tsx";
+import { CashMovementsList } from "@/features/shift/CashMovementsList.tsx";
 import { ShiftFiguresList } from "@/features/shift/ShiftFigures.tsx";
 import { problemMessage, t } from "@/i18n/t.ts";
 import { useConnection } from "@/lib/connection.ts";
@@ -138,6 +139,7 @@ export function ShiftPage() {
         <Button variant="secondary" size="lg" className="h-touch-xl flex-col gap-1" onClick={() => setMovement("PAY_OUT")}><ArrowUpFromLine />{t("shift.payOut")}</Button>
         <Button variant="secondary" size="lg" className="h-touch-xl flex-col gap-1" onClick={() => setMovement("DROP")}><Landmark />{t("shift.drop")}</Button>
       </div>
+      {!offlineCached && <CashMovementsList shiftId={report.shift.id} onChanged={() => void qc.invalidateQueries({ queryKey: currentShiftKey })} />}
       <Button size="xl" variant="soft" className="w-full" disabled={connection === "offline"} onClick={() => setClosing(true)}>
         {t("shift.close")} {report.figures ? `· ${money(report.figures.expected)}` : ""}
       </Button>
