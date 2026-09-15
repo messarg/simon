@@ -25,3 +25,14 @@ dist-ssr
 
 # Claude Code personal settings
 .claude/settings.local.json
+
+# Simon runtime data — shop data never enters git
+backend/var/
+backend/src/generated/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+scripts/__pycache__/
+test-results/
+playwright-report/

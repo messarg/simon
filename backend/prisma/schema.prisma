@@ -1,0 +1,702 @@
+// Simon's data model. PRD §11 is the authority; this file follows its field conventions:
+// - ids are TEXT UUIDv7, client-generated where §14.3 says so;
+// - money and quantity are Int (drams, milli-drams, milli-units); never Float or Decimal;
+// - timestamps are String (RFC 3339 UTC) and booleans are Int 0/1, because STRICT tables
+//   accept neither DATETIME nor BOOLEAN;
+// - enums are String with a CHECK added to the migration SQL by prisma/strictify.ts;
+// - every foreign key is ON DELETE RESTRICT — nothing financial is ever deleted (§10.7).
+
+generator client {
+  provider            = "prisma-client"
+  output              = "../src/generated/prisma"
+  importFileExtension = "ts"
+  moduleFormat        = "esm"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// ── Catalogue ────────────────────────────────────────────────────────────────
+
+model Category {
+  id        String     @id
+  name      String
+  parentId  String?
+  updatedAt String
+  parent    Category?  @relation("CategoryTree", fields: [parentId], references: [id], onDelete: Restrict)
+  children  Category[] @relation("CategoryTree")
+  products  Product[]
+}
+
+model Product {
+  id                String           @id
+  sku               String?          @unique
+  name              String
+  nameSearch        String
+  categoryId        String?
+  stockUom          String
+  stockQty          Int              @default(0)
+  decimalPlaces     Int
+  avgCostMdram      Int?
+  sellPriceMdram    Int
+  taxCategory       String           @default("STANDARD")
+  defaultSupplierId String?
+  reorderPoint      Int              @default(0)
+  reorderQty        Int              @default(0)
+  tilePinnedAt      String?
+  trackStock        Int              @default(1)
+  isActive          Int              @default(1)
+  createdAt         String
+  updatedAt         String
+  category          Category?        @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  defaultSupplier   Supplier?        @relation(fields: [defaultSupplierId], references: [id], onDelete: Restrict)
+  barcodes          ProductBarcode[]
+  units             ProductUnit[]
+  priceHistory      PriceHistory[]
+  movements         StockMovement[]
+  saleLines         SaleLine[]
+  stats             ProductStats?
+
+  @@index([nameSearch])
+  @@index([updatedAt])
+}
+
+model ProductBarcode {
+  id        String  @id
+  productId String
+  barcode   String  @unique
+  isPrimary Int     @default(0)
+  retiredAt String?
+  updatedAt String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@index([productId])
+}
+
+model ProductUnit {
+  id               String  @id
+  productId        String
+  uom              String
+  factorToStockUom Int
+  role             String
+  barcode          String?
+  updatedAt        String
+  product          Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@index([productId])
+}
+
+model PriceHistory {
+  id             String  @id
+  productId      String
+  sellPriceMdram Int
+  effectiveFrom  String
+  changedBy      String
+  product        Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+  user           User    @relation(fields: [changedBy], references: [id], onDelete: Restrict)
+
+  @@index([productId, effectiveFrom])
+}
+
+// ── Selling ──────────────────────────────────────────────────────────────────
+
+model Sale {
+  id                 String       @id
+  number             String?      @unique
+  shiftId            String
+  userId             String
+  customerId         String?
+  status             String
+  subtotal           Int
+  discountTotal      Int
+  discountReason     String?
+  taxTotal           Int
+  priceBasis         String
+  roundingAdjustment Int
+  total              Int
+  businessDate       String
+  createdAt          String
+  completedAt        String?
+  reversesId         String?
+  fiscalReceiptId    String?
+  shift              Shift        @relation(fields: [shiftId], references: [id], onDelete: Restrict)
+  user               User         @relation(fields: [userId], references: [id], onDelete: Restrict)
+  customer           Customer?    @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  lines              SaleLine[]
+  payments           Payment[]
+  returns            SaleReturn[]
+  debtEntries        DebtEntry[]
+
+  @@index([businessDate])
+  @@index([completedAt])
+  @@index([shiftId, status])
+  @@index([status, createdAt])
+}
+
+model SaleLine {
+  id               String           @id
+  saleId           String
+  productId        String
+  productName      String
+  qty              Int
+  uom              String
+  factorToStockUom Int
+  unitPriceMdram   Int
+  unitCostMdram    Int?
+  taxRateBp        Int
+  lineTax          Int
+  discountAmount   Int
+  discountReason   String?
+  priceOverridden  Int              @default(0)
+  lineTotal        Int
+  sale             Sale             @relation(fields: [saleId], references: [id], onDelete: Restrict)
+  product          Product          @relation(fields: [productId], references: [id], onDelete: Restrict)
+  returnLines      SaleReturnLine[]
+
+  @@index([saleId])
+  @@index([productId])
+}
+
+model Payment {
+  id             String  @id
+  saleId         String
+  method         String
+  amount         Int
+  tenderedAmount Int?
+  changeGiven    Int?
+  sale           Sale    @relation(fields: [saleId], references: [id], onDelete: Restrict)
+
+  @@index([saleId])
+}
+
+model SaleReturn {
+  id             String             @id
+  originalSaleId String?
+  shiftId        String
+  businessDate   String
+  userId         String
+  reason         String
+  priceBasis     String
+  total          Int
+  reversesId     String?
+  createdAt      String
+  originalSale   Sale?              @relation(fields: [originalSaleId], references: [id], onDelete: Restrict)
+  shift          Shift              @relation(fields: [shiftId], references: [id], onDelete: Restrict)
+  user           User               @relation(fields: [userId], references: [id], onDelete: Restrict)
+  lines          SaleReturnLine[]
+  tenders        SaleReturnTender[]
+
+  @@index([originalSaleId])
+  @@index([shiftId])
+  @@index([businessDate])
+}
+
+model SaleReturnTender {
+  id       String     @id
+  returnId String
+  method   String
+  amount   Int
+  ret      SaleReturn @relation(fields: [returnId], references: [id], onDelete: Restrict)
+
+  @@index([returnId])
+}
+
+model SaleReturnLine {
+  id            String     @id
+  returnId      String
+  saleLineId    String?
+  productId     String
+  qty           Int
+  unitCostMdram Int?
+  taxRateBp     Int
+  lineTax       Int
+  discountShare Int
+  refundAmount  Int
+  restock       Int
+  ret           SaleReturn @relation(fields: [returnId], references: [id], onDelete: Restrict)
+  saleLine      SaleLine?  @relation(fields: [saleLineId], references: [id], onDelete: Restrict)
+
+  @@index([returnId])
+  @@index([saleLineId])
+}
+
+// ── Buying ───────────────────────────────────────────────────────────────────
+
+model Supplier {
+  id                 String               @id
+  name               String
+  nameSearch         String
+  taxId              String?
+  phone              String?
+  paymentTerms       Int                  @default(0)
+  leadTimeDays       Int                  @default(0)
+  isActive           Int                  @default(1)
+  createdAt          String
+  updatedAt          String
+  products           Product[]
+  purchaseOrders     PurchaseOrder[]
+  receipts           GoodsReceipt[]
+  payments           SupplierPayment[]
+  adjustments        SupplierAdjustment[]
+  purchaseReturns    PurchaseReturn[]
+}
+
+model PurchaseOrder {
+  id         String              @id
+  number     String              @unique
+  supplierId String
+  status     String
+  expectedAt String?
+  total      Int
+  createdAt  String
+  supplier   Supplier            @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  lines      PurchaseOrderLine[]
+  receipts   GoodsReceipt[]
+}
+
+model PurchaseOrderLine {
+  id            String        @id
+  poId          String
+  productId     String
+  qtyOrdered    Int
+  qtyReceived   Int           @default(0)
+  unitCostMdram Int
+  po            PurchaseOrder @relation(fields: [poId], references: [id], onDelete: Restrict)
+
+  @@index([poId])
+}
+
+model GoodsReceipt {
+  id                String             @id
+  number            String             @unique
+  supplierId        String
+  poId              String?
+  receivedAt        String
+  userId            String
+  supplierInvoiceNo String
+  landedCostTotal   Int
+  total             Int
+  reversesId        String?
+  supplier          Supplier           @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  po                PurchaseOrder?     @relation(fields: [poId], references: [id], onDelete: Restrict)
+  user              User               @relation(fields: [userId], references: [id], onDelete: Restrict)
+  lines             GoodsReceiptLine[]
+  allocations       SupplierAllocation[]
+  purchaseReturns   PurchaseReturn[]
+
+  @@index([supplierId, receivedAt])
+}
+
+model GoodsReceiptLine {
+  id                   String               @id
+  receiptId            String
+  productId            String
+  qty                  Int
+  uom                  String
+  factorToStockUom     Int
+  invoiceUnitCostMdram Int
+  landedUnitCostMdram  Int
+  receipt              GoodsReceipt         @relation(fields: [receiptId], references: [id], onDelete: Restrict)
+  corrections          CostCorrection[]
+  returnLines          PurchaseReturnLine[]
+
+  @@index([receiptId])
+  @@index([productId])
+}
+
+model CostCorrection {
+  id                   String           @id
+  goodsReceiptLineId   String
+  wrongUnitCostMdram   Int
+  correctUnitCostMdram Int
+  affectedFrom         String
+  affectedTo           String
+  reason               String
+  userId               String
+  createdAt            String
+  receiptLine          GoodsReceiptLine @relation(fields: [goodsReceiptLineId], references: [id], onDelete: Restrict)
+}
+
+model SupplierPayment {
+  id         String   @id
+  supplierId String
+  amount     Int
+  method     String
+  paidAt     String
+  userId     String
+  reversesId String?
+  supplier   Supplier @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+
+  @@index([supplierId])
+}
+
+model SupplierAdjustment {
+  id         String   @id
+  supplierId String
+  type       String
+  amount     Int
+  reason     String
+  userId     String
+  createdAt  String
+  reversesId String?
+  supplier   Supplier @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+
+  @@index([supplierId])
+}
+
+model SupplierAllocation {
+  id             String       @id
+  creditType     String
+  creditId       String
+  goodsReceiptId String
+  amount         Int
+  userId         String
+  createdAt      String
+  receipt        GoodsReceipt @relation(fields: [goodsReceiptId], references: [id], onDelete: Restrict)
+
+  @@index([goodsReceiptId])
+  @@index([creditType, creditId])
+}
+
+model PurchaseReturn {
+  id             String               @id
+  supplierId     String
+  receiptId      String?
+  reason         String
+  total          Int
+  landedCostLost Int
+  userId         String
+  createdAt      String
+  supplier       Supplier             @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  receipt        GoodsReceipt?        @relation(fields: [receiptId], references: [id], onDelete: Restrict)
+  lines          PurchaseReturnLine[]
+}
+
+model PurchaseReturnLine {
+  id                  String           @id
+  returnId            String
+  receiptLineId       String
+  productId           String
+  qty                 Int
+  landedUnitCostMdram Int
+  creditAmount        Int
+  ret                 PurchaseReturn   @relation(fields: [returnId], references: [id], onDelete: Restrict)
+  receiptLine         GoodsReceiptLine @relation(fields: [receiptLineId], references: [id], onDelete: Restrict)
+
+  @@index([returnId])
+}
+
+// ── Money, stock & people ────────────────────────────────────────────────────
+
+model StockMovement {
+  id            String  @id
+  productId     String
+  seq           Int     @unique
+  type          String
+  qtyDelta      Int
+  unitCostMdram Int?
+  balanceAfter  Int
+  sourceType    String
+  sourceId      String
+  userId        String
+  locationId    String?
+  reasonCode    String?
+  note          String  @default("")
+  createdAt     String
+  product       Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+  user          User    @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([productId, seq])
+  @@index([sourceType, sourceId])
+}
+
+model ReviewFlag {
+  id         String  @id
+  type       String
+  sourceType String
+  sourceId   String
+  productId  String?
+  customerId String?
+  note       String  @default("")
+  createdAt  String
+  resolvedAt String?
+  resolvedBy String?
+
+  @@index([resolvedAt, type])
+  @@index([sourceType, sourceId])
+}
+
+model Customer {
+  id           String      @id
+  fullName     String?
+  nameSearch   String
+  phone        String?     @unique
+  discountBp   Int         @default(0)
+  creditLimit  Int
+  isBlocked    Int         @default(0)
+  isActive     Int         @default(1)
+  mergedIntoId String?
+  anonymisedAt String?
+  notes        String      @default("")
+  createdAt    String
+  updatedAt    String
+  mergedInto   Customer?   @relation("CustomerMerge", fields: [mergedIntoId], references: [id], onDelete: Restrict)
+  absorbed     Customer[]  @relation("CustomerMerge")
+  sales        Sale[]
+  debtEntries  DebtEntry[]
+
+  @@index([nameSearch])
+  @@index([updatedAt])
+}
+
+model DebtEntry {
+  id         String    @id
+  customerId String
+  type       String
+  amount     Int
+  method     String?
+  saleId     String?
+  dueDate    String?
+  reversesId String?
+  createdAt  String
+  userId     String
+  customer   Customer  @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  sale       Sale?     @relation(fields: [saleId], references: [id], onDelete: Restrict)
+  user       User      @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([customerId, createdAt])
+}
+
+model DebtAllocation {
+  id            String @id
+  creditEntryId String
+  chargeEntryId String
+  amount        Int
+
+  @@index([chargeEntryId])
+  @@index([creditEntryId])
+}
+
+model AllocationOverride {
+  id            String @id
+  creditEntryId String
+  chargeEntryId String
+  amount        Int
+  userId        String
+  createdAt     String
+
+  @@index([creditEntryId])
+}
+
+model Shift {
+  id               String             @id
+  userId           String
+  openedAt         String
+  closedAt         String?
+  openingFloat     Int
+  expectedCash     Int?
+  countedCash      Int?
+  countedBreakdown String?
+  variance         Int?
+  status           String
+  unsyncedAtClose  Int                @default(0)
+  notes            String             @default("")
+  user             User               @relation(fields: [userId], references: [id], onDelete: Restrict)
+  sales            Sale[]
+  returns          SaleReturn[]
+  cashMovements    CashMovement[]
+  lateArrivals     ShiftLateArrival[]
+  sessions         Session[]
+
+  @@index([userId, status])
+  @@index([status])
+}
+
+model CashMovement {
+  id           String  @id
+  shiftId      String
+  businessDate String
+  type         String
+  amount       Int
+  reasonCode   String?
+  reason       String?
+  sourceType   String
+  sourceId     String
+  userId       String
+  reversesId   String?
+  createdAt    String
+  shift        Shift   @relation(fields: [shiftId], references: [id], onDelete: Restrict)
+  user         User    @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([shiftId])
+  @@index([sourceType, sourceId])
+}
+
+model ShiftLateArrival {
+  id         String @id
+  shiftId    String
+  sourceType String
+  sourceId   String
+  amount     Int
+  arrivedAt  String
+  shift      Shift  @relation(fields: [shiftId], references: [id], onDelete: Restrict)
+
+  @@index([shiftId])
+}
+
+model User {
+  id               String          @id
+  name             String
+  pinHash          String
+  recoveryCodeHash String?
+  role             String
+  isActive         Int             @default(1)
+  failedAttempts   Int             @default(0)
+  lockedUntil      String?
+  coachMarksSeen   String          @default("[]")
+  createdAt        String
+  sessions         Session[]
+  shifts           Shift[]
+  sales            Sale[]
+  saleReturns      SaleReturn[]
+  priceChanges     PriceHistory[]
+  movements        StockMovement[]
+  debtEntries      DebtEntry[]
+  cashMovements    CashMovement[]
+  receipts         GoodsReceipt[]
+  auditLogs        AuditLog[]
+}
+
+model Device {
+  id             String    @id
+  prefix         String    @unique
+  label          String
+  registeredAt   String
+  lastSequence   Int       @default(0)
+  blockStart     Int?
+  blockEnd       Int?
+  outboxDepth    Int       @default(0)
+  outboxOldestAt String?
+  parkedDepth    Int       @default(0)
+  lastSeenAt     String?
+  isActive       Int       @default(1)
+  sessions       Session[]
+}
+
+model Session {
+  id         String  @id
+  userId     String
+  deviceId   String
+  tokenHash  String  @unique
+  mode       String
+  shiftId    String?
+  createdAt  String
+  lastSeenAt String
+  expiresAt  String
+  revokedAt  String?
+  user       User    @relation(fields: [userId], references: [id], onDelete: Restrict)
+  device     Device  @relation(fields: [deviceId], references: [id], onDelete: Restrict)
+  shift      Shift?  @relation(fields: [shiftId], references: [id], onDelete: Restrict)
+
+  @@index([userId])
+  @@index([deviceId])
+  @@index([shiftId])
+}
+
+model AuditLog {
+  id         String  @id
+  userId     String
+  action     String
+  entityType String
+  entityId   String
+  before     String?
+  after      String?
+  reason     String?
+  createdAt  String
+  user       User    @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@index([action, entityId])
+}
+
+model Stocktake {
+  id         String          @id
+  status     String
+  startedAt  String
+  startedBy  String
+  approvedAt String?
+  approvedBy String?
+  note       String          @default("")
+  lines      StocktakeLine[]
+}
+
+model StocktakeLine {
+  id            String    @id
+  stocktakeId   String
+  productId     String
+  expectedQty   Int
+  countedQty    Int?
+  varianceValue Int       @default(0)
+  stocktake     Stocktake @relation(fields: [stocktakeId], references: [id], onDelete: Restrict)
+
+  @@index([stocktakeId])
+}
+
+model ProductStats {
+  productId         String  @id
+  avgDailyQty30d    Int
+  lastSoldAt        String?
+  daysSinceLastSale Int?
+  computedAt        String
+  product           Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+}
+
+model BackupRun {
+  id          String  @id
+  startedAt   String
+  completedAt String?
+  destination String
+  sizeBytes   Int?
+  outcome     String
+  error       String?
+}
+
+model Setting {
+  key       String @id
+  value     String
+  updatedAt String
+
+  @@index([updatedAt])
+}
+
+// ── Import ───────────────────────────────────────────────────────────────────
+
+model ImportBatch {
+  id           String      @id
+  kind         String
+  fileHash     String
+  rowCount     Int
+  appliedCount Int         @default(0)
+  skippedCount Int         @default(0)
+  failedCount  Int         @default(0)
+  startedAt    String
+  completedAt  String?
+  userId       String
+  rows         ImportRow[]
+}
+
+model ImportRow {
+  id         String      @id
+  batchId    String
+  rowNumber  Int
+  naturalKey String
+  status     String
+  entityId   String?
+  error      String?
+  batch      ImportBatch @relation(fields: [batchId], references: [id], onDelete: Restrict)
+
+  @@index([naturalKey, status])
+  @@index([batchId])
+}

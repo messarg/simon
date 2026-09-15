@@ -1,0 +1,76 @@
+/**
+ * IndexedDB. PRD §14.4.
+ *
+ *   catalogue  products (with barcodes and units), keyed by id, for offline scan and search
+ *   settings   the client settings shape, one row
+ *   outbox     queue-drained documents awaiting delivery, FIFO by `enqueuedAt`
+ *   basket     the basket in progress, so it survives navigation and restart (§6.1)
+ *   meta       lastSyncAt, device sequence counter
+ */
+import { openDB, type DBSchema, type IDBPDatabase } from "idb";
+
+export interface CachedProduct {
+  id: string;
+  name: string;
+  nameSearch: string;
+  stockUom: string;
+  decimalPlaces: number;
+  sellPriceMdram: number;
+  stockQty: number;
+  isActive: boolean;
+  tilePinnedAt: string | null;
+  categoryId: string | null;
+  barcodes: string[];
+  updatedAt: string;
+}
+
+export type OutboxKind = "sale" | "sale-return" | "cash-movement" | "debt-payment";
+export type OutboxState = "pending" | "held" | "parked";
+
+export interface OutboxItem {
+  id: string;
+  kind: OutboxKind;
+  body: unknown;
+  /** Documents this one depends on, which must drain first (§14.4). */
+  dependsOn: string[];
+  enqueuedAt: string;
+  attempts: number;
+  state: OutboxState;
+  lastError: { status: number; type: string } | null;
+  nextAttemptAt: number;
+  /** Counted apart from sales in transit (§11 `Device.parkedDepth`). */
+  isParkedBasket: boolean;
+  requeuedOnce: boolean;
+}
+
+interface SimonDB extends DBSchema {
+  catalogue: { key: string; value: CachedProduct; indexes: { byBarcode: string } };
+  settings: { key: string; value: unknown };
+  outbox: { key: string; value: OutboxItem; indexes: { byEnqueuedAt: string } };
+  basket: { key: string; value: unknown };
+  meta: { key: string; value: unknown };
+}
+
+let dbPromise: Promise<IDBPDatabase<SimonDB>> | null = null;
+
+export function localDb() {
+  dbPromise ??= openDB<SimonDB>("simon", 1, {
+    upgrade(db) {
+      const catalogue = db.createObjectStore("catalogue", { keyPath: "id" });
+      catalogue.createIndex("byBarcode", "barcodes", { multiEntry: true });
+      db.createObjectStore("settings");
+      db.createObjectStore("outbox", { keyPath: "id" }).createIndex("byEnqueuedAt", "enqueuedAt");
+      db.createObjectStore("basket");
+      db.createObjectStore("meta");
+    },
+  });
+  return dbPromise;
+}
+
+export async function getMeta<T>(key: string): Promise<T | undefined> {
+  return (await (await localDb()).get("meta", key)) as T | undefined;
+}
+
+export async function setMeta(key: string, value: unknown) {
+  await (await localDb()).put("meta", value, key);
+}

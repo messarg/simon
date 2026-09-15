@@ -133,6 +133,20 @@ return Armenian prose from the API.
 
 ## Prisma
 
+**Prisma 7.10 with the `prisma-client` generator and `@prisma/adapter-better-sqlite3`.** The client is
+generated as TypeScript into `backend/src/generated/prisma/` (gitignored, regenerated on `postinstall`)
+with `importFileExtension = "ts"`, and runs directly under `--experimental-strip-types`. The CLI reads
+its URL from `backend/prisma.config.ts`; the runtime builds clients in `src/lib/db.ts`, which sets the
+four PRAGMAs on every client and opens the live and practice files separately.
+
+- **New migration:** `npm run db:new-migration -w backend` = `prisma migrate dev --create-only` then
+  `prisma/strictify.ts` on the new SQL. Strictify appends `STRICT` and the enum/boolean/range `CHECK`s
+  from its two tables (`ENUM_CHECKS`, `EXTRA_CHECKS`); add a check there, not by hand in SQL.
+  `src/lib/schema.test.ts` fails if any migration table lacks `STRICT`.
+- **Applied on startup** by `src/lib/migrate.ts`, which records into the same `_prisma_migrations`
+  table the CLI uses. Tests use it too (`src/test/db.ts`), so every test runs on the real SQL.
+- Interactive transaction type: `Tx` from `src/lib/db.ts`. Services take `Db | Tx` and never open
+  their own transaction when handed one.
 - Migrations are checked in and applied on startup; the owner never runs a CLI.
 - `Int` for money and quantity. **No `Float`, no `Decimal`** — Prisma's SQLite `Decimal`
   mapping does not give reliable precision.

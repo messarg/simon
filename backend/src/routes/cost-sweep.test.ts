@@ -1,0 +1,53 @@
+/**
+ * §27.9 — a WORKER session obtains no cost field from any API endpoint.
+ *
+ * Walks every GET route registered on the app (collected from the Express router stack, so
+ * a new route joins the sweep without anyone remembering to add it) and asserts no key in
+ * COST_KEYS appears anywhere in the body. Each phase re-runs it with its routes mounted.
+ */
+import request from "supertest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { COST_KEYS } from "../lib/shape.ts";
+import { bearer, createTestApp, type TestApp } from "../test/app.ts";
+
+function collectGetPaths(app: TestApp["app"]): string[] {
+  const out = new Set<string>();
+  const walk = (stack: any[], prefix: string) => {
+    for (const layer of stack) {
+      if (layer.route?.methods?.get) out.add(prefix + layer.route.path);
+      else if (layer.handle?.stack) walk(layer.handle.stack, layer.name === "router" && layer.matchers ? prefix : prefix);
+    }
+  };
+  walk((app as any).router.stack, "");
+  return [...out];
+}
+
+function findCostKeys(v: unknown, path = "$"): string[] {
+  if (Array.isArray(v)) return v.flatMap((x, i) => findCostKeys(x, `${path}[${i}]`));
+  if (v && typeof v === "object") {
+    return Object.entries(v).flatMap(([k, x]) => [...((COST_KEYS as readonly string[]).includes(k) ? [`${path}.${k}`] : []), ...findCostKeys(x, `${path}.${k}`)]);
+  }
+  return [];
+}
+
+export async function sweepForCost(t: TestApp, fill: (path: string) => string | null) {
+  const leaks: string[] = [];
+  for (const raw of collectGetPaths(t.app)) {
+    const path = fill(raw);
+    if (!path) continue;
+    const res = await request(t.app).get(`/api${path}`).set(bearer(t.tokens.WORKER));
+    leaks.push(...findCostKeys(res.body).map((k) => `${path} → ${k}`));
+  }
+  return leaks;
+}
+
+describe("§27.9 cost sweep (foundation routes)", () => {
+  let t: TestApp;
+  beforeAll(async () => { t = await createTestApp(); });
+  afterAll(async () => { await t.close(); });
+
+  it("finds the routes and no cost field reaches a WORKER", async () => {
+    expect(collectGetPaths(t.app).length).toBeGreaterThan(5);
+    expect(await sweepForCost(t, (p) => p.replace(/:id/g, t.users.WORKER.id))).toEqual([]);
+  });
+});

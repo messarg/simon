@@ -23,6 +23,7 @@
     "pretest": "npm run check"
   },
   "devDependencies": {
+    "fast-check": "^4.10.0",
     "typescript": "~6.0.2",
     "vitest": "^4.0.18"
   },

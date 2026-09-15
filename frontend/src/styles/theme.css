@@ -1,0 +1,117 @@
+/*
+ * Simon design tokens — "calm utilitarian".
+ *
+ * A modern paper ledger: warm off-white ground, deep teal for the one thing to do next,
+ * amber for attention, and a neutral slate for variance so a shift close never reads as an
+ * accusation (§6.6). Destructive red is reserved for irreversible actions only.
+ * Components use the semantic names (`bg-primary`, `text-muted-foreground`), never values.
+ */
+@import "tailwindcss";
+@import "@fontsource/noto-sans-armenian/400.css";
+@import "@fontsource/noto-sans-armenian/500.css";
+@import "@fontsource/noto-sans-armenian/600.css";
+@import "@fontsource/noto-sans-armenian/700.css";
+@import "@fontsource-variable/inter";
+
+:root {
+  --background: oklch(0.978 0.008 85);
+  --foreground: oklch(0.24 0.02 250);
+  --card: oklch(0.995 0.004 85);
+  --card-foreground: var(--foreground);
+  --muted: oklch(0.945 0.01 85);
+  --muted-foreground: oklch(0.48 0.02 250);
+  --border: oklch(0.89 0.012 85);
+  --input: oklch(0.86 0.014 85);
+  --ring: oklch(0.52 0.09 190);
+
+  --primary: oklch(0.45 0.085 192);
+  --primary-foreground: oklch(0.985 0.006 190);
+  --primary-soft: oklch(0.94 0.03 190);
+  --accent: oklch(0.93 0.02 190);
+  --accent-foreground: oklch(0.32 0.06 192);
+
+  --attention: oklch(0.8 0.13 75);
+  --attention-foreground: oklch(0.33 0.07 60);
+  --attention-soft: oklch(0.96 0.045 85);
+  --success: oklch(0.55 0.1 155);
+  --success-soft: oklch(0.95 0.035 155);
+  --destructive: oklch(0.53 0.17 28);
+  --destructive-foreground: oklch(0.985 0.005 28);
+  --destructive-soft: oklch(0.95 0.03 28);
+
+  /* Variance and money deltas: neutral in both directions (§6.6 tone rule). */
+  --money-neutral: oklch(0.42 0.02 250);
+
+  --radius: 0.875rem;
+  --text-scale: 1;
+}
+
+:root[data-text-size="large"] { --text-scale: 1.125; }
+:root[data-text-size="xlarge"] { --text-scale: 1.25; }
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-soft: var(--primary-soft);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-attention: var(--attention);
+  --color-attention-foreground: var(--attention-foreground);
+  --color-attention-soft: var(--attention-soft);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-destructive-soft: var(--destructive-soft);
+  --color-money-neutral: var(--money-neutral);
+
+  --font-sans: "Noto Sans Armenian", "Inter Variable", system-ui, sans-serif;
+  --font-numeric: "Inter Variable", "Noto Sans Armenian", system-ui, sans-serif;
+
+  --radius-sm: calc(var(--radius) - 6px);
+  --radius-md: calc(var(--radius) - 3px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 6px);
+
+  /* Touch: 48px is the floor for anything tapped during a sale (§27.17). */
+  --spacing-touch: 3rem;
+  --spacing-touch-lg: 3.75rem;
+  --spacing-touch-xl: 4.5rem;
+
+  --animate-line-in: line-in 180ms ease-out;
+  --animate-sheet-up: sheet-up 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  --animate-fade-in: fade-in 150ms ease-out;
+}
+
+@keyframes line-in { from { opacity: 0; transform: translateY(-6px); background: var(--primary-soft); } to { opacity: 1; transform: none; } }
+@keyframes sheet-up { from { transform: translateY(100%); } to { transform: none; } }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+
+@layer base {
+  html { font-size: calc(100% * var(--text-scale)); -webkit-tap-highlight-color: transparent; }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    min-height: 100dvh;
+    overscroll-behavior-y: none;
+  }
+  *, ::before, ::after { border-color: var(--border); }
+  :focus-visible { outline: 3px solid var(--ring); outline-offset: 2px; }
+  button { cursor: pointer; touch-action: manipulation; }
+  button:disabled { cursor: not-allowed; }
+  @media (prefers-reduced-motion: reduce) {
+    *, ::before, ::after { animation-duration: 1ms !important; transition-duration: 1ms !important; }
+  }
+}
+
+@utility tabular { font-family: var(--font-numeric); font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1, "cv11" 1; }
+@utility safe-bottom { padding-bottom: max(env(safe-area-inset-bottom), 0px); }
+@utility safe-top { padding-top: max(env(safe-area-inset-top), 0px); }

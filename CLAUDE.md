@@ -20,7 +20,16 @@ docs/event-storming/  domain-discovery output (events, commands, bounded context
 
 ### Current state of the tree
 
-Phase 0 of §23 is in progress. What exists: the workspace split, `packages/shared/src/money.ts` with its tests, and placeholder entry points. What does **not** exist yet, despite being specified in the PRD and described by the skills below: Prisma schema, Express, any route or service, Tailwind, shadcn, TanStack Query, react-hook-form, Zod, the Armenian resource files. `frontend/src/App.tsx` is still the Vite scaffold, and `backend/src/index.ts` only logs. `backend/src/{domain,services,routes,jobs,lib}/` hold README stubs marking the intended layering. Do not assume a convention the skills describe is already wired up — check first, then add it the way the skill says.
+Built phase by phase in PRD §23's order, each phase committed and reviewed before the next. **Phase 0 (foundations) is done**; Phase 1 (Sell) is next.
+
+What exists:
+- `packages/shared/src/` — money, `tax.ts` (both price bases), `sale-math.ts` (`computeSale`, the one sale total the till shows and the server recomputes), `search.ts` (Latin-typed Armenian), `time.ts` (shop-local `businessDate`), `enums.ts` (every §11 enum as `z.enum`), `problems.ts` (§8.5 catalogue), `settings.ts` (defaults and the `ClientSettings` shape).
+- `backend/src/domain/` — pure rules with tests: costing, ledger replay/drift, debt allocation projection, aging, shift cash, discount cap, returns, drawer, PIN policy.
+- `backend/prisma/schema.prisma` — every §11 model. Migrations are post-processed by `prisma/strictify.ts` (STRICT + CHECKs) and applied on startup by `src/lib/migrate.ts`.
+- `backend/src/{lib,services,routes,middleware,jobs}` — Express 5 app (`app.ts`, Supertest-driven), RFC 7807 errors, response shaping (`lib/shape.ts`), PIN auth with lockout/rate limit/devices/sessions/re-auth grants, settings, users, audit, stock ledger posting, drift job.
+- `frontend/src/` — Tailwind v4 theme (`styles/theme.css`), Armenian strings (`i18n/hy.ts` + `t()`), `lib/` (http, session store, connection probe, IndexedDB), hand-written shadcn-style primitives in `components/ui/`, shells and navigation, sign-in and first-run owner setup. Destinations are placeholders until their phase.
+
+Not yet: sales, returns, shifts, catalogue routes and screens (Phase 1); debt (2); buying (3); reports, backup (4); wizard, import, practice data, PWA (5). react-hook-form and Playwright are not installed yet.
 
 ### Invariants from the PRD that are expensive to fix later
 
@@ -61,6 +70,8 @@ npm run lint                 # oxlint — frontend only; no other workspace has 
 npm test                     # vitest, single root run across all workspaces
 npm run test:watch
 npm run check:prd            # PRD index consistency (python3 scripts/check-prd.py)
+npm run db:seed -w backend   # dev database: owner 1111, stock 2222, worker 3333 (refuses if users exist)
+npm run db:new-migration -w backend   # prisma migrate dev --create-only, then strictify the new SQL
 ```
 
 `build`, `typecheck` and `lint` fan out with `--workspaces --if-present`; `test` does not — `vitest.config.ts` at the root is one runner covering `{packages,backend,frontend}/**/src/**/*.test.{ts,tsx}`. Playwright (when added) will own `tests/**`.

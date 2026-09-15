@@ -5,10 +5,29 @@
   "type": "module",
   "scripts": {
     "dev": "node --experimental-strip-types --watch src/index.ts",
+    "start": "node --experimental-strip-types src/index.ts",
     "build": "tsc --noEmit",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "db:generate": "prisma generate",
+    "db:new-migration": "prisma migrate dev --create-only && node --experimental-strip-types prisma/strictify.ts $(ls -d prisma/migrations/*/ | tail -1)migration.sql",
+    "db:migrate": "prisma migrate deploy",
+    "db:seed": "node --experimental-strip-types prisma/seed.ts",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
-    "@simon/shared": "*"
+    "@prisma/adapter-better-sqlite3": "^7.10.0",
+    "@prisma/client": "^7.10.0",
+    "@simon/shared": "*",
+    "argon2": "^0.45.1",
+    "express": "^5.2.1",
+    "pino": "^10.3.1",
+    "prisma": "^7.10.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^9.6.0",
+    "@types/express": "^5.0.6",
+    "@types/node": "^24.13.4",
+    "@types/supertest": "^7.2.1",
+    "supertest": "^7.2.2"
   }
 }
