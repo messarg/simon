@@ -25,6 +25,7 @@ export function Sheet({ open, onOpenChange, title, description, children, classN
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-40 bg-foreground/35 animate-fade-in" />
         <Dialog.Content
+          {...(description ? {} : { "aria-describedby": undefined })}
           className={cn(
             "fixed inset-x-0 bottom-0 z-50 max-h-[92dvh] overflow-y-auto rounded-t-xl bg-card px-4 pt-3 pb-5 shadow-2xl animate-sheet-up safe-bottom",
             "md:inset-x-auto md:bottom-auto md:top-1/2 md:left-1/2 md:w-full md:max-w-lg md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-xl md:animate-fade-in",
@@ -35,7 +36,7 @@ export function Sheet({ open, onOpenChange, title, description, children, classN
           <div className="mb-4 flex items-start justify-between gap-3">
             <div>
               <Dialog.Title className="text-xl font-semibold">{title}</Dialog.Title>
-              {description ? <Dialog.Description className="mt-1 text-sm text-muted-foreground">{description}</Dialog.Description> : <Dialog.Description className="sr-only">{title}</Dialog.Description>}
+              {description && <Dialog.Description className="mt-1 text-sm text-muted-foreground">{description}</Dialog.Description>}
             </div>
             {!hideClose && (
               <Dialog.Close className="grid size-touch shrink-0 place-items-center rounded-lg text-muted-foreground hover:bg-muted" aria-label={t("common.close")}>

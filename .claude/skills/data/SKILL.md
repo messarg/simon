@@ -5,6 +5,24 @@ argument-hint: "[query | mutation | keys | invalidation | filter]"
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 ---
 
+# Data layer
+
+> **Simon specifics first** — the generic sections below this block describe another codebase's
+> setup (Next.js `"use client"`, `src/app/providers.tsx`, feature `hooks.ts` barrels). In Simon:
+>
+> - The `QueryClient` is created in `frontend/src/app/App.tsx`: `staleTime` 30 s, one retry only on a
+>   network failure (status 0), mutations never retried.
+> - Reads go through `http` in `lib/http.ts` (relative `/api`, RFC 7807 → `ApiProblem` with `.type`
+>   and `.field()`).
+> - **Queue-drained writes never use `useMutation` or `http.post` directly** — sales, returns and cash
+>   movements go through `outbox.enqueue` (`lib/outbox.ts`), which returns at once. Printing and the
+>   drawer run after the server accepts a document, and only if it was completed online.
+> - Offline-capable reads fall back to IndexedDB (`lib/local-db.ts`): the catalogue (`lib/catalogue.ts`,
+>   synced by `?since=`), client settings (`app/settings.ts`) and the current shift (`app/shift.ts`).
+>   A till with no settings cache refuses to price rather than guessing (§14.4).
+> - Query keys in use: `["settings","client"]`, `["shifts","current",userId]`, `["products",…]`,
+>   `["sales","held"]`, `["sales","recent"]`, `["users"]`, `["devices"]`, `["sessions"]`.
+
 # TanStack
 
 Covers **TanStack Query v5** — the data-fetching and mutation layer for this app. `@tanstack/react-table` is **not installed**, and there is **no generic DataTable or Pagination component** in the consumer app: list surfaces render plain cards/tables per feature and most consumer endpoints return plain arrays (not paginated pages). Do not reach for a shared table/pagination primitive — none exists.

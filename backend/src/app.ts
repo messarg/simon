@@ -8,6 +8,8 @@ import { logger } from "./lib/logger.ts";
 import { errorHandler, problem } from "./lib/problem.ts";
 import { requireSession } from "./middleware/auth.ts";
 import { accountRoutes, adminRoutes } from "./routes/admin.routes.ts";
+import { catalogueRoutes } from "./routes/catalogue.routes.ts";
+import { sellRoutes } from "./routes/sell.routes.ts";
 import { systemRoutes } from "./routes/system.routes.ts";
 
 export interface AppDeps {
@@ -35,6 +37,8 @@ export function createApp(deps: AppDeps) {
   api.use(systemRoutes(deps.live));
   api.use(requireSession(deps.live, deps.practice));
   api.use(accountRoutes());
+  api.use(catalogueRoutes());
+  api.use(sellRoutes());
   for (const router of deps.extraRouters ?? []) api.use(router);
   api.use(adminRoutes());
   api.use((_req, _res, next) => next(problem("not-found")));

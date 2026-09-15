@@ -9,6 +9,7 @@ import request from "supertest";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { COST_KEYS } from "../lib/shape.ts";
 import { bearer, createTestApp, type TestApp } from "../test/app.ts";
+import { makeProduct, openShift, post, saleBody } from "../test/fixtures.ts";
 
 function collectGetPaths(app: TestApp["app"]): string[] {
   const out = new Set<string>();
@@ -41,13 +42,32 @@ export async function sweepForCost(t: TestApp, fill: (path: string) => string | 
   return leaks;
 }
 
-describe("§27.9 cost sweep (foundation routes)", () => {
+describe("§27.9 cost sweep", () => {
   let t: TestApp;
-  beforeAll(async () => { t = await createTestApp(); });
+  let ids: Record<string, string>;
+  beforeAll(async () => {
+    t = await createTestApp();
+    const p = await makeProduct(t, { name: "Մալուխ", priceDram: 1200, stock: 10_000, costMdram: 800_000, barcode: "123" });
+    const shiftId = await openShift(t, "WORKER");
+    const sale = saleBody({ shiftId, lines: [{ product: p, qty: 1000 }] });
+    await post(t, "/sales", sale);
+    ids = { product: p.id, sale: sale.id, shift: shiftId, code: "123", number: sale.number! };
+  });
   afterAll(async () => { await t.close(); });
 
   it("finds the routes and no cost field reaches a WORKER", async () => {
     expect(collectGetPaths(t.app).length).toBeGreaterThan(5);
-    expect(await sweepForCost(t, (p) => p.replace(/:id/g, t.users.WORKER.id))).toEqual([]);
+    const fill = (p: string) => {
+      if (p.startsWith("/products/:id") || p === "/products") return p.replace(":id", ids.product);
+      if (p.startsWith("/sales/:id")) return p.replace(":id", ids.sale);
+      if (p.startsWith("/shifts/:id")) return p.replace(":id", ids.shift);
+      if (p.includes(":code")) return p.replace(":code", ids.code);
+      if (p.includes(":number")) return p.replace(":number", ids.number);
+      return p.replace(/:id/g, t.users.WORKER.id);
+    };
+    expect(await sweepForCost(t, fill)).toEqual([]);
+    // The same routes do carry cost for ADMIN, so the sweep is not vacuous.
+    const admin = await request(t.app).get(`/api/products/${ids.product}`).set(bearer(t.tokens.ADMIN));
+    expect(admin.body.avgCostMdram).toBe(800_000);
   });
 });

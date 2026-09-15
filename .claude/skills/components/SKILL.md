@@ -5,130 +5,64 @@ argument-hint: "[component-name]"
 allowed-tools: Read, Write, Bash, Glob, Grep
 ---
 
-# Component Design
+# Components
 
-Design and implement UI components following this consumer app's conventions.
+Simon's React SPA (Vite, React 19, Tailwind v4). This file describes what exists in
+`frontend/src`; check it before adding a component, and update it when you add one.
 
-## Tier Decision
+## Tiers
 
-| Tier | Location | When | Import Style |
-|------|----------|------|-------------|
-| `ui/` | `components/ui/` | Shadcn primitive (DO NOT modify) | Direct path |
-| `shared/` | `components/shared/` | Reusable across pages | Barrel (`@/components/shared`) |
-| `common/` | `components/common/` | Layout/shell | Direct path |
-| Route-private | `app/<route>/_components/` | Page-specific | Local |
+| Tier | Location | Rule |
+|---|---|---|
+| Primitives | `components/ui/` | Hand-written in the shadcn style on Radix (`button.tsx`, `input.tsx`, `sheet.tsx`). Change deliberately; everything builds on them |
+| Shared | `components/shared/` | Reusable across features; exported from the barrel `@/components/shared` |
+| Shell | `components/common/` | `AppShell` (bottom tabs on phones, side rail for the owner on ≥ md) and `StatusStrip` |
+| Feature | `features/<name>/` | Components that own one feature's data. **No cross-feature imports** |
+| Route | `app/pages/` | Pages compose features — the till page composes `features/till` and `features/returns` |
 
-## Existing Shared Components
+Shared hooks that more than one feature needs (current shift, client settings) live in `app/`
+(`app/shift.ts`, `app/settings.ts`), not inside a feature.
 
-Check before creating — everything exported from `@/components/shared` (`src/components/shared/index.ts`):
+## Existing shared components
 
-- `FormField` (+ `FormFieldProps`, `baseControl`) — Discriminated union by `kind`: text, email, password, textarea, select (checkbox/switch use a raw `<Controller>` + shadcn `<Checkbox>`)
-- `ConfirmDialog` — Confirmation with action
-- `ConsentDeletionDialog` (+ `ConsentDeletionSectionRow`) — Consent-withdrawal / deletion confirmation
-- `QuantityField` / `MoneyField` — integer-backed touch keypads (see the `money` skill)
-- `DatePicker` (+ `DatePickerProps`) — Calendar date picker
-- `PhoneField` (+ `formatPhoneNumber`) — E.164 phone input with country select; the formatter renders a stored number the way a person reads it
-- `PhoneTextField` — Phone input for fields the backend types `ShortText`; stores the *display* string, not E.164
-- `EmailField` (+ `EmailDomainSuggestions`, `SuggestEmailDomainsContext`, `emailDomainSuggestions`, `applyEmailDomain`, `EMAIL_DOMAINS`) — Email input with domain-completion chips. `FormField kind="email"` renders the chips automatically; provide the context as `false` to suppress them (`AuthCard` does)
-- `OptionFlag` (+ `countryForOption`) — Country flag for a schema option that names a country
-- `MultiSelectFilter` (+ `MultiSelectOption`) — Multi-select filter control
-- `EmptyState` — Empty-state placeholder
-- `ComingSoonPage` — Placeholder page for unbuilt routes
-- `RequestAccessAction` — Access-request control (promoted out of `onboarding/_components`)
-- `ProvideConsentButton` / `GrantConsentDialog` — Consent capture at the gate
-- `PasswordStrengthMeter` (+ `passwordScore`) / `PasswordRequirementsChecklist` — Password UX
-- `useMeasuredHeight` — Hook for measuring element height
+- `Keypad` — the large numeric keypad (§6.1). Edits a digit string; callers parse with `parseQty`.
+  Editing rules are in `lib/keypad.ts`.
+- `PinPad` — dots, keypad, server message. Parent clears it by remounting with a new `key`.
+- `QuantitySheet` — quantity on the keypad with a live line total; decimals only where the unit allows.
+- `ReauthSheet` — admin PIN (+ reason) for one action; returns a single-use grant. Sits over the
+  basket, never replaces it (§16.3). Blocked offline with a plain message.
+- `MoneyText` — tabular, grouped money; `signed` for variances.
+- `EmptyState` — icon, title, *teaching* hint (§8.4), optional action.
 
-> Heavy, client-only components (the **camera barcode scanner**, any charting used by the owner dashboard) are **deliberately not** barrel-exported: they are reached through `React.lazy` so their dependency graph stays out of the till bundle. Import those by direct path; everything else in `shared/` goes through the barrel. See the `perf` skill.
+## Design system — "calm utilitarian"
 
-## Design System
+Tokens in `src/styles/theme.css` (`@theme inline`). Use names, never values:
 
-### Colors (semantic design tokens)
+- surfaces `bg-background`, `bg-card`, `bg-muted`, `border-border`
+- action `bg-primary` (teal), `bg-primary-soft`, `text-accent-foreground`
+- attention `bg-attention`, `bg-attention-soft`, `text-attention-foreground` (amber — offline, stale, recount)
+- `bg-destructive` only for irreversible actions; **variance uses `text-money-neutral`**, never red (§6.6)
+- sizes `h-touch` (48 px floor), `h-touch-lg`, `h-touch-xl`; `tabular` for every number
+- text scale follows the text-size setting via `data-text-size` on `<html>`
 
-```tsx
-text-foreground          // Primary text
-text-muted-foreground    // Secondary text
-bg-background            // Page bg
-bg-card                  // Card surface
-bg-muted                 // Subtle bg
-bg-primary text-primary-foreground    // Primary buttons
-bg-destructive text-destructive-foreground  // Danger
-```
+Buttons wrap rather than overflow: Armenian runs 10–30% longer than English (§20.3).
 
-### Typography (Google Sans for sans + headings, Geist Mono for mono — applied globally)
+## Patterns
 
-```tsx
-text-2xl font-semibold   // Page title
-text-lg font-medium      // Section heading
-text-sm text-muted-foreground  // Description
-```
+- **Sheets, not dialogs.** `Sheet` is a bottom sheet on phones and a centred dialog on ≥ md.
+  One without a `description` gets no `aria-describedby`.
+- **Reset by remounting.** A sheet that must start empty each time is given a `key` by its parent
+  and initialises state from props — not a `useEffect` that calls `setState` (oxlint flags it).
+- **Gestures always have a visible alternative.** Basket lines: tap → keypad, swipe → remove with a
+  5-second undo toast, long-press → price override. The keypad sheet offers the same actions.
+- **Strings** come from `t()` (`i18n/t.ts`); no Armenian literals in components.
+- **Camera scanning** (`features/till/CameraSheet.tsx`) lazy-imports `@zxing/browser` so it stays out
+  of the till bundle.
 
-### Layout Patterns
+## Checklist
 
-```tsx
-// Card
-<div className="rounded-lg border bg-card p-6">{/* ... */}</div>
-
-// Page layout
-<div className="space-y-6">
-  <PageHeader title="Title" description="Desc" />
-  {/* Content */}
-</div>
-```
-
-### Tailwind classnames — prefer builtins over arbitrary values
-
-The spacing scale is **`0.25rem` = 4px per step**. For any pixel value that's a multiple of 4, use the scale class — never the arbitrary form.
-
-| Wrong | Right |
-|---|---|
-| `min-h-[140px]` | `min-h-35` (140 ÷ 4 = 35) |
-| `h-[40px]` | `h-10` |
-| `w-[200px]` | `w-50` |
-| `p-[16px]` `gap-[8px]` `mt-[24px]` | `p-4` `gap-2` `mt-6` |
-| `text-[14px]` `text-[16px]` `text-[18px]` | `text-sm` `text-base` `text-lg` |
-| `rounded-[8px]` `rounded-[12px]` | `rounded-lg` `rounded-xl` |
-| `border-[1px]` | `border` |
-
-Arbitrary values (`min-h-[140px]`, `text-[0.65rem]`) are an escape hatch for *off-scale* numbers copied from a prototype — not the default. If `Npx ÷ 4` is a whole number, the builtin exists. Same applies to color tokens with `@theme inline` aliases — use `bg-card`, not `bg-[var(--card)]`.
-
-See `.claude/skills/tailwind-audit/SKILL.md` for the full taxonomy.
-
-For form patterns, see `.claude/skills/forms/SKILL.md`.
-
-## Component Template
-
-```tsx
-"use client";
-
-import { Button } from "@/components/ui/button";
-
-interface MyComponentProps {
-  title: string;
-  onAction?: () => void;
-}
-
-export function MyComponent({ title, onAction }: MyComponentProps) {
-  return (
-    <div className="rounded-lg border bg-card p-6">
-      <h3 className="text-lg font-medium text-foreground">{title}</h3>
-      {onAction && (
-        <Button onClick={onAction} size="sm">Action</Button>
-      )}
-    </div>
-  );
-}
-```
-
-## State
-
-- Local UI → `useState`
-- Forms → `react-hook-form` + `zodResolver`
-- Server data → React Query hooks from `features/`
-- No Zustand, no Redux
-
-## After Creating
-
-1. Add to `shared/index.ts` barrel if shared component
-2. `npm run lint` (oxlint)
-3. `npm run build`
+- [ ] Correct tier; no cross-feature import
+- [ ] Semantic tokens only; ≥ 48 px touch targets; numbers `tabular`
+- [ ] Every string through `t()`
+- [ ] Status never signalled by colour alone
+- [ ] Icon-only buttons have `aria-label`

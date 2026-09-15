@@ -17,8 +17,9 @@ export default defineConfig({
     host: true,
     proxy: {
       // The API is same-origin in production (Nginx). In dev, proxy to the local
-      // Express server — never hardcode a LAN IP anywhere in the client.
-      "/api": { target: "http://localhost:5000", changeOrigin: true },
+      // Express server — never hardcode a LAN IP anywhere in the client. On macOS the
+      // AirPlay Receiver holds :5000, so SIMON_API_URL points the proxy elsewhere.
+      "/api": { target: process.env.SIMON_API_URL ?? "http://localhost:5000", changeOrigin: true },
     },
   },
 });

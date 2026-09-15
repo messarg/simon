@@ -5,6 +5,7 @@
  * NO_SALE carries zero and cannot move it.
  */
 import type { CashMovementType, Dram } from "@simon/shared";
+export { DENOMINATIONS } from "@simon/shared";
 
 export interface CashFigures {
   openingFloat: Dram;
@@ -22,8 +23,6 @@ export interface Denomination {
   value: Dram;
   count: number;
 }
-
-export const DENOMINATIONS: readonly Dram[] = [20_000, 10_000, 5_000, 2_000, 1_000, 500, 200, 100, 50, 20, 10];
 
 export function countedTotal(breakdown: readonly Denomination[]): Dram {
   return breakdown.reduce((a, d) => {

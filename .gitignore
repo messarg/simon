@@ -36,3 +36,6 @@ backend/src/generated/
 scripts/__pycache__/
 test-results/
 playwright-report/
+
+# Playwright journeys write a throwaway database here
+.e2e-data/

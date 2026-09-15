@@ -7,12 +7,16 @@ import { t } from "@/i18n/t.ts";
 import { cn } from "@/lib/cn.ts";
 import { useConnection } from "@/lib/connection.ts";
 import { useSession } from "@/lib/session-store.ts";
+import { useOutboxCounts } from "@/lib/outbox.ts";
+import { useCurrentShift } from "@/app/shift.ts";
 
 export function StatusStrip({ className }: { className?: string }) {
   const session = useSession();
   const connection = useConnection();
   const offline = connection === "offline";
-  const shiftOpen = Boolean(session?.session.shiftId);
+  const counts = useOutboxCounts();
+  const shift = useCurrentShift().data;
+  const shiftOpen = shift?.shift.status === "OPEN";
   return (
     <div className={cn("safe-top border-b border-border bg-card/95 backdrop-blur", className)}>
       <div className="flex h-11 items-center gap-2 px-4 text-sm">
@@ -22,7 +26,11 @@ export function StatusStrip({ className }: { className?: string }) {
         {session?.session.mode === "PRACTICE" && (
           <span className="ml-1 rounded-full bg-attention-soft px-2 py-0.5 text-xs font-medium text-attention-foreground">{t("status.practice")}</span>
         )}
-        <span className="ml-auto flex items-center gap-1.5 text-muted-foreground" aria-label={offline ? t("status.offline") : t("status.online")}>
+        {counts.pendingSales > 0 && (
+          <span className="ml-auto rounded-full bg-attention-soft px-2 py-0.5 text-xs font-medium text-attention-foreground">{t("status.pending", { n: counts.pendingSales })}</span>
+        )}
+        {counts.needsAttention > 0 && <span className="rounded-full bg-destructive-soft px-2 py-0.5 text-xs font-medium text-destructive">! {counts.needsAttention}</span>}
+        <span className={cn("flex items-center gap-1.5 text-muted-foreground", counts.pendingSales === 0 && "ml-auto")} aria-label={offline ? t("status.offline") : t("status.online")}>
           {offline ? <CloudOff className="size-4" aria-hidden /> : <Wifi className="size-4" aria-hidden />}
         </span>
       </div>

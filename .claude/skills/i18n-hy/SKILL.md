@@ -62,8 +62,22 @@ Also handle:
 ## Numbers & currency
 
 ```ts
-formatDram(12500)   // "12 500 ֏"
+formatDram(12500)   // "12 500 ֏" — no-break spaces, from @simon/shared
+groupDigits(-1500)  // "−1 500"
 ```
+
+**Verified, not assumed (2026-09-15): Chromium's `hy-AM` locale is wrong for this shop in three ways.**
+`Intl.NumberFormat("hy-AM")` groups with commas (`3,100`), `Intl.DateTimeFormat("hy-AM")` defaults to a
+12-hour clock (`08:48 PM`), and short month names come out as `M09`. So:
+
+- money and quantities go through `groupDigits` / `formatDram` in `packages/shared/src/money.ts`, and
+  `money`, `moneyPlain`, `qty` in `frontend/src/lib/format.ts` — never `Intl.NumberFormat` directly;
+- times go through `time()` (24-hour) and dates through `dateTime()`, which takes month names from
+  `hy.dates.months` in the resource file;
+- numbers interpolated into strings by `t()` are grouped the same way.
+
+A test that locates a money value by accessible name must match `\s`, not a literal no-break space:
+Playwright normalises whitespace in accessible names.
 
 - Symbol is **֏** (U+058F), conventionally after the amount with a space.
 - Thousands separator is a space, not a comma. Use `Intl.NumberFormat("hy-AM")` and verify

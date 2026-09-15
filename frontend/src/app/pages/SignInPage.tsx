@@ -32,7 +32,7 @@ export function SignInPage() {
     retry: false,
   });
 
-  if (session) return <Navigate to={(location.state as { from?: string } | null)?.from ?? (session.user.role === "ADMIN" ? "/home" : "/sell")} replace />;
+  if (session) return <Navigate to={(location.state as { from?: string } | null)?.from ?? "/sell"} replace />;
   if (users.error instanceof ApiProblem && users.error.type === "setup-required") return <Navigate to="/setup" replace />;
 
   const submit = async (pin: string) => {
@@ -42,7 +42,7 @@ export function SignInPage() {
     try {
       const res = await http.post<SessionState>("/auth/login", { userId: selected.id, pin, deviceId: sessionStore.deviceId(), deviceLabel: navigator.platform || "Till" });
       sessionStore.set(res);
-      navigate(res.user.role === "ADMIN" ? "/home" : "/sell", { replace: true });
+      navigate("/sell", { replace: true });
     } catch (err) {
       const p = err instanceof ApiProblem ? err : null;
       if (p?.type === "pin-incorrect" && typeof p.field("attemptsRemaining") === "number") setError(`${problemMessage(p.type)} · ${t("signIn.attemptsLeft", { n: p.field<number>("attemptsRemaining")! })}`);

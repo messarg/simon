@@ -3,6 +3,7 @@
  * `tp("status.pending", 3)` using Intl.PluralRules("hy"). Numbers in messages are formatted
  * with the Armenian locale.
  */
+import { groupDigits } from "@simon/shared";
 import { hy } from "./hy.ts";
 
 type Leaf = string | { one: string; other: string };
@@ -13,7 +14,6 @@ type Paths<T, P extends string = ""> = {
 export type StringKey = Paths<typeof hy>;
 
 const plural = new Intl.PluralRules("hy");
-const number = new Intl.NumberFormat("hy-AM");
 
 function resolve(key: string): Leaf | undefined {
   return key.split(".").reduce<unknown>((node, part) => (node as Record<string, unknown> | undefined)?.[part], hy) as Leaf | undefined;
@@ -23,7 +23,7 @@ function interpolate(s: string, vars?: Record<string, string | number>) {
   if (!vars) return s;
   return s.replace(/\{(\w+)\}/g, (_, k) => {
     const v = vars[k];
-    return v === undefined ? `{${k}}` : typeof v === "number" ? number.format(v) : v;
+    return v === undefined ? `{${k}}` : typeof v === "number" ? groupDigits(v) : v;
   });
 }
 

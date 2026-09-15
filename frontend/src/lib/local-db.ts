@@ -20,7 +20,11 @@ export interface CachedProduct {
   isActive: boolean;
   tilePinnedAt: string | null;
   categoryId: string | null;
+  trackStock: boolean;
+  /** Every code, retired ones included — an old sticker still scans (§11). */
   barcodes: string[];
+  units: { uom: string; factorToStockUom: number; role: string }[];
+  velocity: number;
   updatedAt: string;
 }
 
@@ -38,6 +42,12 @@ export interface OutboxItem {
   state: OutboxState;
   lastError: { status: number; type: string } | null;
   nextAttemptAt: number;
+  /** Enqueued with the server unreachable: the counter's checks were the till's alone (§15.3). */
+  enqueuedOffline: boolean;
+  /** Host-owned follow-ups, only for documents completed while the host was reachable (§14.5). */
+  afterSync: { print: boolean; drawer: boolean } | null;
+  /** Short label for the needs-attention list. */
+  label: string;
   /** Counted apart from sales in transit (§11 `Device.parkedDepth`). */
   isParkedBasket: boolean;
   requeuedOnce: boolean;

@@ -12,7 +12,7 @@ export const AUDITED_ACTIONS = [
   "product.priceChange", "sale.linePriceOverride", "stock.adjustment", "sale.discountAboveCap",
   "debt.creditLimitOverride", "sale.void", "sale.return", "sale.blindReturn", "debt.repaymentReversal",
   "sale.heldTransfer", "cashDrawer.open", "user.permissionChange", "user.create", "session.revoke",
-  "device.deactivate", "settings.update", "session.practiceEnter", "session.practiceExit", "auth.unlock", "auth.recover",
+  "device.deactivate", "settings.update", "session.practiceEnter", "session.practiceExit", "auth.unlock", "auth.recover", "cashMovement.create",
 ] as const;
 export type AuditAction = (typeof AUDITED_ACTIONS)[number];
 

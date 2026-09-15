@@ -20,16 +20,17 @@ docs/event-storming/  domain-discovery output (events, commands, bounded context
 
 ### Current state of the tree
 
-Built phase by phase in PRD §23's order, each phase committed and reviewed before the next. **Phase 0 (foundations) is done**; Phase 1 (Sell) is next.
+Built phase by phase in PRD §23's order, each phase committed and reviewed before the next. **Phases 0 (foundations) and 1 (Sell) are done**; Phase 2 (Trust — customers and debt) is next.
 
 What exists:
-- `packages/shared/src/` — money, `tax.ts` (both price bases), `sale-math.ts` (`computeSale`, the one sale total the till shows and the server recomputes), `search.ts` (Latin-typed Armenian), `time.ts` (shop-local `businessDate`), `enums.ts` (every §11 enum as `z.enum`), `problems.ts` (§8.5 catalogue), `settings.ts` (defaults and the `ClientSettings` shape).
-- `backend/src/domain/` — pure rules with tests: costing, ledger replay/drift, debt allocation projection, aging, shift cash, discount cap, returns, drawer, PIN policy.
-- `backend/prisma/schema.prisma` — every §11 model. Migrations are post-processed by `prisma/strictify.ts` (STRICT + CHECKs) and applied on startup by `src/lib/migrate.ts`.
-- `backend/src/{lib,services,routes,middleware,jobs}` — Express 5 app (`app.ts`, Supertest-driven), RFC 7807 errors, response shaping (`lib/shape.ts`), PIN auth with lockout/rate limit/devices/sessions/re-auth grants, settings, users, audit, stock ledger posting, drift job.
-- `frontend/src/` — Tailwind v4 theme (`styles/theme.css`), Armenian strings (`i18n/hy.ts` + `t()`), `lib/` (http, session store, connection probe, IndexedDB), hand-written shadcn-style primitives in `components/ui/`, shells and navigation, sign-in and first-run owner setup. Destinations are placeholders until their phase.
+- `packages/shared/src/` — money (`groupDigits`, `formatDram`), `tax.ts`, `sale-math.ts` (`computeSale`, the one sale total the till shows and the server recomputes), `return-math.ts` (`computeReturn`), `cash.ts` (denominations), `search.ts` (Latin-typed Armenian), `time.ts`, `enums.ts`, `problems.ts`, `settings.ts`, `schemas.ts` (request bodies both sides validate).
+- `backend/src/domain/` — pure rules with tests: costing, ledger replay/drift, debt allocation projection, aging, shift cash, discount cap, drawer, PIN policy.
+- `backend/prisma/schema.prisma` — every §11 model; migrations post-processed by `prisma/strictify.ts` (STRICT + CHECKs) and applied on startup by `src/lib/migrate.ts`.
+- `backend/src/{lib,services,routes,middleware,jobs}` — Express 5 app: auth (PIN, lockout, devices, sessions, re-auth grants), settings, users, catalogue, sales (idempotent on id + status, server-owned arithmetic, the cap, accept-and-flag), returns, shifts and cash movements, printing and the drawer behind `lib/hardware/printer.ts`, review flags, drift job. Supertest suites name the §27 criteria they prove.
+- `frontend/src/` — theme, Armenian strings, `lib/` (http, session, connection probe, IndexedDB, catalogue cache, outbox, HID scanner, device receipt numbers), shells, and screens: sign-in, first-run owner setup, till (scan/search/tiles/camera, keypad, swipe-undo, price override, held baskets, quick-add, discount, payment with split), returns, shift (open, X-report, cash movements, denomination close, Z-report), stock, products, settings (with users, devices, sessions).
+- `tests/e2e/` — Playwright journey J1 → J2 → offline sale synced exactly once → J4.
 
-Not yet: sales, returns, shifts, catalogue routes and screens (Phase 1); debt (2); buying (3); reports, backup (4); wizard, import, practice data, PWA (5). react-hook-form and Playwright are not installed yet.
+Not yet: debt book and customers (Phase 2); suppliers, receiving, write-offs (3); owner home, reports, backup, diagnostics (4); full wizard, import, practice data, PWA, Docker/TLS (5). The Home, Debts, Customers, Suppliers and Reports destinations are placeholders.
 
 ### Invariants from the PRD that are expensive to fix later
 
@@ -64,13 +65,16 @@ Run from the repository root.
 npm install                  # installs every workspace and links @simon/*
 npm run dev                  # frontend dev server, HMR at http://localhost:5173
 npm run dev:api              # backend on :5000 (Vite proxies /api to it)
+                             # macOS: AirPlay Receiver holds :5000 — run PORT=5055 npm run dev:api
+                             # and SIMON_API_URL=http://localhost:5055 npm run dev
 npm run build                # per-workspace build (frontend only emits — see below)
 npm run typecheck            # tsc --noEmit across every workspace
 npm run lint                 # oxlint — frontend only; no other workspace has a lint script
 npm test                     # vitest, single root run across all workspaces
 npm run test:watch
 npm run check:prd            # PRD index consistency (python3 scripts/check-prd.py)
-npm run db:seed -w backend   # dev database: owner 1111, stock 2222, worker 3333 (refuses if users exist)
+npm run db:seed -w backend   # dev database: owner 1111, stock 2222, worker 3333, 12 products (refuses if users exist)
+npm run test:e2e             # Playwright journeys; starts its own API (:5065) and SPA (:5175) on a throwaway database
 npm run db:new-migration -w backend   # prisma migrate dev --create-only, then strictify the new SQL
 ```
 

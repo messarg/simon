@@ -145,12 +145,13 @@ export async function reauth(db: Db, limiter: DeviceRateLimiter, input: { adminU
 }
 
 /** Consumes a grant for an action, returning the admin who gave it, or null. */
-export function consumeGrant(grant: string | null | undefined, action: ReauthAction): string | null {
+export function consumeGrant(grant: string | null | undefined, action: ReauthAction | readonly ReauthAction[]): string | null {
   if (!grant) return null;
   const g = grants.get(grant);
   if (!g) return null;
   grants.delete(grant);
-  if (g.action !== action || g.expires < clock.now().getTime()) return null;
+  const allowed = typeof action === "string" ? [action] : action;
+  if (!allowed.includes(g.action) || g.expires < clock.now().getTime()) return null;
   return g.adminId;
 }
 

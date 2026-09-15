@@ -6,7 +6,13 @@ import { AppShell } from "@/components/common/AppShell.tsx";
 import { connection } from "@/lib/connection.ts";
 import { onSessionExpired } from "@/lib/http.ts";
 import { sessionStore, useSession } from "@/lib/session-store.ts";
+import { Bootstrap } from "./Bootstrap.tsx";
 import { PlaceholderPage } from "./pages/PlaceholderPage.tsx";
+import { ProductsPage } from "./pages/ProductsPage.tsx";
+import { SettingsPage } from "./pages/SettingsPage.tsx";
+import { ShiftPage } from "./pages/ShiftPage.tsx";
+import { StockPage } from "./pages/StockPage.tsx";
+import { TillPage } from "./pages/TillPage.tsx";
 import { SetupPage } from "./pages/SetupPage.tsx";
 import { SignInPage } from "./pages/SignInPage.tsx";
 import { useClientSettings } from "./settings.ts";
@@ -27,6 +33,7 @@ function RequireSession() {
   if (!session) return <Navigate to="/sign-in" replace state={{ from: location.pathname }} />;
   return (
     <AppShell>
+      <Bootstrap />
       <Outlet />
     </AppShell>
   );
@@ -43,7 +50,8 @@ export function App() {
 
   useEffect(() => connection.start(), []);
   // A 401 on an ordinary request returns to the PIN pad; the basket lives in IndexedDB and survives (§16.3).
-  useEffect(() => onSessionExpired(() => sessionStore.set(null)), []);
+  // A session ended by closing its shift stays on screen until the worker leaves the Z-report.
+  useEffect(() => onSessionExpired(() => { if (!sessionStore.get()?.endedByShiftClose) sessionStore.set(null); }), []);
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -52,17 +60,17 @@ export function App() {
           <Route path="/setup" element={<SetupPage />} />
           <Route path="/sign-in" element={<SignInPage />} />
           <Route element={<RequireSession />}>
-            <Route path="/sell" element={<PlaceholderPage screen="nav.sell" />} />
+            <Route path="/sell" element={<TillPage />} />
             <Route path="/debts" element={<PlaceholderPage screen="nav.debts" />} />
-            <Route path="/stock" element={<PlaceholderPage screen="nav.stock" />} />
-            <Route path="/shift" element={<PlaceholderPage screen="nav.shift" />} />
+            <Route path="/stock" element={<StockPage />} />
+            <Route path="/shift" element={<ShiftPage />} />
             <Route element={<RequireAdmin />}>
               <Route path="/home" element={<PlaceholderPage screen="nav.home" />} />
               <Route path="/reports" element={<PlaceholderPage screen="nav.reports" />} />
-              <Route path="/products" element={<PlaceholderPage screen="nav.products" />} />
+              <Route path="/products" element={<ProductsPage />} />
               <Route path="/customers" element={<PlaceholderPage screen="nav.customers" />} />
               <Route path="/suppliers" element={<PlaceholderPage screen="nav.suppliers" />} />
-              <Route path="/settings" element={<PlaceholderPage screen="nav.settings" />} />
+              <Route path="/settings" element={<SettingsPage />} />
             </Route>
           </Route>
           {/* The till is the home screen (§5.2). */}

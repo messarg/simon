@@ -113,9 +113,21 @@ export function toStockQty(purchaseQty: MilliUnit, unitsPerPurchaseUnit: number)
   return purchaseQty * unitsPerPurchaseUnit;
 }
 
+/**
+ * Thousands grouped with a no-break space, the Armenian convention (§20.3). Not
+ * `Intl.NumberFormat("hy-AM")`: Chromium groups that locale with commas, which is the
+ * "verify rather than assume" case the i18n skill warns about.
+ */
+export function groupDigits(n: number): string {
+  const sign = n < 0 ? "−" : "";
+  const [whole, frac] = String(Math.abs(n)).split(".");
+  const grouped = whole.replace(/\B(?=(\d{3})+(?!\d))/g, "\u00a0");
+  return sign + grouped + (frac ? `.${frac}` : "");
+}
+
 /** Display only. Never feed the output of a formatter back into arithmetic. */
 export function formatDram(amount: Dram): string {
-  return `${new Intl.NumberFormat("hy-AM").format(amount)} ֏`;
+  return `${groupDigits(amount)}\u00a0֏`;
 }
 
 export function formatQty(qty: MilliUnit, decimalPlaces: number): string {

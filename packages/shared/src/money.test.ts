@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  apportionByValue, applyBps, cashRounding, formatQty, lineTotal,
+  apportionByValue, formatDram, groupDigits, applyBps, cashRounding, formatQty, lineTotal,
   newAverageCost, parseQty, roundHalfUp, splitInclusiveTax, toStockQty,
 } from "./money.ts";
 
@@ -97,5 +97,14 @@ describe("quantity input", () => {
 describe("applyBps", () => {
   it("computes a discount", () => {
     expect(applyBps(2900, 500)).toBe(145); // 5%
+  });
+});
+
+describe("formatDram", () => {
+  it("groups with a no-break space and puts ֏ after the amount (§20.3)", () => {
+    expect(formatDram(12500)).toBe("12\u00a0500\u00a0֏");
+    expect(formatDram(1234567)).toBe("1\u00a0234\u00a0567\u00a0֏");
+    expect(groupDigits(-500)).toBe("−500");
+    expect(groupDigits(999)).toBe("999");
   });
 });

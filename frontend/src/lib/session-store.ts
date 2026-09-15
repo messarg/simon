@@ -10,6 +10,8 @@ export interface SessionState {
   token: string;
   user: { id: string; name: string; role: Role };
   session: { id: string; mode: SessionMode; expiresAt: string; shiftId: string | null };
+  /** Set when this session's shift closed: the server has revoked it, but the Z-report is still on screen (§16.3). */
+  endedByShiftClose?: boolean;
   device: { id: string; prefix: string; label: string; lastSequence: number };
 }
 
