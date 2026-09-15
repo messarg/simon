@@ -238,7 +238,8 @@ describe("shifts, returns and the drawer", () => {
     const held = saleBody({ shiftId: workerShift, status: "HELD", lines: [{ product: item, qty: 3000 }] });
     await post(t, "/sales", held);
     expect((await post(t, `/shifts/${workerShift}/begin-close`, { unsyncedAtClose: 0 })).body.type).toMatch(/shift-has-open-baskets$/);
-    expect((await post(t, `/sales/${held.id}/resume`, { shiftId: stockShift }, "STOCK")).body.status).toBe("DRAFT");
+    // Compare the whole body so a failure shows the problem type rather than "undefined".
+    expect((await post(t, `/sales/${held.id}/resume`, { shiftId: stockShift }, "STOCK")).body).toMatchObject({ status: "DRAFT" });
     const done = saleBody({ shiftId: stockShift, id: held.id, lines: [{ product: item, qty: 3000 }], prefix: "AB" });
     expect((await post(t, "/sales", done, "STOCK")).status).toBe(200);
     const x = (await get(t, `/shifts/${stockShift}/x-report`, "STOCK")).body;

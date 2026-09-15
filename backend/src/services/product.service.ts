@@ -6,7 +6,7 @@
  * - A price change writes PriceHistory and an audit row, and needs admin re-auth.
  * - A barcode belongs to one product forever; retiring stops new labels, never a scan.
  */
-import { normalizeForSearch, uuidv7, type CreateProductBody, type Role } from "@simon/shared";
+import { normalizeForSearch, searchTokens, uuidv7, type CreateProductBody, type Role } from "@simon/shared";
 import type { z } from "zod";
 import type { UpdateProductBody } from "@simon/shared";
 import type { Prisma } from "../generated/prisma/client.ts";
@@ -136,9 +136,9 @@ export async function addUnit(db: Db, productId: string, unit: { uom: string; fa
 export type ProductFilter = "all" | "needs-detail" | "inactive" | "low-stock";
 
 export async function listProducts(db: Db, opts: { q?: string; filter?: ProductFilter; categoryId?: string; cursor?: string; limit: number; role: Role }) {
-  const q = opts.q ? normalizeForSearch(opts.q) : "";
+  const tokens = opts.q ? searchTokens(opts.q) : [];
   const where = {
-    ...(q ? { OR: [{ nameSearch: { contains: q } }, { barcodes: { some: { barcode: opts.q!.trim() } } }, { sku: opts.q!.trim() }] } : {}),
+    ...(tokens.length ? { OR: [{ AND: tokens.map((t) => ({ nameSearch: { contains: t } })) }, { barcodes: { some: { barcode: opts.q!.trim() } } }, { sku: opts.q!.trim() }] } : {}),
     ...(opts.categoryId ? { categoryId: opts.categoryId } : {}),
     ...(opts.filter === "inactive" ? { isActive: 0 } : opts.filter === "all" || !opts.filter ? {} : { isActive: 1 }),
     ...(opts.filter === "needs-detail" ? { OR: [{ avgCostMdram: null }, { categoryId: null }, { barcodes: { none: {} } }] } : {}),

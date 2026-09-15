@@ -5,7 +5,7 @@
  * erasure are the owner's. Nothing is deleted: a duplicate is merged, leaving a forwarding
  * address, and an erasure request anonymises the row while every ledger amount and date stays.
  */
-import { normalizeForSearch, uuidv7, type CreateCustomerBody } from "@simon/shared";
+import { normalizeForSearch, searchTokens, uuidv7, type CreateCustomerBody } from "@simon/shared";
 import type { z } from "zod";
 import type { UpdateCustomerBody } from "@simon/shared";
 import { age } from "../domain/aging.ts";
@@ -73,13 +73,13 @@ export async function updateCustomer(db: Db, adminId: string, customerId: string
 }
 
 export async function listCustomers(db: Db, opts: { q?: string; includeInactive?: boolean; limit: number }) {
-  const q = opts.q?.trim() ? normalizeForSearch(opts.q) : "";
+  const tokens = opts.q?.trim() ? searchTokens(opts.q) : [];
   const digits = normalizePhone(opts.q);
   const rows = await db.customer.findMany({
     where: {
       mergedIntoId: null,
       ...(opts.includeInactive ? {} : { isActive: 1 }),
-      ...(q ? { OR: [{ nameSearch: { contains: q } }, ...(digits && digits.length >= 3 ? [{ phone: { contains: digits } }] : [])] } : {}),
+      ...(tokens.length ? { OR: [{ AND: tokens.map((t) => ({ nameSearch: { contains: t } })) }, ...(digits && digits.length >= 3 ? [{ phone: { contains: digits } }] : [])] } : {}),
     },
   });
   const projections = await allProjections(db);

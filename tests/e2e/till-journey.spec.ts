@@ -29,6 +29,9 @@ test("a worker opens a shift, sells, keeps selling offline, syncs exactly once a
   // J2 — scan twice (one line, incremented), then pay with the exact-cash shortcut.
   await scan(page, "4820000000401");
   await expect(page.getByRole("button", { name: /Պտուտակ 4x40/ }).first()).toBeVisible();
+  // The scanner ignores an identical code within 300 ms (cheap scanners double-fire), so a real
+  // rescan comes a moment later — as a person's second scan always does.
+  await page.waitForTimeout(400);
   await scan(page, "4820000000401");
   await expect(page.getByText("2 հատ × 50")).toBeVisible();
   await page.getByRole("button", { name: /ՎՃԱՐԵԼ/ }).click();

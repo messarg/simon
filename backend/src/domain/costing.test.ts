@@ -1,7 +1,7 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 import { lineTotal } from "@simon/shared";
-import { applyMovement, type StockState } from "./costing.ts";
+import { applyMovement, widenBand, type CostBand, type StockState } from "./costing.ts";
 import { detectDrift, replay, type LedgerRow } from "./stock-replay.ts";
 
 const empty: StockState = { stockQty: 0, avgCostMdram: null };
@@ -79,5 +79,45 @@ describe("replay — §27.30", () => {
     expect(detectDrift(truth, rows)).toEqual([]);
     const drift = detectDrift({ stockQty: truth.stockQty + 1, avgCostMdram: 1 }, rows);
     expect(drift.map((d) => d.field)).toEqual(["stockQty", "avgCostMdram"]);
+  });
+});
+
+describe("purchase return — §27.22, §13.7's worked table", () => {
+  const run = (moves: Array<{ type: "OPENING_BALANCE" | "PURCHASE_RECEIPT" | "SALE" | "PURCHASE_RETURN"; qty: number; cost?: number }>) => {
+    let s: StockState = { stockQty: 0, avgCostMdram: null };
+    let band: CostBand | null = null;
+    for (const m of moves) {
+      const input = { type: m.type, qtyDelta: m.qty, unitCostMdram: m.cost ?? s.avgCostMdram };
+      s = applyMovement(s, input, band ?? undefined);
+      band = widenBand(band, input);
+    }
+    return s;
+  };
+
+  it("with no sale in between, returning the delivery restores the average exactly", () => {
+    expect(run([
+      { type: "OPENING_BALANCE", qty: 10_000, cost: 12_000 },
+      { type: "PURCHASE_RECEIPT", qty: 10_000, cost: 14_000 },
+      { type: "PURCHASE_RETURN", qty: -10_000, cost: 14_000 },
+    ])).toEqual({ stockQty: 10_000, avgCostMdram: 12_000 });
+  });
+
+  it("with eight sold in between, the naive 8 ֏ is refused and the average stands at 13 ֏", () => {
+    expect(run([
+      { type: "OPENING_BALANCE", qty: 10_000, cost: 12_000 },
+      { type: "PURCHASE_RECEIPT", qty: 10_000, cost: 14_000 },
+      { type: "SALE", qty: -8_000 },
+      { type: "PURCHASE_RETURN", qty: -10_000, cost: 14_000 },
+    ])).toEqual({ stockQty: 2_000, avgCostMdram: 13_000 });
+  });
+
+  it("the replay applies the same guard, so a refused figure is not drift", () => {
+    const rows: LedgerRow[] = [
+      { seq: 1, type: "OPENING_BALANCE", qtyDelta: 10_000, unitCostMdram: 12_000 },
+      { seq: 2, type: "PURCHASE_RECEIPT", qtyDelta: 10_000, unitCostMdram: 14_000 },
+      { seq: 3, type: "SALE", qtyDelta: -8_000, unitCostMdram: 13_000 },
+      { seq: 4, type: "PURCHASE_RETURN", qtyDelta: -10_000, unitCostMdram: 14_000 },
+    ];
+    expect(replay(rows)).toEqual({ stockQty: 2_000, avgCostMdram: 13_000 });
   });
 });

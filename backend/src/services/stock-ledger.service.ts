@@ -6,11 +6,13 @@
  * `applyMovement` the replay uses — so a replay reproduces what was written.
  */
 import { uuidv7, type MilliDram, type MilliUnit, type MovementType, type WriteOffReason } from "@simon/shared";
-import { AVERAGE_MOVING_TYPES, applyMovement, hitNegativeStockGuard, type CostBand } from "../domain/costing.ts";
+import { AVERAGE_MOVING_TYPES, applyMovement, hitNegativeStockGuard, purchaseReturnAverage, type CostBand } from "../domain/costing.ts";
 import type { Tx } from "../lib/db.ts";
 import { clock } from "../lib/time.ts";
 
 export interface PostMovement {
+  /** Client-generated for self-sourced movements, so a retried write-off posts once. */
+  id?: string;
   productId: string;
   type: MovementType;
   qtyDelta: MilliUnit;
@@ -21,7 +23,13 @@ export interface PostMovement {
   userId: string;
   reasonCode?: WriteOffReason | null;
   note?: string;
-  band?: CostBand;
+  band?: CostBand | null;
+}
+
+/** Lowest and highest cost this product's stock has entered at (§13.7). */
+export async function costBand(tx: Tx, productId: string): Promise<CostBand | null> {
+  const agg = await tx.stockMovement.aggregate({ where: { productId, type: { in: ["PURCHASE_RECEIPT", "OPENING_BALANCE"] }, unitCostMdram: { not: null } }, _min: { unitCostMdram: true }, _max: { unitCostMdram: true } });
+  return agg._min.unitCostMdram === null || agg._max.unitCostMdram === null ? null : { minMdram: agg._min.unitCostMdram, maxMdram: agg._max.unitCostMdram };
 }
 
 export async function postMovement(tx: Tx, m: PostMovement) {
@@ -31,8 +39,9 @@ export async function postMovement(tx: Tx, m: PostMovement) {
   const state = { stockQty: product.stockQty, avgCostMdram: product.avgCostMdram };
   const ownCost = AVERAGE_MOVING_TYPES.has(m.type);
   const unitCostMdram = ownCost ? (m.unitCostMdram ?? null) : state.avgCostMdram;
-  const next = applyMovement(state, { type: m.type, qtyDelta: m.qtyDelta, unitCostMdram }, m.band);
-  const id = uuidv7();
+  const band = m.type === "PURCHASE_RETURN" ? (m.band === undefined ? await costBand(tx, m.productId) : m.band) : undefined;
+  const next = applyMovement(state, { type: m.type, qtyDelta: m.qtyDelta, unitCostMdram }, band ?? undefined);
+  const id = m.id ?? uuidv7();
   const selfSourced = m.type === "ADJUSTMENT" || m.type === "WRITE_OFF";
   if (!selfSourced && !m.source) throw new Error(`a ${m.type} movement must name its source document`);
   const now = clock.iso();
@@ -49,5 +58,6 @@ export async function postMovement(tx: Tx, m: PostMovement) {
     },
   });
   await tx.product.update({ where: { id: m.productId }, data: { stockQty: next.stockQty, avgCostMdram: next.avgCostMdram, updatedAt: now } });
-  return { movement, before: state, after: next, negativeGuard: hitNegativeStockGuard(state, { type: m.type, qtyDelta: m.qtyDelta, unitCostMdram }) };
+  const returnRefused = m.type === "PURCHASE_RETURN" && purchaseReturnAverage(state, { type: m.type, qtyDelta: m.qtyDelta, unitCostMdram }, band) === null;
+  return { movement, before: state, after: next, negativeGuard: hitNegativeStockGuard(state, { type: m.type, qtyDelta: m.qtyDelta, unitCostMdram }), returnRefused };
 }

@@ -45,18 +45,34 @@ export function applyMovement(state: StockState, m: MovementInput, band?: CostBa
   const cost = m.unitCostMdram;
 
   if (m.type === "PURCHASE_RETURN") {
-    // §13.7: remove the returned units at the landed cost they came in at.
-    const q = -m.qtyDelta;
-    if (state.avgCostMdram === null || stockQty <= 0) return { stockQty, avgCostMdram: state.avgCostMdram };
-    let avg = roundHalfUp(state.stockQty * state.avgCostMdram - q * cost, stockQty);
-    if (band) avg = Math.min(band.maxMdram, Math.max(band.minMdram, avg));
-    return { stockQty, avgCostMdram: avg };
+    const avg = purchaseReturnAverage(state, m, band);
+    return { stockQty, avgCostMdram: avg ?? state.avgCostMdram };
   }
 
   // Seeding: a null average is not a number and never averages against zero.
   if (state.avgCostMdram === null) return { stockQty, avgCostMdram: cost };
   // newAverageCost guards the zero/negative denominator by taking the incoming cost.
   return { stockQty, avgCostMdram: newAverageCost(state.stockQty, state.avgCostMdram, m.qtyDelta, cost) };
+}
+
+/**
+ * §13.7: remove the returned units at the landed cost they came in at — but only store the result
+ * when it lies inside the band of costs this product's stock has actually entered at. Outside the
+ * band, with no band at all, or with nothing left on the shelf, return null: the average stands
+ * and the caller flags it. Refused, never clamped: a clamped figure is still one nobody paid.
+ */
+export function purchaseReturnAverage(state: StockState, m: MovementInput, band: CostBand | null | undefined): MilliDram | null {
+  if (m.type !== "PURCHASE_RETURN" || m.unitCostMdram === null) return null;
+  const remaining = state.stockQty + m.qtyDelta;
+  if (state.avgCostMdram === null || remaining <= 0 || !band) return null;
+  const avg = roundHalfUp(state.stockQty * state.avgCostMdram + m.qtyDelta * m.unitCostMdram, remaining);
+  return avg < band.minMdram || avg > band.maxMdram ? null : avg;
+}
+
+/** The band a purchase return is checked against: costs on stock-adding movements that carried one (§13.7, §10.4). */
+export function widenBand(band: CostBand | null, m: MovementInput): CostBand | null {
+  if ((m.type !== "PURCHASE_RECEIPT" && m.type !== "OPENING_BALANCE") || m.unitCostMdram === null) return band;
+  return band ? { minMdram: Math.min(band.minMdram, m.unitCostMdram), maxMdram: Math.max(band.maxMdram, m.unitCostMdram) } : { minMdram: m.unitCostMdram, maxMdram: m.unitCostMdram };
 }
 
 /** Whether the ≤ 0 denominator guard fired, which the ledger flags (§10.5). */

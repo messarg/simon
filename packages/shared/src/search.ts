@@ -40,7 +40,12 @@ export function normalizeForSearch(input: string): string {
   return out.replace(/\s+/g, " ").trim();
 }
 
+/** The query's words, normalised. Each must appear somewhere in the name: "malukh 3x" finds "Մալուխ ՊՎՍ 3x2.5". */
+export function searchTokens(query: string): string[] {
+  return normalizeForSearch(query).split(" ").filter(Boolean);
+}
+
 export function matchesSearch(nameSearch: string, query: string): boolean {
-  const q = normalizeForSearch(query);
-  return q.length > 0 && nameSearch.includes(q);
+  const tokens = searchTokens(query);
+  return tokens.length > 0 && tokens.every((t) => nameSearch.includes(t));
 }

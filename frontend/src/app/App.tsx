@@ -10,6 +10,8 @@ import { Bootstrap } from "./Bootstrap.tsx";
 import { PlaceholderPage } from "./pages/PlaceholderPage.tsx";
 import { DebtsPage } from "./pages/DebtsPage.tsx";
 import { ProductsPage } from "./pages/ProductsPage.tsx";
+import { ReceivingPage } from "./pages/ReceivingPage.tsx";
+import { SuppliersPage } from "./pages/SuppliersPage.tsx";
 import { SettingsPage } from "./pages/SettingsPage.tsx";
 import { ShiftPage } from "./pages/ShiftPage.tsx";
 import { StockPage } from "./pages/StockPage.tsx";
@@ -64,13 +66,14 @@ export function App() {
             <Route path="/sell" element={<TillPage />} />
             <Route path="/debts" element={<DebtsPage />} />
             <Route path="/stock" element={<StockPage />} />
+            <Route path="/stock/receive" element={<ReceivingPage />} />
             <Route path="/shift" element={<ShiftPage />} />
             <Route element={<RequireAdmin />}>
               <Route path="/home" element={<PlaceholderPage screen="nav.home" />} />
               <Route path="/reports" element={<PlaceholderPage screen="nav.reports" />} />
               <Route path="/products" element={<ProductsPage />} />
               <Route path="/customers" element={<DebtsPage admin />} />
-              <Route path="/suppliers" element={<PlaceholderPage screen="nav.suppliers" />} />
+              <Route path="/suppliers" element={<SuppliersPage />} />
               <Route path="/settings" element={<SettingsPage />} />
             </Route>
           </Route>

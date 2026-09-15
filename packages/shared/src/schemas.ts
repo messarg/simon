@@ -137,6 +137,60 @@ export const UpdateCustomerBody = z.object({
 
 export const ReverseCashMovementBody = z.object({ reason: text(240).min(1) });
 
+export const SupplierBody = z.object({
+  id,
+  name: text(120).min(1),
+  phone: z.string().trim().max(32).nullish(),
+  taxId: text(32).nullish(),
+  paymentTerms: nonNeg.max(365).optional(),
+  leadTimeDays: nonNeg.max(365).optional(),
+});
+export const UpdateSupplierBody = SupplierBody.omit({ id: true }).partial().extend({ isActive: z.boolean().optional() });
+
+export const GoodsReceiptBody = z.object({
+  id,
+  supplierId: id,
+  supplierInvoiceNo: text(60),
+  /** When the goods arrived, if not now — a paper invoice entered the next morning (§11 `receivedAt`). */
+  receivedAt: iso.optional(),
+  landedCostTotal: nonNeg,
+  lines: z.array(z.object({
+    id,
+    productId: id,
+    uom: text(16).min(1),
+    factorToStockUom: pos,
+    /** In the unit received: 3 spools is 3000. */
+    qty: pos,
+    /** Per unit received, off the paper invoice. */
+    invoiceUnitCostMdram: nonNeg,
+  })).min(1).max(500),
+});
+export type GoodsReceiptBody = z.infer<typeof GoodsReceiptBody>;
+
+export const PurchaseReturnBody = z.object({
+  id,
+  receiptId: id,
+  reason: text(240).min(1),
+  lines: z.array(z.object({ id, receiptLineId: id, qty: pos })).min(1).max(500),
+});
+export type PurchaseReturnBody = z.infer<typeof PurchaseReturnBody>;
+
+export const SupplierPaymentBody = z.object({
+  id,
+  supplierId: id,
+  amount: pos,
+  method: z.enum(["CASH", "CARD", "TRANSFER"]),
+  shiftId: id.nullish(),
+  allocations: z.array(z.object({ goodsReceiptId: id, amount: pos })).max(200).optional(),
+});
+export type SupplierPaymentBody = z.infer<typeof SupplierPaymentBody>;
+
+export const ReverseSupplierPaymentBody = z.object({ reason: text(240).min(1), reenterSupplierId: id.nullish() });
+
+export const WriteOffBody = z.object({ id, productId: id, qty: pos, reasonCode: WriteOffReason, note: text(240).optional() });
+export const AdjustmentBody = z.object({ id, productId: id, qtyDelta: int.refine((v) => v !== 0), note: text(240).optional(), reauthGrant: z.string().min(1), reason: text(240).min(1) });
+export const CostCorrectionBody = z.object({ id, goodsReceiptLineId: id, correctUnitCostMdram: nonNeg, reason: text(240).min(1) });
+
 export const OpenShiftBody = z.object({ id, openingFloat: nonNeg });
 export const BeginCloseBody = z.object({ unsyncedAtClose: nonNeg.max(100_000) });
 export const CloseShiftBody = z.object({

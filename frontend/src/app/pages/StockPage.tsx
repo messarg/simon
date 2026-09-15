@@ -1,6 +1,11 @@
 /** Պահեստ — "do we have it, and how many?" (§6.16). The shelf, written down; last-known when offline. */
 import { useQuery } from "@tanstack/react-query";
-import { PackageSearch, Search } from "lucide-react";
+import { ClipboardList, PackageMinus, PackageSearch, Scale, Search, Truck } from "lucide-react";
+import { Link } from "react-router";
+import { Button } from "@/components/ui/button.tsx";
+import { ReceiptListSheet } from "@/features/buying/ReceiptSheet.tsx";
+import { AdjustSheet, WriteOffSheet } from "@/features/stock/StockOpsSheets.tsx";
+import { useSession } from "@/lib/session-store.ts";
 import { useCallback, useEffect, useState } from "react";
 import { EmptyState, MoneyText } from "@/components/shared";
 import { Input } from "@/components/ui/input.tsx";
@@ -21,6 +26,9 @@ export function StockPage() {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<CachedProduct[]>([]);
   const [selected, setSelected] = useState<CachedProduct | null>(null);
+  const session = useSession();
+  const canStock = session?.user.role === "STOCK" || session?.user.role === "ADMIN";
+  const [op, setOp] = useState<null | "writeOff" | "adjust" | "receipts">(null);
 
   useEffect(() => { const id = setTimeout(() => void searchCatalogue(query, 50).then(setResults), 60); return () => clearTimeout(id); }, [query, version]);
   useEffect(() => { if (selected) void getCachedProduct(selected.id).then((p) => p && setSelected(p)); }, [version]); // eslint-disable-line
@@ -37,6 +45,12 @@ export function StockPage() {
   return (
     <div className="flex min-h-0 flex-1 flex-col md:flex-row">
       <section className={cn("flex min-h-0 flex-col border-border md:w-96 md:border-r", selected && "hidden md:flex")}>
+        {canStock && (
+          <div className="grid grid-cols-2 gap-2 px-3 pt-3">
+            <Button asChild size="lg" disabled={connection === "offline"}><Link to="/stock/receive"><Truck />{t("stockOps.receive")}</Link></Button>
+            <Button variant="secondary" size="lg" disabled={connection === "offline"} onClick={() => setOp("receipts")}><ClipboardList />{t("stockOps.receipts")}</Button>
+          </div>
+        )}
         <div className="p-3">
           <div className="relative">
             <Search className="pointer-events-none absolute left-3 top-1/2 size-5 -translate-y-1/2 text-muted-foreground" aria-hidden />
@@ -74,6 +88,12 @@ export function StockPage() {
               <MoneyText amount={selected.sellPriceMdram / 1000} className="text-3xl font-bold" />
             </div>
           </div>
+          {canStock && (
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              <Button variant="secondary" size="lg" disabled={connection === "offline"} onClick={() => setOp("writeOff")}><PackageMinus />{t("stockOps.writeOff")}</Button>
+              <Button variant="secondary" size="lg" disabled={connection === "offline"} onClick={() => setOp("adjust")}><Scale />{t("stockOps.adjust")}</Button>
+            </div>
+          )}
           <h2 className="mt-6 mb-2 text-lg font-semibold">{t("stock.history")}</h2>
           {connection === "offline" ? <p className="text-muted-foreground">{t("stock.offlineHistory")}</p> : history.data?.items.length === 0 ? <p className="text-muted-foreground">{t("stock.historyEmpty")}</p> : (
             <ul className="divide-y divide-border rounded-xl bg-card ring-1 ring-border">
@@ -91,8 +111,11 @@ export function StockPage() {
               ))}
             </ul>
           )}
+          <WriteOffSheet key={op === "writeOff" ? "wo-open" : "wo-closed"} product={selected} open={op === "writeOff"} onOpenChange={(o) => setOp(o ? "writeOff" : null)} onDone={() => void history.refetch()} />
+          <AdjustSheet key={op === "adjust" ? "adj-open" : "adj-closed"} product={selected} open={op === "adjust"} onOpenChange={(o) => setOp(o ? "adjust" : null)} onDone={() => void history.refetch()} />
         </section>
       )}
+      {canStock && <ReceiptListSheet open={op === "receipts"} onOpenChange={(o) => setOp(o ? "receipts" : null)} admin={session?.user.role === "ADMIN"} />}
     </div>
   );
 }

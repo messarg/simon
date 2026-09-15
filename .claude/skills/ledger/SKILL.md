@@ -157,3 +157,22 @@ sale → lines → payments → stock movements → debt charge → audit log.
 - [ ] Payment allocations sum exactly to the payment
 - [ ] Correction is a reversal, never an update or delete
 - [ ] Audit log written in the same transaction
+
+
+## Built conventions (Phase 3)
+
+- **One costing rule, two callers.** `applyMovement` in `backend/src/domain/costing.ts` is used by
+  `postMovement` when writing and by `replay` when checking. Anything that changes how a movement moves
+  the average must change there, or the drift job reports false drift.
+- **Purchase returns are refused, never clamped** (§13.7). `purchaseReturnAverage` returns null when the
+  result falls outside the band of costs the product entered at (`widenBand` over `PURCHASE_RECEIPT` and
+  `OPENING_BALANCE` movements carrying a cost), when there is no band, or when nothing is left on the shelf.
+  The average stands and the service raises a `COST_VARIANCE` flag; the replay tracks the band as it goes,
+  so the refused figure is reproduced, not reported as drift.
+- **Payables are stored allocations, not a projection** (§11 `SupplierAllocation`). `allocateCredit` in
+  `supplier.service.ts` settles receipts (the person's choice first, then oldest) and turns any leftover
+  into a credit `SupplierAdjustment` whose reason names its origin (`overpayment:<id>`,
+  `purchase-return:<id>`). A reversed payment voids its allocations by exclusion and reverses the credit it
+  created; nothing is edited. `applyStandingCredits` runs after every receipt.
+- **Customer debt stays a projection** (`debt.service.ts`): an overpayment's excess is the payment's
+  unallocated remainder, not a separate ADJUSTMENT row.

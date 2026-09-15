@@ -20,7 +20,7 @@ docs/event-storming/  domain-discovery output (events, commands, bounded context
 
 ### Current state of the tree
 
-Built phase by phase in PRD §23's order, each phase committed and reviewed before the next. **Phases 0 (foundations), 1 (Sell) and 2 (Trust) are done**; Phase 3 (Buy — suppliers, receiving, payables) is next.
+Built phase by phase in PRD §23's order, each phase committed and reviewed before the next. **Phases 0–3 (foundations, Sell, Trust, Buy) are done**; Phase 4 (Control — owner home, reports, reorder suggestions, backup and restore, diagnostics) is next.
 
 What exists:
 - `packages/shared/src/` — money (`groupDigits`, `formatDram`), `tax.ts`, `sale-math.ts` (`computeSale`, the one sale total the till shows and the server recomputes), `return-math.ts` (`computeReturn`), `cash.ts` (denominations), `search.ts` (Latin-typed Armenian), `time.ts`, `enums.ts`, `problems.ts`, `settings.ts`, `schemas.ts` (request bodies both sides validate).
@@ -29,9 +29,10 @@ What exists:
 - `backend/src/{lib,services,routes,middleware,jobs}` — Express 5 app: auth (PIN, lockout, devices, sessions, re-auth grants), settings, users, catalogue, sales (idempotent on id + status, server-owned arithmetic, the cap, accept-and-flag), returns, shifts and cash movements, printing and the drawer behind `lib/hardware/printer.ts`, review flags, drift job. Supertest suites name the §27 criteria they prove.
 - `frontend/src/` — theme, Armenian strings, `lib/` (http, session, connection probe, IndexedDB, catalogue cache, outbox, HID scanner, device receipt numbers), shells, and screens: sign-in, first-run owner setup, till (scan/search/tiles/camera, keypad, swipe-undo, price override, held baskets, quick-add, discount, payment with split), returns, shift (open, X-report, cash movements, denomination close, Z-report), stock, products, settings (with users, devices, sessions).
 - Debt book (Phase 2): `backend/src/services/{debt,customer}.service.ts` and `routes/debt.routes.ts` — debt sales with limit/block (refused at the counter, flagged from the queue), repayments (cash writes REPAYMENT, card writes nothing), reversal with re-entry, merge, erasure, aging, a debt-reduction tender on returns, linked reversal of cash movements with drill-through; `frontend/src/features/debt/` — customer picker with inline create, the four-line debt panel, repayment, ledger, owner controls; `lib/customers.ts` IndexedDB cache with the offline debt cap.
+- Buying (Phase 3): `backend/src/services/{supplier,receiving,purchase-return,supplier-payment,stock-adjust,margin}.service.ts` and `routes/buy.routes.ts` — receiving with unit conversion, landed cost and the weighted average; purchase returns at landed cost with §13.7's band guard (applied identically by the ledger replay); payables through one allocation table with overpayment credits and linked payment reversal; write-offs and admin-re-authed adjustments; cost corrections and a margin report as booked and restated; `frontend/src/features/buying/` and `features/stock/` — receiving, receipts and returns, suppliers with payment, write-off and adjustment sheets.
 - `tests/e2e/` — Playwright journey J1 → J2 → offline sale synced exactly once → J4.
 
-Not yet: suppliers, receiving, write-offs (3); owner home, reports, backup, diagnostics (4); full wizard, import, practice data, PWA, Docker/TLS (5). The Home, Suppliers and Reports destinations are placeholders.
+Not yet: owner home, reports screen, reorder suggestions, backup, diagnostics (4); full wizard, import, practice data, PWA, Docker/TLS (5). The Home and Reports destinations are placeholders.
 
 ### Invariants from the PRD that are expensive to fix later
 
