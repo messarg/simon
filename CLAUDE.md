@@ -44,7 +44,8 @@ Unresolved: Armenian fiscal (ՀԴՄ) and tax-regime requirements — see PRD §1
 - **§23.1 is where to start before writing code.** It orders *code* into dependency layers (arithmetic → schema → services → HTTP → access → client → operations), names the PRD section that specifies each, and lists the acceptance criteria that close it. §23's phase table orders *features* instead; the two lists differ deliberately.
 - **§9 is the authority on what ships in a release** (§23 only orders the building), and indexes every numbered requirement to the criterion that verifies each.
 - **§27 holds the v1 acceptance criteria** that §9 and §23.1 both reference.
-- `npm run check:prd` enforces that those three indexes agree. Run it after any PRD edit — editing §11 or §27 without updating the sections that index them has silently broken the document repeatedly, and the checker exists because a human reader missed it five times.
+- `npm run check:prd` enforces that those three indexes agree, **and that the document's enumerated sets agree with each other** — movement types against §10.4's per-type table, `CashMovement` types and `PAY_OUT` reason codes against §11's source rule, `ReviewFlag` against §8.5's warning types, the three audit lists against one another, and admin-re-auth operations against §14.5's offline table. Sets that live in prose declare their membership in a `<!-- prd-check: key = ... -->` marker beside the argument for them; adding a member means adding it there.
+- `npm run check:prd:test` mutation-tests the checker: defects the PRD actually shipped, reintroduced one at a time, each asserted caught. Run it after changing `check-prd.py`; `npm test` runs both via `pretest`. Both failure modes it guards against were found only by reading the whole document again — five times for the indexes, six more for the sets.
 
 ## Commands
 

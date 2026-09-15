@@ -17,7 +17,10 @@
     "lint": "npm run lint --workspaces --if-present",
     "test": "vitest run",
     "test:watch": "vitest",
-    "check:prd": "python3 scripts/check-prd.py"
+    "check:prd": "python3 scripts/check-prd.py",
+    "check:prd:test": "python3 scripts/test-check-prd.py",
+    "check": "npm run check:prd && npm run check:prd:test",
+    "pretest": "npm run check"
   },
   "devDependencies": {
     "typescript": "~6.0.2",

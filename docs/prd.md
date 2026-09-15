@@ -1,19 +1,27 @@
 # Product Requirements Document — Simon
 
 **Product:** Simon (Սիմոն) — trade management for small retail
-**Document version:** 3.70 — see the revision history below
+**Document version:** 3.78 — see the revision history below
 **Primary market:** Small & medium retail and hardware stores in Armenia
 **UI language:** Armenian. Code, schema, API, comments, commits: English.
 **Currency:** Armenian Dram (AMD, ֏)
 **Type:** Full PRD
 **Document owner:** messarg
-**Last updated:** 2026-09-14
+**Last updated:** 2026-09-15
 **Status:** §17 (fiscal) and §26 (open questions) need local professional advice before launch.
 
 ### Revision history
 
 | Version | Date | Change |
 |:--|:--|:--|
+| **3.78** | 2026-09-15 | **The guard 3.77 built was blind in the direction the defect arrives from, and fixing that found one more instance of the defect.** The membership checks verified *declared → present in every list* and not the reverse, so adding an audited action to §10.7 alone, or a re-authenticated operation to §16.3 alone, passed silently — and **a term always reaches some list before it reaches a declaration**, which makes that the direction that matters. A declaration nothing checks against reality is the second source of truth it was added to remove. The canonical lists are parsed and compared back now, with the parentheticals stripped first, because these lists carry their own arguments inside them and the commas in an argument are not separators. **It failed on its first run and was right**: a repayment reversal had reached §8.2's recovery table, §14.5's offline table and the declaration itself, while **§16.3 — the one sentence that decides what needs an admin PIN — had never listed it**. §8.2 has called it *"an admin correction"* since v2. That is the blind-return defect of 3.72 and the reason-list defect of 3.76 for a third time, caught this time by a script on the day it was introduced rather than by a reading round two versions later. Also: the declaration for that set sat in §16.2 while the list it declares is §16.3's, which is the kind of drift the convention exists to prevent — it has moved; a wording drift that hid an enumeration reported the drift **and** every member as missing, seven failures from one cause, and now reports the cause alone; the mutation suite gained the three cases for the new direction and no longer carries a count in its prose, for the reason §23.1 gives about counts; and **`npm test` now runs both guards** through `pretest`, because a control that depends on someone remembering to invoke it is the thing §16.5 spends a page refusing |
+| **3.77** | 2026-09-15 | **The four findings were 3.76's, and all three substantive ones were one defect wearing three coats — so this version fixes the defect rather than the instances.** A **correction `PAY_OUT`** was added to the cash ledger in 3.76 and never classified by §11's `sourceId` rule, which enumerates every type and reason code as sourced or self-sourced; the one movement whose entire purpose is saying which repayment it undoes could not say it. A **repayment reversal** was added to §10.7's audited actions and not to §11's `reason`-required list, so an admin could move money between two customers' pages and type nothing — the same shape as the blind return of 3.72, which was fixed in §10.7 while its sibling list went untouched. And the same reversal, needing admin re-auth, was **absent from §14.5's offline table**, neither permitted nor refused — the state supplier payments sat in until 3.74. Each was invisible to six rounds of careful reading and is one line to a script. **So `npm run check:prd` now enforces enumerated-set membership**: movement types against §10.4's per-type table, cash types and `PAY_OUT` reason codes against the source rule, `ReviewFlag` against §8.5's warning types, the three audit lists against each other, `reason`-required against audited, and re-auth operations against §14.5. Sets that live in prose declare their membership in a `prd-check` marker beside the argument for them, the convention §9 already used for its criteria exemption. **And the checker has mutation tests** (`npm run check:prd:test`): nine defects this document actually shipped, reintroduced one at a time, each asserted caught. Writing them earned their keep immediately — the first version of the audit check tested whether a term appeared anywhere in a row, and **these rows carry prose explaining why a member is in the list, using the member's own name**, so it passed on the explanation while the enumeration was wrong. That is a false negative in the guard against false negatives, and it is exactly what a checker nobody has watched fail looks like. The checks are scoped to the enumeration now, with a test that fails if the scoping stops finding it. Also fixed: §11's `AuditLog.reason` said *"price override"* where every other list says *"line price override"* — a terminology drift §4.2 forbids, found by the new check on its first run — and §20.2 claimed payables used *"the same bands"* as the debtor row while reading `1–30` against `0–30`, correct arithmetic in an overclaiming sentence |
+| **3.76** | 2026-09-15 | **Every finding this pass was 3.75's own, and the worst of them is §12.5's defect for the fourth time.** 3.75 specified how a repayment taken against the wrong customer is corrected — reverse the `DebtEntry`, re-enter it against the right person — and specified it **only for the debt ledger**. A cash repayment writes a `CashMovement` of type `REPAYMENT` (§12.3) and §12.5 counts those, so a correction that wrote one on the reversal and another on the re-entry closes the shift **15 000 ֏ over** on a single 15 000 ֏ payment. That is a repayment counted twice (3.6), a missing refund term (3.48), a card repayment counted as cash (3.72), and now a re-attribution counted as a second receipt — one formula, four ways of getting money into it wrongly. **The correction moves an attribution, not money**: the reversing entry mirrors the original's `method`, neither it nor the re-entry writes a movement, and the original stands. Where cash genuinely has to come back out — a repayment recorded that never happened — that is a `PAY_OUT` with `reasonCode = CORRECTION`, recorded as its own act rather than as a side effect, because cash leaving the drawer is something a person did and §20.2 counts it by that reason. **The lesson is narrower than "be careful": 3.75 fixed the aging half of a correction and never asked what the same correction does to the drawer.** A document with two ledgers has two halves to every correction, and §9's five directions do not say so because they are organised by *section*, not by *ledger*. Also fixed, all three 3.75's: an `AllocationOverride` whose credit had left the projection's inputs stayed in them, an instruction to allocate an entry that no longer stands — it now leaves with the pair `reversesId` links; §20.2's payables bands read `31–60 · 60+` and **put day 60 in two of them**, a boundary overlap in the row beside the debtor buckets that do not overlap, now `1–30 · 31–60 · 61–90 · 90+` to match, since different anchoring was never a reason for different bands; and §10.6's outstanding identity lacked the *over the entries that still stand* qualifier the projection formula ten lines above it carries. Walking §9's fifth direction for the cash fix turned up one more, older: **a repayment reversal was not in §10.7's audited-action list**, though §8.2 has promised since v2 that it is *"logged"* and it moves money between two people's pages with no cash moving at all. It is in §10.7, FR-SEC-05 and §27.41 now — the same three places a blind return needed in 3.72, for the same reason |
+| **3.75** | 2026-09-15 | **The debt projection had no answer for a correction, and 3.74 is what closed the last door it could have used.** §8.2 and §6.15 both fix a repayment taken against the wrong customer with a linked reversing `DebtEntry`, and **what that entry's `type` is, and what `allocate()` does with it, was never written** — while `allocate(charges, payments, overrides)` takes no reversal input at all, so a reversed payment stayed a payment to the function that derives every allocation and every aging bucket. 3.74's *"`ADJUSTMENT` is always a credit"* was right and it removed the one type that could have absorbed the case: a negative `PAYMENT` is forbidden, an `ADJUSTMENT` reduces the balance a second time, and a `CHARGE` ages from the day of the correction while the charges that payment had settled re-open at their own dates — the same money counted twice and aged twice, on the screen §6.3 exists to make truthful. **A reversed entry now leaves the projection's inputs rather than being cancelled inside them**, the reversing row mirrors the type it reverses, and the pair stands as the audit record. Exclusion is what keeps aging reproducible, which is the property the projection was built for. The same paragraph renames the input `credits`, since `DebtAllocation.creditEntryId` has always pointed at a `PAYMENT` **or** a credit `ADJUSTMENT` — *"named after payments alone"* a third time, in a formula rather than a column. **And *outstanding* is defined, in both directions, for the first time.** Three screens sort by it and §6.9 shows both directions, and the phrase appeared once with no formula behind it: the term that gets dropped is the unallocated credit, and dropping it reports a customer who overpaid as owing money they have already handed over, then sorts them up the list an owner opens to decide who to telephone. 3.74 gave the payables side the same hazard when `SupplierAdjustment` gave an overpayment somewhere to live. Three of this pass's findings were 3.74's own, and all three were **one mistake**: adding a model by analogy and copying its shape without its obligations. `SupplierAllocation` lost the `userId`/`createdAt` pair that makes `AllocationOverride` auditable — while §13.8 had just designated that row the record of a person's decision; `SupplierAdjustment.reversesId` was copied across with no stated use, which §6.11 refuses for a setting and should refuse for a column; and `paidAt` sat beside `createdAt` in one family with no convention saying which belongs where. All three are fixed, and **§9 gains the check that would have caught all three mechanically**: when you add a model by analogy, diff the two field lists and account for every difference out loud. Also: §20.2's payables aging gains bands, because arguing against §10.6's buckets was never an argument for specifying none |
+| **3.74** | 2026-09-15 | **The payables side, read against the debt ledger — the mirror 3.73 named as the next place to look, and it was worse than the cash ledger.** **`SupplierAllocation.creditId` was `supplierPaymentId`, `NOT NULL`** — which is precisely *"naming the field after payments alone"*, the defect the debt side identified, argued and fixed in `DebtAllocation.creditEntryId`. There it was a clarity problem; here it was structural. §13.7 commits a purchase-return credit *"allocated to the original receipt like any other settlement (§11 `SupplierAllocation`)"* — **and that row could not be written**, because the credit is a `PurchaseReturn` and the only credit column pointed at a `SupplierPayment`. A costing rule specified in full, an endpoint that exists, and an allocation neither could store. **§6.14's *"paying more than is owed becomes a credit against the supplier, never a negative payable — §10.6's rule, mirrored"* had no row either**: the model it claimed to mirror has an entity for that credit and this side had none, so the overpayment's only home was the negative payable the rule forbids. `SupplierAdjustment` is that row. **`SupplierPayment` had no `reversesId`**, though §10.7's sentence reads *"finalised sales, receipts, and **payments** are never updated or deleted"* and `GoodsReceipt` — the other half of that sentence — has carried the field throughout. **And §11's note claiming the two allocations are *"deliberately the same shape"* stopped being true in 3.48**, when §10.6 made `DebtAllocation` a derived projection and nobody re-read the row that pointed at it: a prose commitment falsified from somewhere else entirely, which §0's 3.8 entry names as its own recurring category. The divergence is argued now rather than asserted — two of §10.6's three reasons for the projection are about offline tills racing, and a supplier payment is online-only against a single writer. **There was also no §13.x for paying a supplier at all**, while §12.3 has stated the customer-side rule since v2, so oldest-first, the override, the overpayment credit and the reversal were nobody's to write down; **§13.8** is that section. It carries the one deliberate asymmetry the audit turned up: **payables age against `paymentTerms` and receivables age from the charge date**, because §10.6 refuses a movable bucket where the shop cannot know when money will arrive, and a payable has a date both sides agreed to. Mirroring §10.6 faithfully would have shipped a report unable to answer the only question an owner asks about his own bills. Plus: `SupplierPayment.method` was an unenumerated enum against §11's own convention; `SupplierPayment(supplierId)` and `SupplierAllocation(goodsReceiptId)` had no index while the debt ledger did; §14.5 listed neither *allowed* nor *blocked* for a supplier payment; §6.14 displayed `paymentTerms` and computed nothing from them; and §6.9 showed what the owner owes with no overdue line beside the one it shows for what he is owed. **And on the reference side itself: §10.6's *"the type carries direction"* was false for one of its three types** — `ADJUSTMENT` is always a credit and had never said so. **FR-BUY-09**, **FR-BUY-10**, **FR-BUY-11** and **§27.46** are the observers. *The audit was the finding again. Nobody had read `SupplierAllocation` against `DebtAllocation` since the projection rewrite* |
+| **3.73** | 2026-09-14 | **The cash ledger, read against the stock ledger for the first time.** This system has two ledgers and only one had ever been audited. §10.4 acquired a source rule, a replay key, a per-type cost table, a drift check and a validation block across a dozen versions; `CashMovement` still had the shape `StockMovement` had before anybody looked at it — **six fields, no timestamp, and not one validation row in §11.** Taken one at a time the gaps look small; taken together they are the same gap, which is why they were found by comparing the two rows rather than by reading either. **It had no `createdAt`** — alone among every ledger row in §11 — so an X-report could not order the movements inside a shift. **It had no `businessDate`**, though it is queue-drained (§14.5) and §12.5's late-arrival rule names it by name: the third of the three queue-drained documents, and the one that never got the field `Sale` got in 3.48 and `SaleReturn` in 3.72. **It named no source**, so §12.5's claim that the drawer is recomputable *"(rule 3)"* was true of the total and false of every line in it — a `REPAYMENT` row could not say who paid, and §6.9's promise that every figure drills to its events stopped at the cash tile. **It had no `reversesId`**, so a `PAY_OUT` typed 12 000 ֏ that was 1 200 ֏ could not be edited (§10.7), deleted (rule 4) or reversed; §8.2 had no recovery row for it either. **Its `reason` was free text** where §13.5 argues a coded field is the whole difference between a chart and *"a list nobody can total"* — and money leaving the drawer is the shrinkage route the argument was written for, so `PAY_OUT` gains a `reasonCode` and §20.2 gains the report. **And §11's index list covered the debt ledger and not this one**, while §12.5's formula is five aggregates over it, live, on every close screen. Two consequences fell out of the source rule once it existed: **§6.14 never said which `type` a cash supplier payment writes** — `PAY_OUT`, necessarily, since §12.5 has no supplier term, and `PAY_OUT` alone is what made this row's own argument about separating refunds from supplier payments untrue; and **`REFUND` was listed as a standalone queued cash movement** (§14.5) while §15.3 had the sale return writing it, which is one row of money written twice. `POST /api/cash-movements` now accepts the self-sourced types only, which is also what keeps §14.4's *"a cash movement has no dependency at all"* true. §10.7's *"every reversing document carries the same five things"* is scoped rather than left to be contradicted by the first reversing `CashMovement`. **FR-SHF-06** and **FR-SHF-07** and **§27.45** are the observers; §27.7 gains a card repayment, the third wrong answer its worked figure could not previously exclude and the one that was live in §15.3 until 3.72. Also closed: §13.7's band now skips a null cost, which 3.72's nullable `unitCostMdram` had made reachable, and §6.4 stops borrowing §6.2's split-tender grammar for a single-tender field. *The audit was the finding. Eight of these were one omission — nobody had ever read the two ledgers side by side* |
+| **3.72** | 2026-09-14 | **Re-running the analysis on 3.71's own output, which is the half of §9's rule that 3.71 had just strengthened and not followed.** **`StockMovement.unitCostMdram` was `NOT NULL`** — by §11's convention, where every field without a `?` is required — while 3.48 had made the figure it carries nullable and 3.71's new table said a `SALE` movement carries *the average at the moment of sale*. For a product quick-added at the till and sold before it was ever received that average is null, so the schema forbade the movement **§27.29 requires to post**: §9's category 1, *does any validation rule forbid what this now permits*, firing on a decision three versions old and only becoming reachable once the table made the column's meaning explicit. It is nullable now, required on the two types that take a cost off an invoice, with the rule stated in §11's validation table rather than left to the `?`. **§15.3's `POST /api/debt-payments` wrote a `CashMovement` unconditionally** while §12.3 says a card repayment writes none — and §12.5 counts those movements, so building from the endpoint table overstates the drawer by every card repayment of the day. That is **the defect §12.5 records fixing in 3.6**, arriving through the wire contract instead of the formula and landing again on the one screen §6.6 exists to make trustworthy. The cause was in §11: **`SupplierPayment` has carried `method` since it was written and `DebtEntry` never did**, so the ledger could not say how a repayment arrived and the endpoint had nothing to condition on. `DebtEntry.method` closes it, and the payables mirror §6.14 promises is symmetric again. **A blind return is audited in §11's `AuditLog.reason` and in §16.3's re-auth list, and was absent from §10.7 — the list that enumerates auditing.** FR-SEC-05 inherited the gap and so did §27.41, written one version earlier *from that list*: a criterion is only ever as complete as the enumeration it was built from, which is the failure §9 already describes for §27.11. Plus four smaller: `SaleReturn.businessDate` gains the server-stamping rule `Sale.businessDate` has had since 3.48, while its sibling `shiftId` had one and it did not; §14.4's *"the till refuses rather than guesses"* is qualified, because 3.71 had given it an exception twelve lines earlier and left the absolute standing — **the 3.68 pattern, committed by the edit that strengthened the rule against it**; §19.6 comes back out of §23.1's layer 2, which §23.1's own closing passage says must not have a row; and §25's settings risk now separates what the owner is asked to decide from the operational thresholds 3.71 absorbed. *Found by `/prd-analyze` re-run against 3.71. Two of the seven were 3.71's own* |
+| **3.71** | 2026-09-14 | **A seventh quality analysis, and the two worst findings were both in the ledger's one shared cost column.** **`StockMovement.unitCostMdram` was never defined per `type`.** §4.4 separates three different unit costs by *name* on the documents and warns that *"§13.7's costing rule turns on which one is read"* — while the ledger carries one column for all nine types and never said which of the three it meant on any of them. FR-STK-06 and §27.30 require a replay to reproduce `avgCostMdram`, and that is unwritable without the answer; §10.4 now states it per type, alongside which four types move the average and why the remaining five arithmetically cannot. **And §10.5 seeded the average from *"the first receipt"* alone**, while §13.7's worked table — restated verbatim in §27.22 — opens on ten units of *imported* stock costing 12, with no receipt line behind it. Read literally the old rule left `avgCostMdram` null after an opening-stock import, seeded 14 from the next receipt instead of averaging to 13, and handed §13.7's guard a one-member band that refuses the exact figure §27.22 calls correct: the rule and the criterion testing it disagreed, which 3.50 already identified as worse than either being wrong alone. `OPENING_BALANCE` is now named as a seeding movement, in §10.5, §11's validation and FR-BUY-07. **§6.11's closing sentence — *"anything not on this list is a decision Simon should make itself"* — was false in five places.** §13.2's cost-variance ratio, §13.3's safety stock, §14.4's connection and staleness thresholds and §11's clock-skew threshold were each called *configurable* and specified nowhere, and §6.6's «large» variance was a word where §27.7 asserts −500 ֏ prompts a note. Six rows added with defaults; the two the *till* enforces also join `GET /settings/client`'s shape, because a setting a device must obey and cannot read is not a setting. **§9's exemption for a requirement with no acceptance criterion fitted neither of its two stated categories on eight rows** — the lockout and its three ways out, the session lifecycle, revocation, the audit trail, erasure, drift-surfacing and Latin-typed search. §27.39–§27.44 are what they gained; four of the eight are §16's own controls and one is a legal obligation (§17, item 5), so *"covered by the property tests, or too small for a trip to the shop"* was true of neither. §23.1 layer 4's *"plus every lockout path in §16.2"* became three criteria rather than an instruction to a builder. Plus: **`POST /review-flags/:id/resolve` had no role gate at all**, sitting outside §15.4's `ADMIN` block while §14.6 called the same table *the owner's* list — a `WORKER` could clear the durable trace of §16.1's second-ranked threat; §19.5's log rotation gained the numbers §19.2's generations already carried; §19.1 names `createdAt` as the field an opening debt is back-dated in; §16.4 marks stocktake *(v2)*; and the `FR-DAT` rows are back in numeric order. *Found by `/prd-analyze`. The first two are the category `check:prd` cannot reach — no index disagreed with another, because each rule was complete as a sentence and incomplete as an instruction* |
 | **3.70** | 2026-09-14 | **The rule 3.69 added to §9 cited three instances and one was a different pattern.** 3.68 is a clean instance — two exceptions removed, *"with no exceptions"* written over a third. 3.66 is the same family one step removed: a table claiming to answer a question it answered incompletely. **3.62 is neither**: its own entry says *"§11's validation forbade the row 3.61 required to post"*, which is a behaviour change in §12.4 failing to reach §11 — the pattern **category 1 already covers** two paragraphs above, in the same table. So a new rule in the section about keeping this document true rested on one supporting instance while claiming three, and borrowed its second from a rule three lines away. The miscitation is struck in place rather than quietly deleted, for the reason 3.61 gives about correcting the record: a claim recorded as settled stops the next reader re-examining it. *Found by applying 3.69's own rule to the edit that added it* |
 | **3.69** | 2026-09-14 | **3.68 replaced an invariant with two silent exceptions with one asserting it had none — over a third exception it did not touch.** §11 read *"whose names it mirrors — exactly, with no exceptions"*, while `LEDGER_CACHE_DRIFT` has no §8.5 warning type at all: `ledger-cache-drift` appears nowhere in the error catalogue, correctly, because §10.4's scheduled job raises it and there is no `warnings[]` array for it to travel in (§15.2). It surfaces through §19.5's alerts. The claim is now *"exactly, for every value that has one"* and the exception is stated where the value is described, rather than left for a reader building the map to rediscover at the twelfth entry. **The tell was that the script verifying 3.68's fix needed a special case by name** — and that exception lived in the script rather than in the document it was checking. §9 gains the rule this is the third instance of: **after tightening a stated invariant, re-walk the whole set, not the members the finding named.** A finding of the form *"this rule has exceptions"* invites a fix asserting the rule has none, and whatever was not in the finding survives while the claim over it gets stronger. Walking the set *before* editing finds the defect; walking it *after* stops the fix creating one |
 | **3.68** | 2026-09-13 | **`ReviewFlag.type` now mirrors §8.5's warning names exactly, which §11 had been claiming since v3.49.** The note reads *"§8.5's warning types, whose names it mirrors"* — and two of them did not: `NEGATIVE_STOCK` against `insufficient-stock`, and `CREDIT_LIMIT_ON_SYNC` against `credit-limit-exceeded-on-sync`, which drops the *EXCEEDED*. They are renamed `INSUFFICIENT_STOCK` and `CREDIT_LIMIT_EXCEEDED_ON_SYNC`. It matters because §15.2 makes a warning something **read back from** the `ReviewFlag` row rather than re-derived against the request, so there is a real mapping from enum value to warning type in the code — mechanical where the names mirror, and a lookup with two silent special cases where they do not, in a table whose own comment says the exceptions are not there. The enum is `TEXT` with a `CHECK` and nothing is built yet, so this is a spelling change today and a data migration once movements exist. *This round of work made the claim stronger while leaving the exceptions: five values were added and every one named to mirror, so the rule held for ten of twelve rather than five of seven — which is how a stated invariant quietly becomes a mostly-stated one.* Found by walking the enum against the property §11 claims for it, the last such set in this document that had not been walked |
@@ -866,8 +874,8 @@ happen, not collected at the end.
    *Unsynced sales → explicit acknowledgement, because the Z-report would be incomplete.*
 2. Simon shows expected cash (§12.5). Shift → `CLOSING`.
 3. Count in stacks: 5000 × n, 1000 × n, and so on. The counter totals as you go.
-4. Simon shows the difference, neutrally. *Large variance → a note is asked for, not demanded as
-   an explanation.*
+4. Simon shows the difference, neutrally. *Variance at or above §6.11's threshold → a note is
+   asked for, not demanded as an explanation.*
 5. **Hard confirm** — one of the few §8.1 asks for, because closing ends a period and is hard
    to unwind. Shift → `CLOSED`, Z-report issued, session ends (§16.3).
 
@@ -1029,6 +1037,12 @@ you. The worker sees it, and so does the customer.
 - Select customer → their unpaid charges, **oldest first, with ages**.
 - Enter an amount → Simon allocates oldest-first automatically, and **shows which charges it
   cleared**. The worker can override.
+- **One tender, cash or card**, defaulting to cash (rule 9) — deliberately unlike §6.2, which
+  splits a sale across several: `DebtEntry.method` is singular and a part-cash, part-card
+  repayment is not representable in v1. This is not cosmetic: only a cash repayment puts money in the drawer, so only a cash one writes the
+  `CashMovement` §12.5 counts (§12.3, §11 `DebtEntry.method`). A card repayment recorded as cash
+  shows up as a shortfall on §6.6 — the screen §2.3 says must never look like an accusation.
+  `TRANSFER` is reserved and not offered in v1, exactly as it is on §6.2 (§11 `Payment`).
 - Partial payments fully supported — this is the normal case, not an edge case.
 - Prints a receipt whenever the host is reachable, and is **reprintable from the record when it
   is not** (§14.5). In a cash-and-trust economy the paper acknowledgement matters to the customer,
@@ -1086,7 +1100,8 @@ designed carelessly.
 
 - The **denomination counter** is a deliberate usability decision: people count cash in
   stacks, not as a single total, and a free-text total invites both typos and rounding.
-- **Variance is recorded, never silently absorbed.** A large variance asks for a note.
+- **Variance is recorded, never silently absorbed.** A variance reaching §6.11's note threshold
+  — default **500 ֏**, either direction — asks for a note.
 - **Tone is neutral.** "Տարբերություն: −400 ֏" — never "Missing", never "Shortage", never a
   red alarm. The worker sees this screen every single day; most variances are honest
   mistakes, and treating each one as an accusation destroys goodwill fast.
@@ -1148,6 +1163,7 @@ shop.
 │    որից 90+ օր        88 000 ֏  ⚠         │  ← the number that matters
 ├────────────────────────────────────────────┤
 │  Ես պարտք եմ         120 000 ֏            │
+│    որից ժամկետանց     34 000 ֏  ⚠         │
 ├────────────────────────────────────────────┤
 │  Քիչ է մնացել  7 ապրանք   Չի վաճառվում 23 │
 └────────────────────────────────────────────┘
@@ -1203,9 +1219,28 @@ a branch the code has to carry.
 | Debt consent step | Off | §26 Q14. If consent turns out to be the lawful basis, this adds one step to §6.3 rather than a redesign |
 | Backup destination | Local + USB | §19.2 |
 | Shop timezone | `Asia/Yerevan` | What every shop-local boundary resolves against — the calendar day in §20's reports, the shift day, and §10.6's aging buckets. A stored setting rather than the host's locale, because a host PC left on UTC would put the day boundary four hours out and make every daily report wrong in a way that looks like fraud. Armenia observes no DST, so a misconfiguration is a one-time silent error rather than a twice-yearly visible one — *less* likely to be noticed, which is why installation sets it explicitly rather than inheriting the host's locale, and why §19.5 prints it (§7.1, §11 `Setting`) |
+| Variance note threshold | 500 ֏ | A shift close whose variance reaches this asks for a note (§6.6). The word was «large» until 3.71, while §27.7 asserts that a −500 ֏ variance prompts one — so either 500 was large or the rule and the criterion testing it disagreed, which is the defect §13.7's band had in the same shape |
+| Cost variance ratio | 3× | Either direction, against the last unit cost for that product. Confirming above it raises a `COST_VARIANCE` flag (§13.2) |
+| Reorder safety days | 3 | The safety-stock term in §13.3's formula, held as days of cover rather than units so that one number serves every product |
+| Connection-failure threshold | 2 failures, or 1.5 s on the scan path | When the till stops believing the server is reachable and moves onto the offline path (§14.4). **Till-enforced** |
+| Settings-cache staleness warning | 4 hours | When a cached settings copy is old enough to surface on §8.3's strip (§14.4). **Till-enforced** |
+| Device clock-skew threshold | 2 minutes | How far a device's `createdAt` may sit from the server's `receivedAt` before `DEVICE_CLOCK_SKEW` is raised (§11) |
 | Text size | Normal | Older owners; a real accessibility need |
 
 Anything not on this list is a decision Simon should make itself.
+
+**The last six rows arrived in 3.71, and they are why that sentence needed enforcing rather than
+repeating.** Each was already described elsewhere as *configurable* — §13.2's ratio, §13.3's
+safety stock, §14.4's two thresholds, §11's skew threshold and §6.6's «large» variance — so this
+list asserted its own completeness while five other sections quietly broke it. **A value called
+configurable and specified nowhere is a setting nobody can set**, and it is worse than a
+constant, because a reader cannot tell which of the two it is and an implementer has to guess a
+default the document never chose.
+
+**Two of the six are enforced by the till rather than by the host**, which means this list is not
+enough on its own: they also have to reach the device, so they travel in `GET /settings/client`'s
+shape beside the caps (§14.4, §15.4, FR-SYN-08). That is §9's third direction — *can a client
+reach it?* — applied to a setting rather than to a feature.
 
 ---
 
@@ -1294,7 +1329,7 @@ alphabetical: the owner opens this screen to work out who to telephone.
 | Deleting a customer who owes money | **Not offered.** Deactivate — the debt history is financial record and survives (§10.7) |
 | Deleting a customer at their request (§17, item 5 — personal data) | Name and phone are cleared; the ledger rows and their amounts remain against an anonymised record. The retention obligation must be confirmed before launch (§17) |
 | Raising a limit to cover the sale in progress | Allowed with admin re-auth and a reason; both audited (§6.3, §16.3) |
-| A repayment recorded against the wrong customer | Reversed by a linked correction, never edited (§10.7) |
+| A repayment recorded against the wrong customer | Reversed by a linked correction, never edited (§10.7): a reversing `PAYMENT` mirroring the one it reverses, after which **both leave the allocation projection's inputs** and the charges that payment had settled re-open at their own dates (§10.6). Aging is exactly what it was before the mistake — which is why the correction is an exclusion rather than an offsetting entry |
 
 **Why it is learnable.** It is the debt notebook: one name, one page, oldest at the top.
 
@@ -1306,12 +1341,21 @@ alphabetical: the owner opens this screen to work out who to telephone.
 wait.
 
 - Sorted by outstanding payable, descending, with `paymentTerms` and `leadTimeDays` visible:
-  the two fields that feed reorder maths (§13.3).
-- Tap a supplier → receipts, purchase returns and payments, each payment showing the receipts
-  it settled. The same allocation shape as customer debt (§10.6), deliberately the same screen
-  grammar, so learning one teaches the other.
-- Recording a payment creates a `SupplierPayment` with allocations, and a cash movement against
-  the open shift if it came out of the drawer (§12.5).
+  the two fields that feed reorder maths (§13.3). **A receipt past `receivedAt + paymentTerms` is
+  marked overdue here**, the mirror of §6.3's marker and §13.8's rule — this screen displayed the
+  terms and computed nothing from them until 3.74.
+- Tap a supplier → receipts, purchase returns and payments, **each payment showing the receipts
+  it settled, oldest first and overridable at the moment of paying** (§13.8). The same allocation
+  shape as customer debt (§10.6), deliberately the same screen grammar, so learning one teaches
+  the other. A purchase-return credit and an overpayment credit appear in that same list and
+  settle receipts the same way (§11 `SupplierAllocation.creditType`).
+- Recording a payment creates a `SupplierPayment` with allocations, and — if it came out of the
+  drawer — a `CashMovement` of type **`PAY_OUT`**, with `reasonCode = SUPPLIER_PAYMENT` and the
+  `SupplierPayment` as its source (§11, §12.5). **Naming the type is not pedantry**: §12.5's
+  formula has no supplier term, so a movement typed anything else is either counted wrongly or
+  not counted at all — and §11's argument for giving refunds a type of their own turns on
+  supplier payments being separable from every other pay-out, which `PAY_OUT` alone never made
+  them. This bullet said *"a cash movement"* and named nothing until 3.73.
 - **Supplier terms are `ADMIN`-only** (§16.5). `STOCK` sees only the invoice costs it types
   during receiving.
 
@@ -1351,7 +1395,7 @@ ways. Never alphabetical.
 | Situation | Behaviour |
 |:--|:--|
 | Customer not in the list | Create inline; duplicate phone is caught at the point of typing (§6.13) |
-| Repayment against the wrong customer | Change before confirming; afterwards an admin correction reverses it as a linked entry (§8.2, §11 `DebtEntry.reversesId`) |
+| Repayment against the wrong customer | Change before confirming; afterwards an admin correction reverses it as a linked entry and re-enters it against the right person (§8.2, §11 `DebtEntry.reversesId`). **The drawer is untouched** — the money arrived once and only its attribution moved (§10.6, §12.3) |
 | Offline | Balances show as **last known** and are labelled so (§14.4); a repayment still records and queues (§14.5) |
 
 **Why it is learnable.** It is the Nisya book with the shop's controls left in the office.
@@ -1576,6 +1620,7 @@ look identical to the harmless ones.
 | Two sales sent twice | Nothing — the second is ignored (§14.3) | Automatic |
 | Cash doesn't match at close | Neutral variance + note prompt | Recorded, not punished |
 | Wrong price on a receipt | Return + re-sell, or admin price correction | Both leave a trail |
+| Cash movement entered wrongly — a 12 000 ֏ pay-out that was 1 200 ֏ | A linked reversing movement, then the right one | Never an edit and never a delete (§10.7, §11 `CashMovement.reversesId`). This row did not exist until 3.73, and neither did the field it depends on |
 | Host PC won't start | *Not recoverable in-app* | Runbook + tested restore (§19.2) |
 
 ### 8.3 Offline, in human language
@@ -1655,6 +1700,15 @@ The client maps `type` to a resource key; the server never sends user-facing pro
 **Every message names a number or a next step.** A message that only reports a state is a
 design failure that already happened (rule 7), and «Սխալ» on its own is the worst of them.
 
+**Every `ReviewFlag` type (§11) mirrors a `type` in this table**, and `check:prd` enforces it —
+it was a lookup with special cases until 3.68, when two flags were found not to mirror anything
+while §11's note said they all did. The single deliberate exception is declared below rather
+than left to be rediscovered: `LEDGER_CACHE_DRIFT` is raised by §10.4's scheduled job instead of
+returned from a request, so it has no `warnings[]` array to travel in (§15.2) and surfaces
+through §19.5's alerts.
+
+<!-- prd-check: flags-without-warning = LEDGER_CACHE_DRIFT -->
+
 ---
 
 ## 9. Scope
@@ -1721,7 +1775,7 @@ answer, and so a requirement cannot quietly lose its acceptance criterion during
 | **FR-CAT-05** | Opening debts imported with their original dates | §7.3, §19.1 | §27.5 |
 | **FR-CAT-06** | Products are deactivated, never deleted | §6.12, §10.7 | — |
 | **FR-CAT-07** | `decimalPlaces` and `stockUom` immutable once movements exist | §6.12, §11 | §27.21 |
-| **FR-CAT-08** | Search tolerates Latin-typed Armenian | §20.3 | — |
+| **FR-CAT-08** | Search tolerates Latin-typed Armenian, for customers as well as products | §20.3, §11 `nameSearch` | §27.44 |
 | **FR-CAT-09** | A unit's conversion factor is immutable once the product has movements; receipts snapshot the unit and factor they used | §11, §6.12 | §27.31 |
 | **FR-CAT-10** | Money and quantity columns refuse a non-integer at the storage layer (`STRICT`), and an import cell that is not whole in its scaled unit is a row error rather than a rounded value | §11, §19.1, §21 | §27.38 |
 | **FR-SELL-01** | Scan → line in < 200 ms; a rescan increments the existing line | §6.1, §21 | §27.1 |
@@ -1743,30 +1797,35 @@ answer, and so a requirement cannot quietly lose its acceptance criterion during
 | **FR-DEBT-01** | Debt sale shows balance, age of the oldest charge, and limit before confirming | §6.3 | §27.12 |
 | **FR-DEBT-02** | Credit limit warns and allows admin override with a reason | §12.2 | §27.12 |
 | **FR-DEBT-03** | Repayment allocated oldest-first, overridable, partial supported | §10.6, §12.3 | §27.5 |
-| **FR-DEBT-04** | Overpayment becomes a credit adjustment, never a negative charge | §10.6 | — |
+| **FR-DEBT-04** | Overpayment becomes a credit adjustment, never a negative charge, and an unallocated credit reduces the outstanding balance in both directions | §10.6, §13.8 | §27.20 |
 | **FR-DEBT-05** | Aging runs from the charge date; buckets 0–30/31–60/61–90/90+ | §10.6, §20.2 | §27.5 |
 | **FR-DEBT-06** | A worker creates a customer mid-sale; limits stay admin-only | §6.13 | §27.12 |
 | **FR-DEBT-07** | Duplicate customers are merged, never deleted or re-keyed by hand | §6.13 | §27.20 |
-| **FR-DEBT-08** | Allocation is a derived projection over stored intent, so concurrent offline repayments reconcile without breaking a charge's balance | §10.6, §11 `AllocationOverride` | §27.32 |
+| **FR-DEBT-08** | Allocation is a derived projection over stored intent, so concurrent offline repayments reconcile without breaking a charge's balance; a reversed entry leaves the projection's inputs rather than being offset inside them, so aging survives a correction | §10.6, §11 `AllocationOverride`, §8.2 | §27.32 |
 | **FR-BUY-01** | Receiving without a prior order is the primary path | §6.7, §13.2 | §27.3 |
 | **FR-BUY-02** | Landed cost apportioned by value before the average moves | §10.5, §13.2 | §27.3 |
 | **FR-BUY-03** | Moving weighted average: rounded once, guarded at zero or negative stock | §10.5 | §27.4 |
 | **FR-BUY-04** | Unit cost snapshotted onto every sale line | §10.5, §11 | §27.4 |
 | **FR-BUY-05** | Supplier payables with allocation, mirroring customer debt | §6.14, §11 | — |
 | **FR-BUY-06** | Purchase returns reverse stock at the receipt's landed cost and credit the invoice only, and never leave an average outside the range of costs actually paid | §13.7 | §27.22 |
-| **FR-BUY-07** | Unknown cost is null, not zero: the first receipt seeds the average, and no margin is reported for a line whose cost was unknown | §10.5, §20.2 | §27.29 |
+| **FR-BUY-07** | Unknown cost is null, not zero: the first movement carrying a cost of its own — a receipt or an `OPENING_BALANCE` — seeds the average, and no margin is reported for a line whose cost was unknown | §10.5, §10.4, §20.2 | §27.29 |
 | **FR-BUY-08** | A corrected cost restates reported margin through a linked document, leaving every sale line untouched | §10.5, §11 `CostCorrection` | §27.33 |
+| **FR-BUY-09** | A supplier payment allocates oldest receipt first and is overridable; an overpayment becomes a credit, never a negative payable; a payment to the wrong supplier is reversed by a linked document | §13.8, §11 `SupplierAdjustment` | §27.46 |
+| **FR-BUY-10** | Every settlement of a payable — a payment, a purchase-return credit, an overpayment credit — allocates through one table against the receipt it settles | §11 `SupplierAllocation`, §13.7, §13.8 | §27.46 |
+| **FR-BUY-11** | Payables age against agreed terms rather than the receipt date, and overdue is surfaced to the owner | §13.8, §6.14, §6.9, §20.2 | §27.46 |
 | **FR-STK-01** | Append-only movement ledger; `stockQty` is a rebuildable cache | §10.4 | §27.3 |
 | **FR-STK-02** | Negative stock allowed with a flag; strict mode is a setting | §6.11, §13.6 | — |
 | **FR-STK-03** | Write-offs carry explicit reason codes | §13.5 | — |
-| **FR-STK-04** | Ledger-vs-cache drift is surfaced, never silently corrected | §10.4, §19.5 | — |
-| **FR-STK-05** | One needs-attention list carries every flag: negative stock, sync conflicts, cache drift | §11 `ReviewFlag`, §13.6, §14.6, §19.5 | — |
+| **FR-STK-04** | Ledger-vs-cache drift is surfaced, never silently corrected | §10.4, §19.5 | §27.43 |
+| **FR-STK-05** | One needs-attention list carries every flag: negative stock, sync conflicts, cache drift; reading it is any session, clearing it is gated by the flag's type | §11 `ReviewFlag`, §13.6, §14.6, §19.5, §15.4 | §27.43 |
 | **FR-STK-06** | Replaying the ledger in `seq` order reproduces both `stockQty` and `avgCostMdram`, and a late-arriving sale does not register as drift | §10.4, §11 `StockMovement` | §27.30 |
 | **FR-SHF-01** | Open on a counted float; close with a denomination counter | §6.6 | §27.7 |
 | **FR-SHF-02** | Expected-cash formula; variance always recorded, note prompted | §12.5 | §27.7 |
 | **FR-SHF-03** | X-report mid-shift, Z-report at close | §6.6, §12.5 | §27.7 |
 | **FR-SHF-04** | A cash refund reduces expected cash by exactly what left the drawer | §12.4, §12.5, §11 `CashMovement` | §27.25 |
 | **FR-SHF-05** | A sale belongs to a drawer and to a period; one arriving after its shift closed posts, reports on the right day, and is stated on the Z-report without rewriting a printed variance | §11 `Sale`, `ShiftLateArrival`, §12.5 | §27.24 |
+| **FR-SHF-06** | Only a cash-tendered repayment moves expected cash; a card repayment writes no cash movement, and neither does a correction that re-attributes one | §12.3, §12.5, §10.6, §11 `DebtEntry.method` | §27.7, §27.32 |
+| **FR-SHF-07** | Every cash movement names the document that caused it or is explicitly self-sourced, carries a coded reason where money leaves the drawer, and is corrected by a linked reversal rather than an edit | §11 `CashMovement`, §10.4, §10.7, §20.2 | §27.45 |
 | **FR-SYN-01** | Catalogue cached in IndexedDB; a basket is buildable offline | §14.4 | §27.8 |
 | **FR-SYN-02** | One outbox carries parked and completed sales, draining FIFO and serially so neither overtakes the other; the UI never awaits the network | §14.4, §15.3 | §27.8 |
 | **FR-SYN-03** | Client-generated id **plus the target status** is the idempotency key: a replay returns `200`, a new legal transition is honoured, an illegal one is `422` | §14.3, §15.3, §11 | §27.8 |
@@ -1775,22 +1834,22 @@ answer, and so a requirement cannot quietly lose its acceptance criterion during
 | **FR-SYN-06** | The queue distinguishes transient 4xx from permanent: an expired session and a not-yet-drained dependency are retried, never parked, and a parked item never blocks the queue behind it | §14.4 | §27.34 |
 | **FR-SYN-07** | A discount above the ordinary cap taken offline is bounded by the offline discount ceiling, completes at the till, and is flagged on sync rather than parked; above the ceiling it is refused on both paths | §6.11, §14.5, §15.3 | §27.36 |
 | **FR-SYN-08** | The settings a till must enforce **or render** are cached alongside the catalogue and readable by any session through an explicit shape; an unsynced till refuses rather than guesses | §14.4, §15.4, §16.5 | §27.36 |
-| **FR-SEC-01** | PIN verified server-side, rate limited, lockout with a way out | §16.2 | — |
-| **FR-SEC-02** | Sessions per-device, ending at shift close, with stated idle timeouts | §16.3 | — |
+| **FR-SEC-01** | PIN verified server-side, rate limited, lockout with three stated ways out, and per-user so the shop keeps selling | §16.2 | §27.39 |
+| **FR-SEC-02** | Sessions per-device, ending at shift close, with stated idle timeouts | §16.3 | §27.40 |
 | **FR-SEC-03** | Three roles; role determines what exists, not what is enabled | §5.1, §16.4 | — |
 | **FR-SEC-04** | Cost, margin and supplier terms stripped server-side for non-admins | §16.5 | §27.9 |
-| **FR-SEC-05** | Audit log for catalogue price change, **line price override**, stock adjustment, discount above cap, **credit-limit override**, basket void, sale return, permissions — with the reason the person typed | §10.7 | — |
-| **FR-SEC-06** | An admin revokes another device's session in one action; deactivating a device revokes its sessions with it | §16.3, §15.4, §11 `Device` | — |
+| **FR-SEC-05** | Audit log for catalogue price change, **line price override**, stock adjustment, discount above cap, **credit-limit override**, basket void, sale return, **blind return**, **repayment reversal**, held-basket transfer, every cash-drawer open, permissions — with the reason the person typed | §10.7 | §27.41 |
+| **FR-SEC-06** | An admin revokes another device's session in one action; deactivating a device revokes its sessions with it | §16.3, §15.4, §11 `Device` | §27.40 |
 | **FR-SEC-07** | The server owns sale arithmetic and enforces the discount cap; a client cannot set a line total, and a price override is capped as the discount it is. The **price and tax rate travel with the line** and are accepted as quoted, so a queued sale is recomputed at its own rate and never at the rate current when it drains | §15.3, §12.1, §10.8, §16.5 | §27.28 |
 | **FR-DAT-01** | Consistent snapshots hourly and at close; local plus USB; encrypted | §19.2 | §27.10 |
 | **FR-DAT-02** | One-click restore, with a documented and rehearsed drill | §19.2 | §27.10 |
+| **FR-DAT-03** | Every report exports to CSV/Excel in one tap | §6.10, §20.2 | — |
+| **FR-DAT-04** | Health endpoint and an owner-readable diagnostics screen | §19.5 | — |
+| **FR-DAT-05** | Erasure anonymises a customer — name and phone cleared, ledger amounts and dates kept | §19.6, §6.13 | §27.42 |
 | **FR-DAT-06** | A backup passphrase generated at setup and shown once, re-displayable and rotatable by an admin while the host lives; the derived key stored outside the database, so a backup never carries the means to decrypt itself | §19.2, §7.1 | §27.10 |
 | **FR-DAT-07** | The backend owns the printer; every receipt and report is a print route, reprint is the same call, and a print failure never rolls back a committed document | §18, §15.4, §12.1 | §27.37 |
 | **FR-DAT-08** | The cash drawer opens on its own route, free **once** per document accounting for the cash — sale, refund, repayment, cash movement, shift open or close — and re-authenticated with a `NO_SALE` movement when none does or when the document has already been spent; every open is audited and no print call ever pulses it | §18, §15.4, §16.3, §10.7 | §27.37 |
 | **FR-DAT-09** | Printing and the drawer are host-owned and therefore unavailable offline; the sale completes regardless and the receipt is reprintable from the record on reconnect | §14.5, §12.1, §8.2 | §27.37 |
-| **FR-DAT-03** | Every report exports to CSV/Excel in one tap | §6.10, §20.2 | — |
-| **FR-DAT-04** | Health endpoint and an owner-readable diagnostics screen | §19.5 | — |
-| **FR-DAT-05** | Erasure anonymises a customer — name and phone cleared, ledger amounts and dates kept | §19.6, §6.13 | — |
 | **FR-LRN-01** | Setup wizard: five questions asked of the owner, skippable, resumable; the tax regime, price basis and timezone are set at installation instead | §7.1, §6.11 | §27.35 |
 | **FR-LRN-02** | Practice mode isolated in a separate database seeded with the catalogue **and the settings**, so a practice sale prices and completes exactly as a real one; audited on entry and exit | §7.2, §19.4 | §27.19 |
 | **FR-LRN-03** | Contextual help, first-run coach marks, teaching empty states | §7.5, §8.4 | §27.14 |
@@ -1852,6 +1911,42 @@ the section about keeping this document true, resting on evidence that does not 
 failure this section exists to catch, so the miscitation is left recorded rather than quietly
 removed.*
 
+**When you add a member to an enumerated set, the other lists enumerating that set are now
+checked for you — in both directions.** A declaration that is only read, never checked against
+the lists it declares, is the second source of truth it was meant to remove, and the first
+version of these checks was exactly that: adding an action to §10.7 alone, or a re-auth operation
+to §16.3 alone, passed silently. **That is the direction the defect actually travels**, since a
+term always reaches some list before it reaches a declaration. The canonical lists are parsed and
+compared back, and it found one on its first run: a repayment reversal had reached §8.2, §14.5
+and the declaration, and **§16.3 — the sentence that decides what needs a PIN — was the last to
+hear**. This was the rule that six review rounds could not make anyone follow — a
+blind return audited in two places and missing from the list that enumerates auditing (3.72); a
+repayment reversal added to that list and not to the one requiring a reason (3.76); a correction
+pay-out added to the cash ledger and not to its source rule (3.76). Each was invisible to a
+reader and is one line to a script, so `check:prd` now enforces six of them: every movement type
+has a row in §10.4's per-type table; every `CashMovement` type and `PAY_OUT` reason code is
+classified as sourced or self-sourced; every `ReviewFlag` mirrors an §8.5 warning type; §10.7,
+**FR-SEC-05** and **§27.41** each name every audited action; every `reason`-required action is an
+audited one; and every operation needing admin re-auth says what it does offline in §14.5. Sets
+that live in prose declare their membership in a `prd-check` marker beside the argument for them.
+
+**The checker has its own mutation tests** — `npm run check:prd:test` — which reintroduce
+defects this document actually shipped and assert each is caught. *A checker nobody has watched
+fail is a checker nobody should trust*, and writing them found a real false negative: the first
+version tested whether a term appeared anywhere in a row, and these rows carry prose explaining
+**why** a member is in the list, using the member's own name. It passed on the explanation while
+the list itself was wrong. The checks are scoped to the enumeration now, and one test exists to
+fail if that scoping ever stops finding it.
+
+**When you add a model by analogy, diff the two field lists.** 3.74 added `SupplierAdjustment`
+and repointed `SupplierAllocation` by reading `DebtEntry` and `DebtAllocation` beside them, and
+still produced three defects of one kind: `SupplierAllocation` lost the `userId`/`createdAt` pair
+that makes `AllocationOverride` auditable, `reversesId` was copied across with no stated use, and
+a timestamp was named differently from its sibling in the same pass. **Copying a shape is not
+copying the obligations the shape carried** — and unlike the rules above, this one is mechanical:
+list the fields the original has, list the fields the new one has, and account for every
+difference out loud. Deciding not to mirror something is fine; not noticing is what this catches.
+
 **And ask it mechanically, not by memory: grep the words the old rule used**, across the whole
 file, not the sections you expect to be affected. Changing tax from one basis to two left the
 phrase "never added" in a requirement, "extracted, not added" in a section heading, and "no safe
@@ -1861,6 +1956,18 @@ middle" in §26 — four rings out from the edit, found in one command and not i
 Those rows are covered either by the domain unit and property tests (§21, *Correctness*) or are
 too small to justify a trip to the shop. Gaining an acceptance criterion is cheap; losing one
 without noticing is not, which is why this column exists at all.
+
+**Both categories are real and neither had been checked against the rows claiming them.** 3.71
+found eight that fitted neither, and §27.39–§27.44 are what they gained: the lockout and its
+three ways out (**FR-SEC-01**), the session lifecycle and revocation (**FR-SEC-02**,
+**FR-SEC-06**), the audit trail (**FR-SEC-05**), erasure (**FR-DAT-05**), drift being surfaced
+rather than corrected (**FR-STK-04**, **FR-STK-05**), and Latin-typed search (**FR-CAT-08**).
+None of them is arithmetic, so the property tests never reached them; none is small — four are
+§16's own controls, one is a legal obligation (§17, item 5), and one is the feature §6.15 is
+built on top of. **An exemption nobody re-reads stops being a rationale and becomes a place to
+put things**, which is the failure mode of any list that explains itself once and is then only
+added to. The rows that remain do fit; what was missing was anyone asking, per row, which of the
+two categories it belonged to.
 
 **Some acceptance criteria have no requirement, also deliberately.** §27.15 (no internal term
 reaches a worker's screen) is enforced by §4.1's vocabulary rule rather than by any one feature.
@@ -2005,7 +2112,52 @@ enum from the start so that adding a second shop does not migrate a live ledger.
 **`Product.stockQty` and `Product.avgCostMdram` are both cached projections**, recomputed
 inside the same transaction that writes the movement, and rebuildable from scratch by replaying
 the ledger. Every movement carries `qtyDelta` *and* `unitCostMdram`, so the quantity and the
-average are equally replayable — and both are therefore equally checkable.
+average are equally replayable — and both are therefore equally checkable. `unitCostMdram` is
+nullable for the same reason `avgCostMdram` is, and the table below says which two types are the
+exception.
+
+**What `unitCostMdram` holds, and which types move the average.** A replay that reproduces
+`avgCostMdram` (FR-STK-06, §27.30) needs both answers for every type in the enum above, and
+until now neither was stated anywhere. §4.4 names three different unit costs and warns that
+*"§13.7's costing rule turns on which one is read"* — and the ledger uses the short name for all
+nine types, so which one it means has to be written here rather than inferred from whichever
+source document a row happens to point at.
+
+| Movement type | `qtyDelta` | `unitCostMdram` holds | Moves `avgCostMdram`? |
+|:--|:--|:--|:--|
+| `OPENING_BALANCE` | + | the cost the stock is brought in at, **or null where the import gave none** (§19.1) | **Seeds it when it carries one** (§10.5) |
+| `PURCHASE_RECEIPT` | + | the **landed** cost — `GoodsReceiptLine.landedUnitCostMdram`, never the invoice cost | **Yes** — §10.5's weighted average |
+| `SALE_RETURN` | + | the original sale line's `unitCostMdram`, copied (§12.4) | **Yes** — averaged back in at that cost |
+| `PURCHASE_RETURN` | − | the **landed** cost copied from the receipt line — `PurchaseReturnLine.landedUnitCostMdram` | **Yes** — §13.7's reversal, subject to its band guard |
+| `SALE` | − | the average at the moment of sale — the same figure snapshotted onto `SaleLine.unitCostMdram` | No |
+| `WRITE_OFF` | − | the average at the moment of write-off | No |
+| `ADJUSTMENT` | ± | the average at the moment of adjustment | No |
+| `STOCKTAKE` *(v2, §9)* | ± | the average at the moment of approval | No |
+| `TRANSFER` *(v2, §9 — never emitted in v1)* | ± | the average at the moment of transfer | No |
+
+**The bottom five cannot move the average**, and that is arithmetic rather than policy: they
+move stock *at* the average, and `(Q·avg ± q·avg) ÷ (Q ± q)` is `avg`. Which is why the top four
+are the whole of the write side, and why a movement of any other type that carries a cost
+differing from the average at the moment it was written is a bug.
+
+**`SALE_RETURN` is the one that surprises.** It restores units at a cost that may be older than
+the current average, so it *can* move it — and must, or `stockQty × avgCostMdram` stops equalling
+the value of the goods actually held, which is the invariant §13.7 spends a page protecting. Its
+cost is always a past average of this product, and an average of banded values is inside the
+band, so it never trips §13.7's guard.
+
+**Every cost in that table may be null except two.** `unitCostMdram` is nullable (§11) for
+exactly the reason `Product.avgCostMdram` is: a product quick-added at the till (§7.4) and sold
+before it was ever received has no cost basis, so there is no average for the `SALE` movement to
+carry — and §27.29 requires that sale to post anyway (rule 1). `PURCHASE_RECEIPT` and
+`PURCHASE_RETURN` are the two exceptions, because both take a cost of their own off an invoice
+and neither can be written without one. A null cost moves no average and contributes nothing to a
+replay; it is **not** zero, which is a legal cost meaning free (§10.5).
+
+The column was `NOT NULL` until 3.72 — by §11's convention, which makes every field without a `?`
+required — while §10.5 had made the figure it carries nullable in 3.48. Neither statement
+mentions the other, and the contradiction only becomes reachable at the moment a quick-added
+product is first sold, which is the one path §7.3 calls the onboarding story.
 
 An earlier form of this section named only `stockQty`. That was not a scoping decision, it was
 an omission: it left the one number the owner's entire profit figure rests on as the only
@@ -2040,9 +2192,19 @@ newAvgCost = (stockQty × currentAvgCost + receivedQty × receiptUnitCost)
 - **Cost may be unknown, and unknown is not zero.** `avgCostMdram` is **nullable**, and null
   means *no cost basis has ever been established for this product* — a quick-added product
   (§7.4) sold before it was ever received. Null is not a number and never participates in
-  arithmetic: the first receipt **seeds** the average (`avgCostMdram = receiptUnitCost`) rather
-  than averaging against a fictional zero, and a sale line whose cost was unknown snapshots
-  null, prints no margin, and is excluded from every margin figure rather than reported as 100%.
+  arithmetic: the first movement that carries a cost **of its own** seeds the average rather than
+  averaging against a fictional zero — a `PURCHASE_RECEIPT` at its landed cost, **or an
+  `OPENING_BALANCE` at the cost stock was imported at** (§19.1, §10.4's table). And a sale line
+  whose cost was unknown snapshots null, prints no margin, and is excluded from every margin
+  figure rather than reported as 100%.
+  **Naming `OPENING_BALANCE` here is load-bearing**, and an earlier form of this bullet said only
+  *"the first receipt"*. §13.7's worked table opens at 10 units costing 12 — imported stock, with
+  no receipt line behind it — and then treats 12 both as the established average and as the floor
+  of the band that refuses 8. Read literally, the old wording left `avgCostMdram` null after that
+  import, made the first receipt seed 14 instead of averaging to 13, and gave §13.7's guard a
+  one-member band that refuses the very figure §27.22 calls correct. A seeding rule that names
+  only one of the two movement types that can seed is a rule that reaches the wrong answer on the
+  document's own worked example.
   §6.12's needs-detail list — «ինքնարժեքը լրացված չէ» — is exactly this state, and before this
   rule the schema could not represent the thing the PRD's own default screen displayed.
   **Zero is a legal cost and means free**, exactly as `sellPriceMdram = 0` means free; the two
@@ -2077,6 +2239,13 @@ newAvgCost = (stockQty × currentAvgCost + receivedQty × receiptUnitCost)
 `DebtEntry` is append-only: `CHARGE`, `PAYMENT`, or `ADJUSTMENT`. **Amounts are always
 positive; the type carries direction** — mixed signs make every aggregate a source of bugs.
 
+**`ADJUSTMENT` is always a credit**, and saying so is what makes the sentence above true of all
+three types rather than of two. Three types and two directions leaves one of them ambiguous, and
+every use of `ADJUSTMENT` in this document is a credit — §12.4's refund onto a debt, and the
+overpayment rule below. **A balance that grows is a `CHARGE`**, never an adjustment. This was
+never stated, which left *"the type carries direction"* asserting something the enum did not
+support; `SupplierAdjustment` (§11) mirrors the same rule for the same reason.
+
 Payments are **allocated to specific charges**, oldest first by default, manually
 overridable. Allocations for one payment must sum exactly to the payment **less any excess**:
 where a payment exceeds the outstanding balance the remainder is posted as a credit
@@ -2088,8 +2257,49 @@ is *stored* is the intent: the charges, the payments, and any `AllocationOverrid
 entered by hand. What is *derived* is the allocation set:
 
 ```
-allocations = allocate(charges, payments, overrides)      a pure function
+allocations = allocate(charges, credits, overrides)       a pure function
+                       over the entries that still stand
 ```
+
+**`credits` is `PAYMENT` rows *and* credit `ADJUSTMENT` rows**, because `DebtAllocation.creditEntryId`
+points at either (§11) — a refund onto a debt is the latter (§12.4). The input was named
+`payments` until 3.75, which is the same *"named after payments alone"* narrowing the payables
+side carried in a column name (§11 `SupplierAllocation`).
+
+**And a reversed entry leaves the inputs; it is not cancelled inside them.** §8.2 and §6.15 both
+correct a repayment taken against the wrong customer with a linked reversing `DebtEntry` (§11
+`reversesId`), and what that entry's `type` is — and what `allocate()` does with it — was never
+written down. It **mirrors the type it reverses** and carries the same positive amount: a
+`PAYMENT` is reversed by a `PAYMENT`. **Both rows are then excluded from the projection's
+inputs**, standing as the audit record of what happened, and the function allocates what is left.
+
+The alternative — an entry that *offsets* the payment arithmetically — has no type that works,
+and 3.74 is what made that visible by closing the last ambiguous one. A negative `PAYMENT` is
+forbidden, since amounts are always positive. `ADJUSTMENT` is always a credit and would reduce
+the balance a second time. And a `CHARGE` would age from the day of the correction while the
+charges that payment had settled re-open at **their** own dates — the same money counted twice
+and aged twice, on the screen §6.3 exists to make truthful. **Exclusion is what keeps aging
+reproducible**, which is the property this projection was built for, and it costs nothing:
+re-deriving is what a projection does (§14.5).
+
+**The correction moves an attribution, not money — so it writes no cash movement.** The reversing
+`DebtEntry` mirrors the original's `method` as well as its type, and **neither it nor the
+re-entry against the right customer writes a `CashMovement`**: the 15 000 ֏ entered the drawer
+once, §12.3's movement already records it, and §12.5 must count it once. Writing one on the
+reversal and another on the re-entry would close the shift **15 000 ֏ over** — §12.5's defect for
+the fourth time, after a repayment counted twice (3.6), a missing refund term (3.48) and a card
+repayment counted as cash (3.72). What was wrong was which customer's page the money landed on,
+and attribution lives in this ledger, not in the drawer's.
+
+**Where the money must actually come back out** — a repayment recorded that never happened at
+all, rather than one recorded against the wrong person — that is a `PAY_OUT` with
+`reasonCode = CORRECTION` (§11), recorded as its own act and audited as one. It is deliberately
+not a side effect of the reversal: cash leaving the drawer is a thing somebody did, and §20.2
+reads that reason code precisely so it can be counted.
+
+Nothing else changes. `Sale`, `GoodsReceipt`, `SupplierPayment` and `CashMovement` are not
+projection inputs, so §10.7's ordinary reversal discipline governs them unaltered — a reversing
+row that stands beside the original and is read with it.
 
 Three things follow, and each fixes a defect the previous wording carried.
 
@@ -2108,7 +2318,12 @@ reject* holds without a special case.
 **Aging stays reproducible**, which §10.6 requires: the same stored inputs always produce the
 same allocation set, so a report run twice gives the same answer. Re-deriving is not a
 correction and writes no audit row; a person changing their mind writes a new
-`AllocationOverride`, which is stored, append-only, and audited like any other decision.
+`AllocationOverride`, which is stored, append-only, and audited like any other decision. **An
+override whose credit or charge has left the inputs leaves them with it** — it is an instruction
+to allocate an entry that no longer stands, and §11 bounds its amount against the charge's
+balance *"as the projection sees it at derivation time"*, which is what makes a dangling one
+reachable rather than theoretical. The same exclusion, one level up, on the pair `reversesId`
+already links.
 
 The projection is drift-checked on the same schedule as §10.4's, for the same reason.
 
@@ -2116,6 +2331,24 @@ Without allocation there is no aging, and without aging "owes 45,000" is not act
 while "45,000, of which 30,000 is over 90 days" is. Aging is measured from the **charge**
 date, not the last payment. Overpayment becomes a credit `ADJUSTMENT`, never a negative
 charge.
+
+**What *outstanding* means, in both directions, stated once.** Three screens sort by it — §6.13,
+§6.14 and §6.15 — and §6.9 shows both directions of it, and the phrase appeared once in this
+document without a formula behind it:
+
+```
+                 over the entries that still stand — as above
+customer owes  = Σ charges − Σ allocations − Σ unallocated credits
+shop owes      = Σ receipts − Σ allocations − Σ unallocated credits   (§13.8)
+```
+
+**The third term is the one that gets dropped**, and dropping it is not harmless: a customer who
+overpaid carries a credit `ADJUSTMENT` that no allocation has consumed yet, and a balance
+computed as *charges − allocations* reports them as owing money they have already handed over —
+then sorts them up §6.13's list, which is the screen an owner opens to decide who to telephone.
+The payables side gained the same hazard in 3.74 when `SupplierAdjustment` gave an overpayment
+somewhere to live. One identity, both directions, the way §10.1 states one identity for a
+receipt and lets the rest inherit it.
 
 `DebtEntry.dueDate` is optional and **never affects aging**. When set it drives only the
 *overdue* marker in §6.3 and §6.9. Letting a due date move a charge between aging buckets
@@ -2147,9 +2380,23 @@ and inherited none of them — five separate defects with one cause. `PurchaseRe
 future reversing document satisfy the same checklist, which is also what §6.14's promise that
 both directions share screen grammar rests on.
 
+**The checklist binds a document that moves goods, money and tax together, which is not every
+reversing document.** A reversing `CashMovement` (§11, new in 3.73) carries items **1 and 5** —
+the period and the drawer it belongs to, and a link to what it reverses — and not 2, 3 or 4: a
+mistyped pay-out has no lines, no tax and no tender to split, because it *is* a single tender.
+Saying so here rather than leaving a reader to work it out is the point: *"the same five things"*
+is exactly the shape of absolute this document has twice asserted more strongly than it held
+(§9), and a `CashMovement` that cannot satisfy three of five would otherwise read as a rule being
+broken rather than a rule being scoped.
+
 `AuditLog` records every catalogue price change, **line price override** (§6.1), stock
 adjustment, discount above threshold, **credit-limit override** (§6.3), basket void, sale
-return, **held-basket transfer between shifts** (§12.1 — it moves takings from one drawer to
+return, **a repayment reversed onto another customer** (§10.6 — it moves money between two
+people's pages without any cash moving, which is precisely the kind of thing an unexplained
+balance is later blamed on, and §8.2 has promised since v2 that it is *"logged"* without this
+list ever naming it), **blind return** (§6.5 — the one return with no original, which §6.5 calls the classic
+fraud path; §11's `AuditLog.reason` and §16.3's re-auth list both required it and this list,
+which is what enumerates auditing, did not name it until 3.72), **held-basket transfer between shifts** (§12.1 — it moves takings from one drawer to
 another, and §16.1's second threat is a worker muddying exactly that), **every opening of the cash
 drawer** (§15.4 — the free ones as well as the no-sale ones, because *"it was already open"* is
 unfalsifiable without them, and because that row is how the server knows a document has been
@@ -2159,6 +2406,17 @@ list did not promise it — the note groups the drawer open with practice-mode e
 that happened rather than a field that changed*, which is why `before`/`after` are nullable. It is
 not one of the two rows §27.19 counts: a practice shift never opens the drawer at all (§19.4). This is what makes rule 4 real, and it
 protects the honest worker as much as it catches the dishonest one.
+
+**The membership of those two lists is machine-checked**, because it is the set this document has
+got wrong most often: a blind return was audited in §11 and in §16.3 and missing from here (3.72);
+a repayment reversal was added here and not to the `reason` list (3.76); and each time the gap
+reached §27's criterion, which is written *from* this list and inherits whatever it omits. The
+declaration below is the membership; §10.7, **FR-SEC-05** and **§27.41** must each name every
+member, and every `reason`-required action must also be an audited one. `npm run check:prd`
+enforces it, for the reason §9 gives about an exception a tool cannot see.
+
+<!-- prd-check: audited-actions = price change, line price override, stock adjustment, discount above, credit-limit override, basket void, sale return, blind return, repayment revers, held-basket transfer, cash drawer, permission -->
+<!-- prd-check: reason-required = line price override, credit-limit override, discount above, blind return, repayment revers, stock adjustment -->
 
 ---
 
@@ -2270,32 +2528,33 @@ states it as a linked line rather than having its variance silently rewritten. `
 | **GoodsReceipt** | `id`, `number`, `supplierId`, `poId?`, `receivedAt`, `userId`, `supplierInvoiceNo`, `landedCostTotal`, `total`, `reversesId?` | Moves stock **and** updates the average. `reversesId` because §6.14 reverses a receipt booked against the wrong supplier rather than editing it, and §10.7 requires that reversal to be linked |
 | **GoodsReceiptLine** | `id`, `receiptId`, `productId`, `qty`, `uom`, `factorToStockUom`, `invoiceUnitCostMdram`, `landedUnitCostMdram` | **`uom` and `factorToStockUom` are snapshotted, exactly as `SaleLine` snapshots them.** The selling side did this because someone thought about reprints; the buying side did not, and the asymmetry was the bug. After commit the receipt said `150` and could no longer say *3 spools* — while reconciling a delivery against the supplier's paper invoice is the actual daily job (§27.3), and it would have meant dividing by a factor stored on a row that can change. **The cost fields are renamed by role**: `unitCostMdram` meant the *invoice* cost here and the *landed* cost on `PurchaseReturnLine`, one name for invoice-only in one row and invoice-plus-freight in the next, in the same document family — and §13.7's entire costing rule turns on which one you grabbed |
 | **CostCorrection** | `id`, `goodsReceiptLineId`, `wrongUnitCostMdram`, `correctUnitCostMdram`, `affectedFrom`, `affectedTo`, `reason`, `userId`, `createdAt` | **What §10.5's immutability rule implies and did not provide.** A cost typed as 14 000 ֏/m instead of 1 400 is snapshotted onto every sale line that follows it, permanently — reversing the receipt fixes the average going forward and can never touch what was booked. This document records the wrong figure, the right one and the window affected, so §20.2 can report *as booked* beside *restated* and say why they differ. **No sale line is edited**; the correction is a fact pointing at facts, like every other correction (§10.7). `affectedFrom`/`affectedTo` bound the restatement to the period between the bad receipt and its correction |
-| **SupplierPayment** | `id`, `supplierId`, `amount`, `method`, `paidAt`, `userId` | Payables — the mirror of Nisya (§6.9) |
-| **SupplierAllocation** | `id`, `supplierPaymentId`, `goodsReceiptId`, `amount` | Deliberately the same shape as `DebtAllocation`, because §6.14 promises the same screen grammar. An inline array would not have been |
+| **SupplierPayment** | `id`, `supplierId`, `amount`, `method` (CASH/CARD/TRANSFER), `paidAt`, `userId`, `reversesId?` | Payables — the mirror of Nisya (§6.9). **`method` is enumerated as `DebtEntry.method` is**, and `CASH` is what causes the `PAY_OUT` movement (§6.14, §11 `CashMovement`); it was an unenumerated `method` until 3.74, against §11's own convention that an enum is `TEXT` with a `CHECK`. **`reversesId` because §10.7 says *"finalised sales, receipts, and payments are never updated or deleted"*** and makes a linked reversal the only correction — `GoodsReceipt` carried the field and `SupplierPayment`, the other half of that same sentence, did not, so a payment recorded against the wrong supplier had no way back at all |
+| **SupplierAdjustment** | `id`, `supplierId`, `type` (`CREDIT`), `amount`, `reason`, `userId`, `createdAt`, `reversesId?` | **`reversesId` is for a credit granted in error** — most often because the `SupplierPayment` that produced it was itself reversed (§13.8): a credit left standing behind a reversed payment is money the shop would spend twice, against a supplier who never owed it. The field was added in 3.74 for symmetry with `DebtEntry` and had no stated use until 3.75, which is the thing §6.11 refuses to allow for a setting and should not allow for a column. **What §6.14's *"paying more than is owed becomes a credit against the supplier, never a negative payable"* had no row for.** It is `DebtEntry`'s credit `ADJUSTMENT` on the buying side: the amount is positive and the type carries the direction (§10.6). §6.14 called that rule *"§10.6's, mirrored"* while the model being mirrored had an entity for the credit and this side had none — so the overpayment had nowhere to go except the negative payable the rule forbids. `CREDIT` is the only value, for the reason §10.6 now states about `ADJUSTMENT`: a payable that *grows* is a new `GoodsReceipt`, not an adjustment |
+| **SupplierAllocation** | `id`, `creditType` (SUPPLIER_PAYMENT/PURCHASE_RETURN/SUPPLIER_ADJUSTMENT), `creditId`, `goodsReceiptId`, `amount`, `userId`, `createdAt` | **`userId` and `createdAt` because §13.8 makes this row the record of a person's decision** — the override of oldest-first — and `AllocationOverride`, which holds that decision on the debt side, is *"append-only and audited"* for exactly that reason. 3.74 chose not to mirror the projection here and argued why; it dropped the audit pair along with it, which was not the same choice and was not argued at all. **Declining to mirror a mechanism is not declining to mirror the obligation the mechanism carried.** `creditId` names whatever settled the receipt — a payment, a purchase-return credit, or a credit `SupplierAdjustment`. This is `DebtAllocation.creditEntryId`'s argument applied to the side it was never applied to: the field was `supplierPaymentId` until 3.74, which is precisely *"naming the field after payments alone"*, the thing the debt side identified and fixed. It was not cosmetic there and it was structural here — **§13.7 commits a purchase-return credit *"allocated to the original receipt like any other settlement (§11 `SupplierAllocation`)"*, and against a `NOT NULL` `supplierPaymentId` that row could not be written at all.** The costing rule was specified, the endpoint existed, and the allocation both depended on was impossible to store. **It is a stored row while `DebtAllocation` is a derived projection, and that divergence is deliberate rather than inherited.** This note claimed the two were *"deliberately the same shape"*, which stopped being true in 3.48 when §10.6 made the debt side a projection over stored intent and nobody re-read this row — a prose commitment falsified from somewhere else entirely. Of §10.6's three reasons for that rewrite, **two do not reach this side**: a supplier payment is online-only (§14.5) against a single writer (§13.1), so two tills cannot allocate one receipt while unable to see each other, and there is no *"recomputed on sync"* because nothing here syncs. What §6.14 promises is the same **screen grammar**, and that holds either way. Mirroring the projection would buy a pure function and a drift check to defend against a race that cannot occur |
 | **PurchaseReturn** | `id`, `supplierId`, `receiptId?`, `reason`, `total`, `landedCostLost`, `userId`, `createdAt` | Header only; the lines are authoritative (§13.7). `landedCostLost` is the delivery charge apportioned to goods now going back — the supplier refunds the invoice, never the freight |
 | **PurchaseReturnLine** | `id`, `returnId`, `receiptLineId`, `productId`, `qty`, `landedUnitCostMdram`, `creditAmount` | `landedUnitCostMdram` is the landed cost copied from the receipt line — the figure that moved the average when it arrived, and therefore the only one that can move it back (§13.7). `creditAmount` is the invoice cost alone, because that is what the supplier owes |
 
 ### Money, stock & people
 | Model | Key fields | Notes |
 |:--|:--|:--|
-| **StockMovement** | `id`, `productId`, `seq`, `type`, `qtyDelta` (signed), `unitCostMdram`, `balanceAfter`, `sourceType`, `sourceId`, `userId`, `locationId?`, `reasonCode?` (DAMAGE/EXPIRY/THEFT/INTERNAL_USE/SAMPLE), `note`, `createdAt` | §10.4. **`seq` is the server's monotonic insertion order and the ledger's replay key** — `balanceAfter` was computed in that order, so only that order reproduces it. `createdAt` cannot serve: it comes from the device, and a sale that spent an hour in an outbox carries an earlier timestamp than rows already posted. Replaying by `createdAt` would reorder every late arrival and make §10.4's drift job report drift on ordinary Wi-Fi drops. **`locationId` is null throughout v1** and exists only so a second shop is a feature rather than a migration (§26 Q7, A12). Until v2 adds a `Location` model it is a **plain nullable column, not a foreign key** — §11's `ON DELETE RESTRICT` convention has nothing to point at yet, and writing the constraint early buys a failing migration and no safety; when it is used, `Product.stockQty` becomes a per-location projection rather than one number. Every movement names its source document — **with one deliberate exception**:
+| **StockMovement** | `id`, `productId`, `seq`, `type`, `qtyDelta` (signed), `unitCostMdram?`, `balanceAfter`, `sourceType`, `sourceId`, `userId`, `locationId?`, `reasonCode?` (DAMAGE/EXPIRY/THEFT/INTERNAL_USE/SAMPLE), `note`, `createdAt` | §10.4 — **whose table is the authority on what `unitCostMdram` holds for each `type`, and on which four types move `avgCostMdram`.** §4.4 separates three different unit costs by *name* on the documents; the ledger has one column for all nine types, so the ledger is the one place the name cannot disambiguate itself and the table has to. **`seq` is the server's monotonic insertion order and the ledger's replay key** — `balanceAfter` was computed in that order, so only that order reproduces it. `createdAt` cannot serve: it comes from the device, and a sale that spent an hour in an outbox carries an earlier timestamp than rows already posted. Replaying by `createdAt` would reorder every late arrival and make §10.4's drift job report drift on ordinary Wi-Fi drops. **`locationId` is null throughout v1** and exists only so a second shop is a feature rather than a migration (§26 Q7, A12). Until v2 adds a `Location` model it is a **plain nullable column, not a foreign key** — §11's `ON DELETE RESTRICT` convention has nothing to point at yet, and writing the constraint early buys a failing migration and no safety; when it is used, `Product.stockQty` becomes a per-location projection rather than one number. Every movement names its source document — **with one deliberate exception**:
 `ADJUSTMENT` and `WRITE_OFF` are their own source (`sourceType = 'StockMovement'`,
 `sourceId = id`). A wrapper document holding nothing but the same product, quantity, note and
 actor the movement already carries would be a value stored twice, and several items written off
 together are simply several movements: §20.2 aggregates movements, not documents. A movement of
 any **other** type with no source is a bug. `reasonCode` is required when `type = WRITE_OFF` and null otherwise — free text cannot be charted, and §20.2's "write-offs by reason" is the whole point of §13.5 |
-| **ReviewFlag** | `id`, `type` (INSUFFICIENT_STOCK/CREDIT_LIMIT_EXCEEDED_ON_SYNC/PRODUCT_DEACTIVATED_ON_SYNC/LEDGER_CACHE_DRIFT/PRICE_CHANGED_ON_SYNC/DEVICE_CLOCK_SKEW/COST_VARIANCE/DISCOUNT_ABOVE_CAP_ON_SYNC/TAX_RATE_CHANGED_ON_SYNC/CUSTOMER_BLOCKED_ON_SYNC/RETURN_EXCEEDS_SOLD_ON_SYNC/HELD_BASKET_AFTER_CLOSE), `sourceType`, `sourceId`, `productId?`, `customerId?`, `note`, `createdAt`, `resolvedAt?`, `resolvedBy?` | **The durable state behind every warning.** §15.2 requires a warning to be read back from what the transaction wrote rather than re-derived; this is that row. One model serves §13.6's recount list, §14.6's needs-attention list, §19.5's owner alerts and §8.5's warning types, whose names it mirrors — **exactly, for every value that has one**, because §15.2 makes a warning something *read back from* this row rather than re-derived, so the mapping from value to warning type is mechanical or it is a lookup with special cases. It was the second of those until 3.68: `INSUFFICIENT_STOCK` was `NEGATIVE_STOCK` and `CREDIT_LIMIT_EXCEEDED_ON_SYNC` dropped the *EXCEEDED*, so two of these silently did not mirror anything while this note said they all did. `LEDGER_CACHE_DRIFT` is what §10.4 means by "surfaces drift rather than silently correcting it" — a discovered mismatch has to land somewhere a person will see it, and it now covers `avgCostMdram` as well as `stockQty`. **It is the one value in this enum with no §8.5 warning type**, and deliberately: it is raised by §10.4's scheduled job rather than returned from a request, so there is no `warnings[]` array for it to travel in (§15.2). It surfaces through §19.5's alerts and the needs-attention list instead. An earlier form of the sentence above claimed the mirroring held *with no exceptions*, which was true of the names and false of the set. `PRICE_CHANGED_ON_SYNC` carries §15.3's price-drift outcome: an offline till quotes from a cache that may be days old, and the sale is accepted at the quoted price and flagged rather than refused after the goods have gone. `DEVICE_CLOCK_SKEW` is raised when a device's `createdAt` differs from the server's `receivedAt` beyond a threshold — unmodelled, skew corrupts aging buckets, shift attribution and daily reports at once, and does it silently. `COST_VARIANCE` fires when a receipt's unit cost is far from the last one for that product (§13.2): the `STOCK` role types the number that moves the owner's margin and is structurally unable to see the result, so the check has to live where the typing happens. `DISCOUNT_ABOVE_CAP_ON_SYNC` is the durable half of §14.5's offline discount allowance — re-auth is impossible with the LAN down (§16.2), so a discount between the ordinary cap and §6.11's offline ceiling completes at the counter and lands here instead of being refused. Like the offline debt cap it trades a control for a sale, and it is read in §20.2's discount-by-worker report as well as the needs-attention list, because a control that relaxes offline is a control a worker can learn to relax |
+| **ReviewFlag** | `id`, `type` (INSUFFICIENT_STOCK/CREDIT_LIMIT_EXCEEDED_ON_SYNC/PRODUCT_DEACTIVATED_ON_SYNC/LEDGER_CACHE_DRIFT/PRICE_CHANGED_ON_SYNC/DEVICE_CLOCK_SKEW/COST_VARIANCE/DISCOUNT_ABOVE_CAP_ON_SYNC/TAX_RATE_CHANGED_ON_SYNC/CUSTOMER_BLOCKED_ON_SYNC/RETURN_EXCEEDS_SOLD_ON_SYNC/HELD_BASKET_AFTER_CLOSE), `sourceType`, `sourceId`, `productId?`, `customerId?`, `note`, `createdAt`, `resolvedAt?`, `resolvedBy?` | **The durable state behind every warning.** §15.2 requires a warning to be read back from what the transaction wrote rather than re-derived; this is that row. One model serves §13.6's recount list, §14.6's needs-attention list, §19.5's owner alerts and §8.5's warning types, whose names it mirrors — **exactly, for every value that has one**, because §15.2 makes a warning something *read back from* this row rather than re-derived, so the mapping from value to warning type is mechanical or it is a lookup with special cases. It was the second of those until 3.68: `INSUFFICIENT_STOCK` was `NEGATIVE_STOCK` and `CREDIT_LIMIT_EXCEEDED_ON_SYNC` dropped the *EXCEEDED*, so two of these silently did not mirror anything while this note said they all did. `LEDGER_CACHE_DRIFT` is what §10.4 means by "surfaces drift rather than silently correcting it" — a discovered mismatch has to land somewhere a person will see it, and it now covers `avgCostMdram` as well as `stockQty`. **It is the one value in this enum with no §8.5 warning type**, and deliberately: it is raised by §10.4's scheduled job rather than returned from a request, so there is no `warnings[]` array for it to travel in (§15.2). It surfaces through §19.5's alerts and the needs-attention list instead. An earlier form of the sentence above claimed the mirroring held *with no exceptions*, which was true of the names and false of the set. `PRICE_CHANGED_ON_SYNC` carries §15.3's price-drift outcome: an offline till quotes from a cache that may be days old, and the sale is accepted at the quoted price and flagged rather than refused after the goods have gone. `DEVICE_CLOCK_SKEW` is raised when a device's `createdAt` differs from the server's `receivedAt` by more than §6.11's clock-skew threshold, **default 2 minutes** — unmodelled, skew corrupts aging buckets, shift attribution and daily reports at once, and does it silently, which is exactly why the number belongs in §6.11 rather than with whoever writes the check. `COST_VARIANCE` fires when a receipt's unit cost is far from the last one for that product (§13.2): the `STOCK` role types the number that moves the owner's margin and is structurally unable to see the result, so the check has to live where the typing happens. `DISCOUNT_ABOVE_CAP_ON_SYNC` is the durable half of §14.5's offline discount allowance — re-auth is impossible with the LAN down (§16.2), so a discount between the ordinary cap and §6.11's offline ceiling completes at the counter and lands here instead of being refused. Like the offline debt cap it trades a control for a sale, and it is read in §20.2's discount-by-worker report as well as the needs-attention list, because a control that relaxes offline is a control a worker can learn to relax |
 | **Customer** | `id`, `fullName`, `nameSearch`, `phone`, `discountBp`, `creditLimit`, `isBlocked`, `isActive`, `mergedIntoId?`, `anonymisedAt?`, `notes` | `nameSearch` is the same normalised/transliterated form `Product` carries (§20.3) — a worker types `Dav` to find `Դավիթ` on §6.3, which is the screen the product exists for, and Latin-typed search cannot be product-only. `anonymisedAt` marks an erasure (§19.6): name and phone go null and the ledger stays. Limit + block are the controls; nothing else stops unbounded debt. `isActive` because §6.13 does not offer deletion, and `mergedIntoId` because a merged record must leave a forwarding address — an old receipt naming the absorbed customer still has to resolve |
-| **DebtEntry** | `id`, `customerId`, `type`, `amount`, `saleId?`, `dueDate?`, `reversesId?`, `createdAt`, `userId` | §10.6. `reversesId` because §8.2's fix for a debt sale on the wrong customer is an admin correction, and §10.7 requires a correction to be a **linked** reversing document rather than two rows that happen to cancel out |
+| **DebtEntry** | `id`, `customerId`, `type`, `amount`, `method?` (CASH/CARD/TRANSFER), `saleId?`, `dueDate?`, `reversesId?`, `createdAt`, `userId` | §10.6. **`method` is the tender a `PAYMENT` was taken in**, and it is what decides whether §12.3 writes a `CashMovement` — cash does, card does not, and §12.5 counts those movements as a term in expected cash. Null on a `CHARGE` and on an `ADJUSTMENT`, neither of which has a tender, and `TRANSFER` is reserved rather than offered, exactly as on `Payment`. **`SupplierPayment` has carried `method` since it was written and this row did not**, which is the payables mirror (§6.14) broken on the customer side: the ledger could not say how the money arrived, and §15.3's endpoint therefore wrote a cash movement unconditionally, because nothing in the model told it which repayments were cash. `reversesId` because §8.2's fix for a debt sale on the wrong customer is an admin correction, and §10.7 requires a correction to be a **linked** reversing document rather than two rows that happen to cancel out |
 | **DebtAllocation** | `id`, `creditEntryId`, `chargeEntryId`, `amount` | Enables aging. `creditEntryId` points at either a `PAYMENT` or a credit `ADJUSTMENT` — a refund onto a debt is the latter (§12.4), and naming the field after payments alone would have made that look irregular. **This is a derived projection, not a ledger row** (§10.6) — the same standing as `Product.stockQty`, and the only member of the debt model that is not append-only. It is recomputed from charges, payments and overrides, never hand-edited, and drift-checked like §10.4's caches. That is what makes §14.5's *"allocation recomputed on sync"* legal instead of a contradiction, and it is why two offline tills allocating against one charge can no longer produce a row that breaks its own `CHECK` |
 | **AllocationOverride** | `id`, `creditEntryId`, `chargeEntryId`, `amount`, `userId`, `createdAt` | **The stored intent behind a hand-made allocation** — *"this one, not that one; that job isn't paid yet."* Append-only and audited, because it is a decision a person made; the `DebtAllocation` rows it steers are derived from it. Without it, a manual override would have to be expressed by editing the projection, which is the thing a projection may never be |
 | **Shift** | `id`, `userId`, `openedAt`, `closedAt?`, `openingFloat`, `expectedCash`, `countedCash`, `countedBreakdown`, `variance`, `status` (OPEN/CLOSING/CLOSED), `unsyncedAtClose`, `notes` | `countedBreakdown` stores the denomination counts from §6.6. `unsyncedAtClose` records how many sales were still queued when the shift closed, so the Z-report can state it — a Z-report that silently omits sales is worse than one that admits to them (§6.6). **`expectedCash` and `variance` are computed live while the shift is `OPEN` or `CLOSING`, and frozen at `CLOSED`** — after that the stored value is the figure that was counted, printed and signed, and it is never recomputed, exactly as `Sale.priceBasis` is never recomputed from the current setting (§10.8). A `ShiftLateArrival` is stated beside it and never folded into it (§12.5). **They are deliberately not drift-checked** (§10.4): a closed shift's stored figure is a historical fact rather than a cache, so a mismatch against a replay is the late arrivals doing their job, not drift. Every other duplicated value in this system is declared somewhere; these two were the exception |
-| **CashMovement** | `id`, `shiftId`, `type` (PAY_IN/PAY_OUT/DROP/NO_SALE/REPAYMENT/REFUND), `amount`, `reason`, `userId` | Cash leaves the drawer for non-sale reasons constantly; unmodelled, it destroys every reconciliation. **`NO_SALE` carries `amount = 0`** — it records only that the drawer was opened outside a sale, which is the classic cover for taking cash and the reason §16.3 re-authenticates it. **`REFUND` is cash leaving the drawer for a sale return** (§12.4), and it exists because §12.5's formula had no term for one: a shift taking a single 8 000 ֏ cash refund closed 8 000 ֏ short, and «Տարբերություն −8 000 ֏» appeared on the one screen §6.6 says exists to catch theft. It is its own type rather than a `PAY_OUT` with a reason, because §20.2 must be able to separate refunds from supplier payments — folding them together would cost the shrinkage report its most important category |
+| **CashMovement** | `id`, `shiftId`, `businessDate`, `type` (PAY_IN/PAY_OUT/DROP/NO_SALE/REPAYMENT/REFUND), `amount`, `reasonCode?` (SUPPLIER_PAYMENT/WAGE/EXPENSE/OWNER_DRAW/CORRECTION), `reason?`, `sourceType`, `sourceId`, `userId`, `reversesId?`, `createdAt` | Cash leaves the drawer for non-sale reasons constantly; unmodelled, it destroys every reconciliation. **`NO_SALE` carries `amount = 0`** — it records only that the drawer was opened outside a sale, which is the classic cover for taking cash and the reason §16.3 re-authenticates it. **`REFUND` is cash leaving the drawer for a sale return** (§12.4), and it exists because §12.5's formula had no term for one: a shift taking a single 8 000 ֏ cash refund closed 8 000 ֏ short, and «Տարբերություն −8 000 ֏» appeared on the one screen §6.6 says exists to catch theft. It is its own type rather than a `PAY_OUT` with a reason, because §20.2 must be able to separate refunds from supplier payments — folding them together would cost the shrinkage report its most important category. **The six fields after `shiftId` arrived in 3.73, when this row was finally read against `StockMovement`.** The two are this system's two ledgers and only one of them had ever been audited: §10.4 gained a source rule, a replay key, a per-type cost table and a drift check across a dozen versions, while this row kept the shape `StockMovement` had before anybody looked at it. What it now carries, and why each was missing: **`createdAt` — it had no timestamp at all**, alone among every ledger row in §11, so an X-report could not order the movements inside a shift and a drawer count could not be placed against the moment cash left. **`businessDate`** — server-stamped at commit in `shop.timezone`, exactly as on `Sale` and `SaleReturn`: a cash movement is queue-drained (§14.5) and §12.5's late-arrival rule names it by name, so the period and the drawer diverge here for precisely the reason they diverge on a sale, and this was the one of the three queue-drained documents never given the field. **`sourceType`/`sourceId`** — §10.4's rule mirrored: a `REPAYMENT` names its `DebtEntry`, a `REFUND` names its `SaleReturn`, a supplier `PAY_OUT` names its `SupplierPayment`; `PAY_IN`, `DROP`, `NO_SALE` and an ad-hoc `PAY_OUT` are self-sourced exactly as `ADJUSTMENT` and `WRITE_OFF` are. Without it §12.5's claim that the drawer is recomputable *"(rule 3)"* was true of the total and false of every line inside it — a `REPAYMENT` row could not say who paid — so §6.9's promise that every figure drills to the events behind it stopped at the cash tile. **`reasonCode`** — §13.5's argument applied where nobody had applied it: write-offs got a coded field because *"a `note` column would only ever produce a list nobody can total"*, and money leaving the drawer is the same question with the same answer. It is also what makes this row's own closing sentence true, since separating refunds from supplier payments requires supplier payments to be identifiable, which `PAY_OUT` alone never made them. **`reversesId`** — a `PAY_OUT` typed 12 000 ֏ that was 1 200 ֏ could not be edited (§10.7), could not be deleted (rule 4) and could not be reversed, because the field did not exist; §8.2's recovery table had no row for it either. That is the defect §10.7 records fixing for `DebtEntry` in 3.8, still standing on the ledger nobody re-read |
 | **ShiftLateArrival** | `id`, `shiftId`, `sourceType`, `sourceId`, `amount`, `arrivedAt` | **A sale, repayment or cash movement that reached the server after its shift had closed.** It posts normally and keeps naming the closed shift — what this row adds is that the Z-report can *say so* as a linked line («+31 000 ֏ ստացվել է փակումից հետո») rather than a closed period's variance being silently rewritten or the money going missing from the sales report. `Shift.unsyncedAtClose` records how many were outstanding; this records what actually arrived, which is the difference between a count and a reconciliation. `amount` is signed, because a late `REFUND` reduces the drawer |
 | **User** | `id`, `name`, `pinHash`, `recoveryCodeHash?`, `role`, `isActive`, `failedAttempts`, `lockedUntil`, `coachMarksSeen` | §16.2, §16.4. `recoveryCodeHash` exists only on `ADMIN` rows: generated at setup (§7.1), shown once, hashed like a PIN, single-use and regenerated after use. It is the third way out of a lockout when the locked-out person is the only admin. `coachMarksSeen` lists the screens this person has already been shown (§7.5) — per user, not per device, because Գոռ should not be taught the till again just because he picked up the other phone |
 | **Device** | `id`, `prefix` (unique), `label`, `registeredAt`, `lastSequence`, `blockStart?`, `blockEnd?`, `outboxDepth`, `outboxOldestAt?`, `parkedDepth`, `isActive` | The till as a durable thing, which `Session` is not: a session is revoked at every logout and a receipt number printed on paper outlives it by years. `prefix` is two characters, unique across the shop, assigned once and never reused — it is the left half of every `Sale.number` this device issues (§12.1). **The server assigns it** at first registration (§16.2): the lowest unused value in `[A-Z0-9]{2}`, written before the device may complete its first sale, because a prefix chosen on the device cannot be checked for collision by the one participant that is offline. The owner renames the till through `label` and never through `prefix`. `lastSequence` is the right half. **The device's own copy of the counter is authoritative**; the server row records the highest sequence it has received, because a till that is offline still has to number the sale in the customer's hand (§14.2, rule 1). `blockStart`/`blockEnd` are null unless §26 Q10 turns out to require Simon to issue a gapless sequence, in which case they hold the range this till has been allocated (§12.1) — the field exists now so that answer costs a setting rather than a redesign. `outboxDepth` and `outboxOldestAt` count **sales awaiting delivery only** — a parked basket sits in the same FIFO queue (§14.4) but is not money in transit, and `parkedDepth` counts those separately. They live here rather than on `Session`, because a queue belongs to the till and not to whoever is signed in on it — summing them across sessions would count one phone once per login it has ever had (§19.5). A device registers on its first successful login (§16.2), and **deactivating it revokes its sessions in the same transaction** (§16.3): a lost phone that stops issuing receipt numbers but carries on selling has not been stopped |
 | **Session** | `id`, `userId`, `deviceId` → `Device` (§11), `tokenHash`, `mode` (LIVE/PRACTICE), `shiftId?`, `createdAt`, `lastSeenAt`, `expiresAt`, `revokedAt?` | **§16.3's token is a row, because everything §16 asks of it needs storage.** `tokenHash`, never the token — a bearer credential at rest is a stolen credential. `revokedAt` makes revocation real; `shiftId` is what lets a session end at shift close; `mode` is how practice stays per-device (§19.4) rather than shop-wide; `lastSeenAt` drives the idle timeouts and §21.2's dashboard-use figure. **Writes to this row and to `Device` are throttled and never sit inside another transaction** (§16.3): SQLite has one writer (§13.1), and a row written on every barcode lookup would spend §21's concurrency budget on bookkeeping |
-| **AuditLog** | `id`, `userId`, `action`, `entityType`, `entityId`, `before?`, `after?`, `reason?`, `createdAt` | §10.7. **`reason` is the text a person typed to justify an override** — price override, credit-limit override, discount above the cap, blind return, stock adjustment. It is required for those actions and null elsewhere. `before`/`after` record what changed; `reason` records why, and in a shrinkage investigation it is the more useful of the two. `before`/`after` are **nullable**: entering or leaving practice mode (§19.4) and opening the drawer outside a sale are events that happened, not fields that changed, and §27.19 counts exactly those rows |
+| **AuditLog** | `id`, `userId`, `action`, `entityType`, `entityId`, `before?`, `after?`, `reason?`, `createdAt` | §10.7. **`reason` is the text a person typed to justify an override** — **line** price override (§6.1, the till's long-press — *not* the catalogue price change beside it in §10.7, which is audited without one), credit-limit override, discount above the cap, blind return, **repayment reversal**, stock adjustment. It is required for those actions and null elsewhere. *Repayment reversal joined the list in 3.77: 3.76 added it to §10.7's audited actions and not here, so an admin could move money between two customers' pages and type nothing — which is the half of the trail §10.7 calls the more useful one in a shrinkage investigation.* `before`/`after` record what changed; `reason` records why, and in a shrinkage investigation it is the more useful of the two. `before`/`after` are **nullable**: entering or leaving practice mode (§19.4) and opening the drawer outside a sale are events that happened, not fields that changed, and §27.19 counts exactly those rows |
 | **Stocktake** *(v2, §9)* | `id`, `status` (COUNTING/REVIEW/APPROVED/ABANDONED), `startedAt`, `startedBy`, `approvedAt?`, `approvedBy?`, `note` | The session §11's *Lifecycles* gives a state machine to, and §13.4 approves |
 | **StocktakeLine** *(v2, §9)* | `id`, `stocktakeId`, `productId`, `expectedQty`, `countedQty?`, `varianceValue` | `expectedQty` is the snapshot taken at `COUNTING`, which is why the shop can keep trading (§6.8) |
 | **ProductStats** | `productId` (primary key), `avgDailyQty30d`, `lastSoldAt?`, `daysSinceLastSale?`, `computedAt` | **A rebuildable cache, never a source of truth** — the same standing as `Product.stockQty` (§10.4). Four screens need sales velocity and none of them can afford to derive it live: quick tiles (§6.1) sit on the till's 200 ms path, the low-stock alert (§6.11) and reorder suggestion (§13.3) run per product, and dead stock (§6.9) needs `daysSinceLastSale`. Refreshed by §22's reorder-stats job, nightly and on demand, **outside any document transaction** (§13.1). Unlike `stockQty` it is **not** part of §10.4's drift check — an approximate figure that is a few hours stale is doing its job, and alerting on it would only teach the owner to ignore alerts |
@@ -2325,7 +2584,13 @@ relationship.
 **Indexing.** `ProductBarcode.barcode` (unique) · `StockMovement(productId, seq)` — the replay order, §10.4 ·
 `Sale(businessDate)` — what §20's daily reports group by ·
 `Sale(completedAt)` · `DebtEntry(customerId, createdAt)` · `Product.nameSearch` ·
-`Customer.nameSearch` · `ImportRow(naturalKey, status)` · `ReviewFlag(resolvedAt, type)` — the
+`Customer.nameSearch` · `ImportRow(naturalKey, status)` · **`SupplierPayment(supplierId)`** and
+**`SupplierAllocation(goodsReceiptId)`** — §6.14 sorts suppliers by outstanding payable, which is
+every receipt less every allocation against it, and the debt ledger had an index where the
+payables side had none · **`CashMovement(shiftId)`** — §12.5's
+expected-cash formula is five aggregates over this table by shift, recomputed live on every
+X-report and on the close screen, and it had no index while the debt ledger had one ·
+`ReviewFlag(resolvedAt, type)` — the
 needs-attention list (§14.6), the recount list (§13.6) and §19.5's alerts are all the same query
 for unresolved flags, and it is read by three screens. Barcode
 lookup is the hottest path in the system.
@@ -2385,7 +2650,7 @@ up disagreeing.
 | Quantity — `qty`, `qtyDelta`, `stockQty` | `INTEGER`, milli-units ×1000 (§10.2) |
 | Percentage — `*Bp` | `INTEGER`, basis points, 0–10000 |
 | Enums — `status`, `type`, `method`, `role` | `TEXT` with a `CHECK` constraint. Never an integer code: reading the database with `sqlite3` should not require a lookup table |
-| Timestamps — `*At` | `TEXT`, RFC 3339 UTC. Shop-local only at the edges (§20.3). **Never a Prisma `DateTime`**, which maps to a `DATETIME` column SQLite will not accept in a `STRICT` table. A consequence worth knowing before it surprises anyone: **`@default(now())` is unavailable** on a `String` field, so every create supplies its own timestamp from the service layer — which is where `businessDate` is stamped anyway (§11 `Sale`) |
+| Timestamps — `*At` | `TEXT`, RFC 3339 UTC. Shop-local only at the edges (§20.3). **A document that records a business event carries that event's time under its own name** — `paidAt`, `receivedAt`, `completedAt` — because the event and the writing of the row can differ by a day and the shop cares about the first. `createdAt` is for a row with no distinct event of its own: a ledger entry, a movement, an adjustment written by another document's transaction. That is why `SupplierPayment` carries `paidAt` and `SupplierAdjustment` `createdAt` though both arrived in the same pass, and it was a naming accident until 3.75 stated the rule it happened to follow. **Never a Prisma `DateTime`**, which maps to a `DATETIME` column SQLite will not accept in a `STRICT` table. A consequence worth knowing before it surprises anyone: **`@default(now())` is unavailable** on a `String` field, so every create supplies its own timestamp from the service layer — which is where `businessDate` is stamped anyway (§11 `Sale`) |
 | Booleans — `is*`, `restock`, `trackStock`, `priceOverridden` | `INTEGER`, 0 or 1. **Never a Prisma `Boolean`**, which maps to `BOOLEAN` — also not a `STRICT` type name. This was harmless while SQLite's flexible typing accepted anything; adopting `STRICT` is what made it load-bearing |
 | `updatedAt` | On every row the client caches — `Product`, `ProductBarcode`, `ProductUnit`, `Category`, `Customer`, **`Setting`** — set on every write. This is what `GET /catalogue/snapshot?since=` compares against (§15.4); without it the cache can only ever be refetched whole, which on a low-end phone over shop Wi-Fi is the difference between a sync and a stall |
 | Free text — `name`, `note`, `reason` | `TEXT`, NFC-normalised on write (§20.3) |
@@ -2400,7 +2665,7 @@ endpoint forgets.
 | `Product.name` | 1–120 chars, trimmed, not blank |
 | `Product.decimalPlaces` | 0–3, and **immutable once movements exist** (§6.12) |
 | `Product.sellPriceMdram` | ≥ 0. Zero is legal — a free sample still moves stock |
-| `Product.avgCostMdram` | Nullable, and **null means unknown, not free** (§10.5). ≥ 0 when set; zero is legal and means free, matching `sellPriceMdram`. Seeded by the first receipt, never by arithmetic against a null |
+| `Product.avgCostMdram` | Nullable, and **null means unknown, not free** (§10.5). ≥ 0 when set; zero is legal and means free, matching `sellPriceMdram`. **Seeded by the first movement carrying a cost of its own** — a `PURCHASE_RECEIPT` or an `OPENING_BALANCE` (§10.4's table) — never by arithmetic against a null, and never by a movement that merely reads the average |
 | `ProductUnit.factorToStockUom` | > 0, and **immutable once movements exist for the product** — the same rule and the same reason as `decimalPlaces`. A supplier changing a spool from 50 m to 100 m must be a *new* `ProductUnit`, never an edit: editing re-reads every historical receipt at the new factor, so replaying the ledger stops reproducing the shelf and §13.7's purchase return against an old receipt line reverses the wrong quantity |
 | `Sale.businessDate` | `TEXT`, `YYYY-MM-DD`, **server-stamped at commit** in `shop.timezone` (§11 `Setting`). Never client-supplied and never derived from `createdAt` on the device, because that is the clock this rule exists to distrust |
 | `StockMovement.seq` | `INTEGER`, server-assigned, monotonic per shop, never reused. The replay order (§10.4) |
@@ -2418,14 +2683,26 @@ endpoint forgets.
 | `SaleLine.discountAmount` | 0 ≤ *d* ≤ the line total before discount |
 | `Payment.amount` | > 0; a split tender's payments sum to ≥ `Sale.total` (§6.2) |
 | `DebtEntry.amount` | > 0 always — direction lives in `type` (§10.6) |
+| `DebtEntry.method` | Required when `type = PAYMENT`; null for `CHARGE` and `ADJUSTMENT` — the same conditional shape as `StockMovement.reasonCode` two rows down. `CASH` writes the `REPAYMENT` movement §12.5 counts; `CARD` and `TRANSFER` write none (§12.3). **A reversing entry mirrors the method of the one it reverses and writes no movement of its own**, and neither does a re-entry correcting the attribution — the cash moved once and §12.5 counts it once (§10.6) |
 | `DebtAllocation.amount` | > 0, and ≤ the remaining balance of its charge |
 | `Shift.openingFloat`, `Shift.countedCash` | ≥ 0. `variance` may be either sign |
+| `CashMovement.amount` | ≥ 0, and **zero if and only if `type = NO_SALE`**; > 0 for every other type. Always positive — **direction lives in `type`**, as on `DebtEntry`, and §12.5's formula carries the signs. `ShiftLateArrival.amount` is the one signed amount in this area and says so explicitly |
+| `CashMovement.businessDate` | `TEXT`, `YYYY-MM-DD`, **server-stamped at commit** in `shop.timezone` — `Sale.businessDate`'s rule, for the third queue-drained document (§14.5, §12.5) |
+| `CashMovement.sourceId` | Required — §10.4's rule for `StockMovement`, mirrored, and **every type and every `PAY_OUT` reason code is classified here or the row is incomplete**. *Sourced:* a `REPAYMENT` names its `DebtEntry`; a `REFUND` its `SaleReturn`; a `PAY_OUT` with `reasonCode = SUPPLIER_PAYMENT` its `SupplierPayment` (§6.14); and a `PAY_OUT` with `reasonCode = CORRECTION` **the `DebtEntry` it answers** (§10.6) — saying which repayment it undoes is the entire reason that movement exists, and it was the one member of this set 3.76 added without re-walking it. *Self-sourced* (`sourceType = 'CashMovement'`, `sourceId = id`): `PAY_IN`, `DROP`, `NO_SALE`, and a `PAY_OUT` whose reason is `WAGE`, `EXPENSE` or `OWNER_DRAW`. A sourced movement with no source is a bug; a new reason code that joins neither side is an unfinished edit, and `check:prd` now says so |
+| `CashMovement.reasonCode` | Required when `type = PAY_OUT`; null for every other type — `StockMovement.reasonCode`'s shape, and §13.5's argument about what a free-text column can never total (§20.2) |
+| `CashMovement.reason` | Free text. **Required on a self-sourced movement**, where nothing else explains it; optional where the movement names a source, because the source is the explanation |
 | `User.pinHash` | argon2id output. The PIN is 4–8 digits and is never stored (§16.2) |
 | `StockMovement.sourceId` | Required — a movement with no source is a bug (§10.4) |
 | `StockMovement.reasonCode` | Required when `type = WRITE_OFF`; null for every other type (§13.5) |
+| `StockMovement.unitCostMdram` | **Nullable, and null means what it means on `Product.avgCostMdram`** — no cost basis had been established when this row was written (§10.5, §10.4's table). **Required and ≥ 0 for `PURCHASE_RECEIPT` and `PURCHASE_RETURN`**, which carry a cost of their own off an invoice; nullable for every other type, each of which copies an average that may itself be null. Zero is a legal cost and means free; it is not the same value as null. Written `NOT NULL` this row forbade the movement §27.29 requires — a quick-added product sold before it was ever received — which is §9's category 1 firing on the nullable-cost decision of 3.48 |
 | `SaleReturnLine.qty` | **`CHECK`:** > 0, and ≤ its sale line's quantity sold. **Counter rule, not a constraint:** ≤ that quantity *less what has already been returned against the line* (§12.4). The two are split because the second is uncheckable offline — a till cannot know what another till returned — so a queued return that breaches it **posts** and raises `return-exceeds-sold-on-sync` (§14.6). Written as one constraint, a `CHECK` built from this row would reject the document §14.6 requires, and the cash-gone-no-record failure §12.4 describes would return through the database instead of through a status code |
 | `SaleReturn.shiftId` | Names an `OPEN` shift at the time of writing, and is frozen thereafter. A return that arrives late posts against the closed shift and writes a `ShiftLateArrival`, exactly as a sale does |
-| `SupplierAllocation.amount` | > 0, and ≤ the receipt's unpaid balance — `DebtAllocation`'s rule, mirrored (§10.6) |
+| `SaleReturn.businessDate` | `TEXT`, `YYYY-MM-DD`, **server-stamped at commit** in `shop.timezone` — `Sale.businessDate`'s rule, and never client-supplied, because a refund carries the same distrusted device clock a sale does (`DEVICE_CLOCK_SKEW`, §11). §10.7 makes `businessDate` the first item of the reversing-document checklist and §15.3's request body does not carry it; this row is why. It had none until 3.72, while the sibling `shiftId` above and `Sale.businessDate` below both did — the asymmetry §11 keeps finding between the selling side and the documents that reverse it |
+| `SupplierAllocation.amount` | > 0, and ≤ the receipt's unpaid balance — `DebtAllocation`'s rule, mirrored (§10.6). Σ over one receipt ≤ its `total`, which is what *"never a negative payable"* means arithmetically (§6.14) |
+| `SupplierAllocation.creditId` | Required, and names a row of the table `creditType` gives — a `SupplierPayment`, a `PurchaseReturn` or a credit `SupplierAdjustment`. It is `StockMovement.sourceId`'s rule applied to a settlement: an allocation that cannot say what paid it settles nothing |
+| `SupplierPayment.amount` | > 0 — `DebtEntry.amount`'s rule, mirrored |
+| `SupplierPayment.method` | One of `CASH`/`CARD`/`TRANSFER`, as on `DebtEntry.method`. **`CASH` is what writes the `PAY_OUT`** (§6.14); the other two write no cash movement, exactly as a card repayment does not (§12.3) |
+| `SupplierAdjustment.amount` | > 0, and `type` is `CREDIT` — direction lives in the type, as on `DebtEntry` (§10.6) |
 | `Product.defaultSupplierId` | Nullable; when set it must reference an active supplier (§13.3) |
 | `Device.prefix` | Exactly 2 characters, `[A-Z0-9]`, globally unique, immutable once a sale has used it — a reused prefix makes two receipts share a number |
 | `Device.lastSequence` | Monotonic, never reset. The device may be ahead of the server row; the server never rewinds it |
@@ -2526,9 +2803,11 @@ functional requirement, not decoration.
 
 ### 12.3 Repayment
 Oldest-first allocation, overridable, partial supported. Creates a `PAYMENT` entry plus
-`DebtAllocation` rows. **Taken in cash, it also writes a `CashMovement` of type `REPAYMENT`** —
+`DebtAllocation` rows. **Taken in cash — `DebtEntry.method = CASH` (§11) — it also writes a `CashMovement` of type `REPAYMENT`** —
 and that row, not the debt entry, is what §12.5 counts, so the drawer and the ledger cannot
-disagree. A card repayment writes no cash movement at all. Prints a receipt.
+disagree. A card repayment writes no cash movement at all. **Nor does a correction**: reversing a
+repayment onto the right customer moves an attribution and not money, so neither the reversing
+entry nor the re-entry writes one, and the original movement stands (§10.6). Prints a receipt.
 
 ### 12.4 Returns
 From the original sale only (blind returns admin-only). Each `SaleReturnLine` names the
@@ -2651,8 +2930,8 @@ Received quantities may differ from ordered; the PO moves to PARTIAL or RECEIVED
 `STOCK` role types the number that moves `avgCostMdram`, which moves every margin the owner
 sees — and §16.5 forbids that role from seeing the resulting average, so the person entering it
 is structurally unable to notice they got it wrong. A read control with no matching write
-control on a derived figure is a half-closed door. Above a configurable ratio (default 3×, either
-direction) the screen says what it saw — *«անցյալ անգամ 1 400 ֏, հիմա 14 000 ֏»* — and offers
+control on a derived figure is a half-closed door. Above §6.11's cost-variance ratio — default
+**3×**, either direction — the screen says what it saw — *«անցյալ անգամ 1 400 ֏, հիմա 14 000 ֏»* — and offers
 confirm or correct; confirming writes a `COST_VARIANCE` flag (§11) to the owner's
 needs-attention list. This is cheap, it catches the misplaced decimal at the one moment it is
 still free to fix, and it is the reason §10.5's restatement mechanism should stay rare.
@@ -2664,8 +2943,15 @@ setting and §7.1's day-3 promise depend on. **Turning a suggestion into an actu
 order is v2** (§9), with the PO flow itself:
 
 ```
-reorderPoint ≈ (ProductStats.avgDailyQty30d × supplier leadTimeDays) + safety stock
+reorderPoint ≈ ProductStats.avgDailyQty30d × (supplier leadTimeDays + safetyDays)
 ```
+
+**`safetyDays` is §6.11's reorder safety days, default 3**, and the term was written as *"safety
+stock"* until 3.71 — undefined, unvalued, and absent from §6.11's closed list, in the one formula
+this section exists to state. It is held as **days of cover rather than units** because a single
+number then serves a shop that sells four of something a day and two of something else a month;
+units would need a value per product, which is a field §11 does not have and a question §6.11
+would have to ask about every row in the catalogue.
 
 Presented to the owner as a plain sentence — *"Սովորաբար վաճառվում է օրական 4, մատակարարը
 բերում է 5 օրում"* — not as a formula. Dead stock is surfaced alongside (§6.9).
@@ -2746,7 +3032,8 @@ unstamped interim hardens into a decision nobody remembers making.
 
 Evaluate the formula; then, if the result falls outside **the range of costs this product's stock
 has actually entered at** — the lowest and the highest `unitCostMdram` across its
-`PURCHASE_RECEIPT` and `OPENING_BALANCE` movements (§10.4) — **do not store it**: leave the
+`PURCHASE_RECEIPT` and `OPENING_BALANCE` movements **whose cost is not null** (§10.4) — **do not
+store it**: leave the
 average as it stands, post the movements, and write a `ReviewFlag`.
 
 **The band reads the ledger, not the receipt lines**, and that is not a stylistic choice. §13.7's
@@ -2754,9 +3041,12 @@ own worked table opens at 10 units costing 12 — stock imported as an `OPENING_
 which has no `GoodsReceiptLine` behind it. Bounding by receipt lines alone would give `[14, 14]`
 there and refuse **12**, the answer the same table calls correct. Every movement carries its
 `unitCostMdram` precisely so the arithmetic is replayable from one source (§10.4); the guard uses
-that source. Where a product has no stock-adding movement to bound it at all — the blind purchase
-return valued at the current average — there is no band, so leave the average and flag
-unconditionally.
+that source. Where a product has no stock-adding movement **carrying a cost** to bound it at all —
+the blind purchase return valued at the current average, or stock imported with a quantity and no
+cost, which §19.1 permits and 3.72 made representable — there is no band, so leave the average and
+flag unconditionally. **The qualifier is 3.73's**: making `unitCostMdram` nullable let a product
+have stock-adding movements and still no bound, a state the old *"no stock-adding movement"*
+wording did not describe.
 Also flag, without clamping, whenever stock has turned over between the receipt and its return,
 because that is the condition under which the figure is suspect even when it lands inside the
 band. The guard is conservative rather than correct: it stops the average becoming evidence of
@@ -2783,8 +3073,48 @@ can see what returning goods actually costs him.
 
 **What commits, in one transaction** (§13.1): the return document → `PURCHASE_RETURN` movements
 with negative `qtyDelta` at the landed cost → the recalculated average → a credit against the
-supplier's payable, allocated to the original receipt like any other settlement (§11
-`SupplierAllocation`) → the audit row.
+supplier's payable, allocated to the original receipt like any other settlement — a
+`SupplierAllocation` with `creditType = PURCHASE_RETURN` naming this return (§11) → the audit row.
+**Naming the `creditType` is what makes this line buildable.** Until 3.74 the allocation's only
+credit field was `supplierPaymentId`, `NOT NULL`, so the row this sentence commits could not be
+written: a rule specified in full against a table that had no way to hold it.
+
+### 13.8 Paying a supplier
+
+§12.3 states how money coming *in* against a debt is allocated, and this section had no
+counterpart — though §6.14 promises the two share screen grammar and §11 gives them the same
+allocation shape. These are the mirror, and the one place they deliberately are not is said so.
+
+**Allocation is oldest receipt first, and overridable** — §12.3's rule exactly, for §10.6's
+reason: without allocation there is no aging, and *"I owe 340 000"* is not actionable while
+*"of which 120 000 is past terms"* is. The override is the stored allocation row itself rather
+than a separate `AllocationOverride`, because `SupplierAllocation` is a stored row and not a
+projection (§11) — there is nothing here that would re-derive it, and therefore nothing for a
+separate statement of intent to steer. **The row carries `userId` and `createdAt` so that it can
+be that record**: the debt side audits the override because it is a decision a person made, and
+that is true here whether the decision lands in a projection's input or in the allocation itself.
+
+**Overpayment becomes a credit, never a negative payable.** Paying 50 000 ֏ against a 30 000 ֏
+receipt settles it and writes a credit `SupplierAdjustment` of 20 000 ֏ (§11) that the next
+receipt can draw on — §10.6's invariant mirrored, `sum(allocations) + credit == payment`.
+
+**Cash pays out of the drawer; card and transfer do not.** A `CASH` payment writes a
+`CashMovement` of type `PAY_OUT` with `reasonCode = SUPPLIER_PAYMENT`, naming this payment as its
+source (§11, §6.14). The other two write nothing, exactly as a card repayment writes nothing on
+the way in (§12.3) and for the same reason: §12.5 counts the movement, never the document.
+
+**A payment made to the wrong supplier is reversed, never edited** (§10.7) — a linked reversing
+`SupplierPayment`, then the right one, and the allocations go with it.
+
+**Payables age against agreed terms, and that is deliberately not §10.6's rule.** A customer's
+debt ages from the charge date, because §10.6 refuses to let a due date move a charge between
+buckets: the shop cannot know when that money will arrive, and a movable bucket makes the report
+unreproducible. A payable is the opposite case — `Supplier.paymentTerms` is a number both sides
+agreed, so *"is this late"* has an answer the shop is bound by. A receipt is **overdue** once
+`receivedAt + paymentTerms` has passed; it is marked on §6.14, counted on §6.9 and aged in those
+terms by §20.2. **Mirroring §10.6 faithfully here would have produced a report that cannot answer
+the only question an owner asks about his own bills** — which is the difference between copying a
+rule and copying its reasoning.
 
 ---
 
@@ -2840,8 +3170,14 @@ be posted twice on purpose.
   receipt that satisfies §10.1's identity; cash rounding, which changes that total; the ordinary
   discount cap, to know when to escalate; the **offline debt cap** and **offline discount
   ceiling** (§6.11), consulted precisely when the server is gone — §8.5 marks both refusals
-  *(client-side)*; and the two **strict modes**, for negative stock and for the credit limit,
-  which decide whether the till may complete at all.
+  *(client-side)*; the two **strict modes**, for negative stock and for the credit limit,
+  which decide whether the till may complete at all; and the two thresholds that govern the
+  till's own behaviour rather than a sale's — the **connection-failure threshold**, which is what
+  moves it onto the offline path at all, and the **settings-cache staleness warning**, which is
+  how it knows this very cache has gone stale (§6.11). Those last two are cached copies of the
+  rules for reading the cache, so the till falls back to §6.11's stated defaults whenever it has
+  no copy — which is not the same as guessing a tax rate, because a wrong threshold costs a strip
+  that appears early or late and a wrong rate prints a number in a customer's hand.
 
   **What it must render.** **Whether the debt book is on** (§6.11): a cash-only shop never sees
   §6.3, §6.4 or §6.15, because *"the concept is absent, not disabled"* (§5.1) — so this setting
@@ -2851,8 +3187,18 @@ be posted twice on purpose.
 
   Without the first group the offline design could not compute the number it shows the customer;
   without the second it would show the wrong app. **With the cache empty — a device that has never
-  synced — the till refuses rather than guesses**, the same rule §10.8 applies to an unset tax
-  regime and for the same reason: a guessed rate becomes immutable the moment it is written.
+  synced — the till refuses rather than guesses** every setting in those two groups, the same rule
+  §10.8 applies to an unset tax regime and for the same reason: a guessed rate becomes immutable
+  the moment it is written.
+
+  **The two thresholds above are outside that refusal, and the qualifier is load-bearing.** They
+  govern how the till reads its own cache rather than what a sale costs, and the
+  connection-failure threshold in particular is needed *before* a device can discover it has no
+  cache at all — a till that refused to decide it was offline until it had synced could never
+  reach the offline path, which is the one rule 1 depends on. So those two fall back to §6.11's
+  stated defaults, and nothing else does. Being wrong about them costs a status strip that appears
+  early or late; being wrong about a tax rate prints a number into a customer's hand, and that
+  asymmetry is the whole of why one group may default and the other may not.
 - **Outbox queue** — completed **and parked** sales are written locally first, then drained
   FIFO and serially. The UI never awaits the network to complete a sale.
   **One queue, both kinds**, because ordering matters across them: a basket parked before a sale
@@ -2889,14 +3235,17 @@ be posted twice on purpose.
 - **Ordering is guaranteed within a document's dependency chain, not across the whole queue.**
   §14.4's original promise covered only the two kinds of *sale*; four endpoints are queue-drained
   (§14.3). A return must not overtake the sale it reverses, a repayment must not overtake the
-  charge it pays, and a cash movement has no dependency at all. The queue therefore holds back an
+  charge it pays, and a cash movement has no dependency at all — which stays true only because
+  the types `POST /api/cash-movements` accepts are the self-sourced ones (§14.5, §11). A
+  `REPAYMENT` or a `REFUND` travels inside its parent document and inherits that document's place
+  in the queue rather than needing one of its own. The queue therefore holds back an
   item whose named antecedent is still ahead of it, which is what makes the `404` rule above a
   rare fallback rather than the common path.
 - **Connection state is measured, not asked.** `navigator.onLine` reports whether the device is
   *associated* with a network, which on shop Wi-Fi is not the question. The client probes
   `/health` — the unauthenticated liveness endpoint, not §19.5's diagnostics payload — and treats
-  the server as unreachable after a configurable threshold (default: 2
-  consecutive failures, or any request exceeding 1.5 s on the scan path). **A router at 40%
+  the server as unreachable after §6.11's connection-failure threshold — default **2
+  consecutive failures, or any request exceeding 1.5 s on the scan path**. **A router at 40%
   packet loss is the failure this exists for** — the till stays nominally "connected", the calm
   strip in §8.3 never appears, the outbox never engages, and §21's 200 ms budget becomes a
   30-second timeout on the hottest path in the system. Degraded is a state, not a binary, and it
@@ -2904,8 +3253,8 @@ be posted twice on purpose.
 - Cached stock and prices are **last-known and must be labelled as such** — and so are **cached
   settings**. A stale quantity shows the worker a number that might be wrong; a stale tax rate
   prints a wrong tax line on a customer's receipt, which is more visible and harder to explain
-  afterwards. A settings cache older than a configurable threshold surfaces on the status strip
-  (§8.3), in the same calm register as the offline strip and never as an error — the till keeps
+  afterwards. A settings cache older than §6.11's staleness warning — default **4 hours** —
+  surfaces on the status strip (§8.3), in the same calm register as the offline strip and never as an error — the till keeps
   selling (rule 1), and the sale it makes is accepted at the rate it quoted (§15.3).
 
 ### 14.5 What may happen offline
@@ -2918,12 +3267,13 @@ be posted twice on purpose.
 | Repayment | ✅ | Additive; allocation is a projection and is re-derived on sync (§10.6) |
 | Sale return, against a sale made on **this** device | ✅ | Queue-drained and idempotent (§14.3). The original sale is in local state, so §6.5's "start from the original" holds. **What the till cannot know is what anyone else returned against that line** — the sale may have synced and been partly returned elsewhere. It refunds anyway, and the excess is flagged on sync rather than parked (§12.4, §14.6), because the cash left the drawer at the counter |
 | Sale return, against any **other** sale | ❌ | The catalogue cache holds products and customers, not sales (§15.4) — there is nothing to start from. Block clearly rather than offer a blind return, which is admin-only for good reason (§6.5) |
-| Cash movement (`PAY_IN`/`PAY_OUT`/`DROP`/`REFUND`) | ✅ | Queue-drained and idempotent. `NO_SALE` needs re-auth and therefore the server (§16.3) |
-| Price change, stock adjustment, blind return | ❌ | Each needs admin re-auth, and PINs are verified server-side and never in the client (§16.2) — so re-authentication is impossible offline. All three are server-dependent anyway, so nothing is lost that was not already blocked |
+| Cash movement (`PAY_IN`/`PAY_OUT`/`DROP`) | ✅ | Queue-drained and idempotent. `NO_SALE` needs re-auth and therefore the server (§16.3). **`REPAYMENT` and `REFUND` are not on this row and cannot be posted here**: each is written inside its parent document's transaction — the repayment's and the return's (§15.3) — so a standalone one would be a second row for money already counted. It is also what keeps §14.4's *"a cash movement has no dependency at all"* true, since the three types this endpoint accepts are exactly the self-sourced ones (§11). `REFUND` was listed here until 3.73 while §15.3 had the return writing it |
+| Price change, stock adjustment, blind return, **repayment reversal** | ❌ | Each needs admin re-auth, and PINs are verified server-side and never in the client (§16.2) — so re-authentication is impossible offline. All three are server-dependent anyway, so nothing is lost that was not already blocked |
 | Discount above the ordinary cap | ⚠️ capped | The one re-auth case that is **not** otherwise server-dependent: it happens mid-sale, at the counter, with a customer waiting. Allowed up to the **offline discount ceiling** — default **10%** (§6.11) — then flagged for owner review on sync; above the ceiling it is refused. Without this the till would have to block the sale, which rule 1 forbids, or cache a PIN verifier on the device, which §16.2 forbids |
 | **Printing a receipt** | ❌ | The host drives the printer (§18), so a till that cannot reach the host cannot print. **The sale still completes** — rule 1, and §14.2's first guarantee — and no receipt is produced. The worker reprints from the sale record when the till reconnects, which is §8.2's existing path and the same `POST /print/receipt` call (§15.4). A queued print job was considered and rejected: a receipt that emerges an hour later belongs to a customer who has left, and the person holding the paper is a better judge than a timer (§18) |
 | **Opening the cash drawer** | ❌ | Same reason — `POST /cash-drawer/open` is a host route (§15.4). The drawer opens **with its key**, which is what every shop already does when a till misbehaves. No `NO_SALE` movement is written: that type records the drawer being opened *outside* a sale (§11), and this is a real cash sale whose takings §12.5 already counts. Nothing about the reconciliation changes |
 | Receiving, stocktake, price change | ❌ | Needs authoritative stock; block clearly |
+| **Paying a supplier** | ❌ | Server-computed: §13.8 allocates against receipt balances the till does not cache, and oldest-first needs every receipt rather than the ones this device happens to know. It was absent from this table altogether until 3.74 — neither allowed nor blocked, in the section whose whole job is to enumerate both |
 | Reports | ❌ | Server-computed |
 
 ### 14.6 Conflicts
@@ -3033,8 +3383,8 @@ returns the stored document with `200` on replay, and each is safe to send twice
 |:--|:--|:--|
 | `POST /api/sales` | `id`, `status` (`HELD` or `COMPLETED`), `shiftId`, lines, payments, `customerId?` | **`HELD`** parks the basket and posts to no ledger at all. **`COMPLETED`** commits sale → lines → payments → stock movements → debt charge → audit, in one transaction |
 | `POST /api/sale-returns` | `id`, `originalSaleId`, `shiftId`, lines (each `saleLineId`, `qty`, `restock`), tenders (each `method`, `amount`) | return → movements at the **original** unit cost → refund tenders, apportioned per §12.4 → cash movement of type `REFUND` and/or credit `ADJUSTMENT` → audit |
-| `POST /api/debt-payments` | `id`, `customerId`, `amount`, `allocations?` | payment entry → allocations → cash movement → audit |
-| `POST /api/cash-movements` | `id`, `shiftId`, `type`, `amount`, `reason` | cash movement → audit |
+| `POST /api/debt-payments` | `id`, `customerId`, `amount`, `method`, `allocations?` | payment entry → allocations → **a `CashMovement` of type `REPAYMENT` only when `method` is cash and the entry is neither a reversal nor a re-entry naming one** (§12.3, §10.6) → audit. The condition is the whole of it: §12.5 counts `REPAYMENT` movements as a term in expected cash, so writing one for a card repayment overstates the drawer by every card repayment taken that day — **the same defect §12.5 records fixing in 3.6**, reached through this table rather than through the formula, and landing on the one screen §6.6 exists to make trustworthy. An earlier form of this row wrote the movement unconditionally |
+| `POST /api/cash-movements` | `id`, `shiftId`, `type` — **`PAY_IN`, `PAY_OUT` or `DROP` only**, the self-sourced ones; `REPAYMENT` and `REFUND` are written inside their parent document's transaction, and `NO_SALE` needs re-auth (§14.5, §16.3) — `amount`, `reasonCode?`, `reason?` | cash movement → audit. `businessDate` is **server-stamped** like a sale's (§11), because this is a queue-drained document and its shift may have closed before it drained (§12.5) |
 
 **What the server recomputes, and what it accepts.** §15.1 says the server never returns a raw
 ORM object; it must equally never *store* one. On `POST /api/sales`:
@@ -3070,7 +3420,7 @@ need authoritative state, so they fail loudly rather than silently (§14.5).
 | Buying | `POST /goods-receipts`, `POST /purchase-returns`, `GET`/`POST /purchase-orders` *(v2, §9)* |
 | Sales *(read)* | `GET /sales?status=&shiftId=&from=&to=`, `GET /sales/:id`, `GET /sales/by-number/:number` — §15.3 creates sales and nothing here read them back. Returns start from the original sale (§6.5), a jammed printer reprints from the sale record (§8.2), held baskets are listed by time (§6.1), and shift close has to find every `DRAFT`/`HELD` one (§11) |
 | Stock | `GET /products/:id/movements`, `POST /adjustments`, `POST /write-offs` — each writes a self-sourced movement (§11) — `POST /stocktakes` *(v2)* |
-| Review | `GET /review-flags?resolved=false`, `POST /review-flags/:id/resolve` — the needs-attention list (§14.6), the recount list (§13.6), and what §8.5's `sync-failed` and §19.5's alerts open onto |
+| Review | `GET /review-flags?resolved=false`, `POST /review-flags/:id/resolve` — the needs-attention list (§14.6), the recount list (§13.6), and what §8.5's `sync-failed` and §19.5's alerts open onto. **Reading is any authenticated session; resolving is gated by the flag's `type`.** `INSUFFICIENT_STOCK` resolves for `STOCK` or `ADMIN`, because it *is* §13.6's recount list and the person who recounts the shelf is the person who clears it. **Every other type is `ADMIN`-only**, and `COST_VARIANCE` is the sharpest reason why: §13.2 raises it precisely because the `STOCK` role types a number it is structurally unable to check, so letting that role clear its own flag closes the loop it was opened to break. The rest are worse — `CREDIT_LIMIT_EXCEEDED_ON_SYNC` and `DISCOUNT_ABOVE_CAP_ON_SYNC` are the durable trace of §16.1's second-ranked threat, *"a worker discounting their own sales to cover cash theft"*, and a control a worker can dismiss is not a control (§16.5). The route had no gate at all until 3.71, sitting outside the `ADMIN` block above while §14.6 called the same table *the owner's* list |
 | Import | `POST /imports` (multipart, returns an `ImportBatch`), `GET /imports/:id` for per-row results (§19.1) |
 | Admin *(`ADMIN` only, every route)* | `GET`/`PATCH /settings` (§6.11), `GET`/`POST`/`PATCH /users` (§7.1, §16.4), `GET`/`POST`/`PATCH /categories`, `GET /diagnostics` (§19.5) — the payload an owner reads down the phone, and therefore not the thing an unauthenticated probe returns — `GET /audit-log?entityType=&entityId=&from=&to=` — an audit trail nobody can read is a trail nobody is protected by (§10.7). The audit log is gated **as a route**, not stripped field by field, for the reason §16.5 gives |
 | Shift | `POST /shifts`, `POST /shifts/:id/close`, `GET /shifts/:id/x-report`, `GET /shifts/:id/z-report` |
@@ -3134,6 +3484,8 @@ sticky note beside the till within a week.
 - **PINs are per-user, never shared.** A shared PIN destroys the audit trail, which is the
   entire point of having one.
 
+
+
 ### 16.3 Sessions
 Opaque server-issued token, per-device, revocable — a `Session` row (§11) holding the token's
 **hash**, its device, its mode and the shift it belongs to, because every one of those words
@@ -3144,10 +3496,22 @@ Idle timeout is **15 minutes on the till** and **8 hours on the owner's dashboar
 because the till is shared and left on a counter, long because the dashboard is one person's own
 machine. **A re-authentication prompt never discards a basket** (§6.1); it sits on top of one.
 Re-authentication (admin PIN) is required for: discount above threshold, blind return (no
-original sale, §6.5), price change, stock adjustment, and **opening the cash drawer with no
+original sale, §6.5), price change, stock adjustment, a repayment reversal (§10.6 — an admin
+moving money between two customers' pages, which §8.2 has called an admin correction since v2
+while this sentence, the one that enumerates what needs a PIN, never listed it), and **opening the cash drawer with no
 unspent document to account for it** — no sale, no return, no repayment, no cash movement,
 **or one that has already opened it** — and outside a shift's float count or close, where the
-drawer opens freely for as long as that state lasts (§15.4). That is the `NO_SALE` case and
+drawer opens freely for as long as that state lasts (§15.4).
+
+<!-- prd-check: reauth-operations = discount above, blind return, price change, stock adjustment, repayment revers, cash drawer -->
+
+The declaration above is this list, and `check:prd` holds three things to it: the sentence above
+names every member, the declaration names nothing the sentence lacks, and **§14.5 says what each
+one does offline** — allowed, capped or blocked. Re-auth is impossible with the server
+unreachable (§16.2), so an operation needing it and missing from that table is neither permitted
+nor refused, the state supplier payments sat in until 3.74. *The second of those three is what
+found the repayment reversal missing from this sentence: it had reached §8.2, §14.5 and the
+declaration, and the list that decides what needs a PIN was the last to hear.* That is the `NO_SALE` case and
 only that case: a refund, a repayment and a
 pay-out each already record where the money went, and making a worker fetch an admin for those
 would put an admin at the till several times a day for operations that are already audited.
@@ -3166,7 +3530,7 @@ must never show it.
 | Role | May |
 |:--|:--|
 | `WORKER` | Sell, take repayments, open/close own shift |
-| `STOCK` | Worker, plus receiving, stocktake, write-offs. Enters invoice unit costs; never sees `avgCostMdram`, margin, or supplier terms |
+| `STOCK` | Worker, plus receiving, stocktake *(v2, §9)*, write-offs, and clearing a recount flag (§15.4). Enters invoice unit costs; never sees `avgCostMdram`, margin, or supplier terms |
 | `ADMIN` | Everything: cost, margin, prices, users, settings |
 
 ### 16.5 Field-level authorization
@@ -3303,7 +3667,10 @@ does not ship.*
 §7.3 has the user-facing design; **this is the normative rule.** CSV/Excel import covers
 products, opening stock, customers, and **opening debt balances with their original dates** —
 posted as `OPENING_BALANCE` movements and back-dated `CHARGE` entries, so aging is correct on
-day one (§10.6).
+day one (§10.6). **The date is back-dated in `DebtEntry.createdAt`**, which is the field §10.6
+ages from; the row's UUIDv7 `id` is generated at import time and sorts by *when it was imported*,
+so nothing may read aging off the key. The `OPENING_BALANCE` movement carries the cost the stock
+is brought in at, and seeds `avgCostMdram` where the product has none (§10.4, §10.5).
 
 Import is **idempotent, re-runnable, reports per-row errors, and never applies partially.** A
 half-built catalogue is worse than no catalogue, because nobody can tell which half is missing.
@@ -3461,8 +3828,14 @@ who does not know what a log is.
 - **Structured logs** via `pino` to a rotating file on the host (§22): one line per request —
   method, route, status, duration, user id, and for the four queue-drained endpoints (§15.3) the
   document id. Never a PIN, never a hash, never a customer's name or phone number.
-- **Log rotation is a requirement, not hygiene.** This is someone's `C:` drive and the database
-  is on it (§19.3).
+- **Log rotation is a requirement, not hygiene**, and it carries numbers for the same reason
+  §19.2's generations do: *"rotate the logs"* is not a thing anyone can build twice the same way.
+  **10 MB per file, 10 files kept, and nothing older than 30 days**, whichever bound is reached
+  first — roughly a fortnight of trading at §19.3's volumes, which outlives the gap between a
+  problem happening and the owner mentioning it on the phone, and caps the logs at 100 MB
+  against a database §19.3 expects in the low gigabytes. This is someone's `C:` drive and the
+  database is on it (§19.3), so an uncapped log is a disk that fills and a shop that stops
+  selling — a way to break rule 1 from the operations layer, which is not where anyone looks.
 - **Three alerts reach the owner in-app**, because nothing else can reach him: no successful
   backup in 24 hours; ledger-vs-cache drift detected (§10.4); a **sale** older than an hour in any device's outbox — parked
   baskets are excluded, since one may sit there all afternoon by design (§14.4). Each says what to do, not what happened.
@@ -3514,11 +3887,24 @@ Per §5.3 and §6.10. Every figure drills to its source events (rule 3).
 
 ### 20.2 Report catalogue
 Sales by period/product/category/worker · **margin by product** · COGS and stock valuation
-at cost · **debtor aging 0–30/31–60/61–90/90+** · supplier payables · **item history** — what
+at cost · **debtor aging 0–30/31–60/61–90/90+** · **payables aged against agreed terms** — grouped
+**not yet due · 1–30 · 31–60 · 61–90 · 90+ days past term**, per §13.8 — the debtor row's bands
+offset by the day *not yet due* already accounts for, because different *anchoring* was never a
+reason for different widths, and an earlier `31–60 · 60+` put day 60 in two of them. *3.76 called
+them "the same bands" while the first reads `1–30` against the debtor row's `0–30`: correct
+arithmetic, an overclaiming sentence.* The bands count from the day the terms ran
+out rather than from the receipt date, which is the deliberate difference from §10.6:
+a payable has a date both sides agreed to and a receivable does not. *Saying only "past due, and
+by how long" left the grouping to be invented, and two implementations would have invented
+different ones — the argument against copying §10.6's buckets was never an argument for
+specifying none* · **item history** — what
 changed, when and who, per product, and never called a movement anywhere the owner can see it
 (§4.3, §6.16) · shift Z-reports with variances · discount by worker · write-offs by reason · stock turnover
 and dead stock · **voids and returns by worker**, beside discount by worker and for the same
-reason · **the audit trail**, filtered by person, date or record (§10.7). All exportable.
+reason · **cash out by reason** — `PAY_OUT` grouped by `reasonCode` (§11), the drawer's answer to
+write-offs-by-reason and read for the same purpose: money leaving the till for a stated reason is
+a shrinkage route, and until 3.73 the reason was free text that nothing could total (§13.5) ·
+**the audit trail**, filtered by person, date or record (§10.7). All exportable.
 
 **Margin reports carry two columns wherever a cost has been corrected**: *as booked* — the
 `unitCostMdram` snapshotted onto each sale line, which never changes (§10.5) — and *restated*,
@@ -3686,9 +4072,9 @@ whether the layering is right: **can the rule be unit-tested with no HTTP and no
 |:--|:--|:--|:--|:--|
 | **0 — Arithmetic** | Integer money, quantities, UoM conversion, tax extraction, weighted average, debt allocation. Pure functions in `packages/shared` and `/backend/domain` | §10.1, §10.2, §10.3, §10.5, §10.6, §10.8 | nothing | Property tests green on every rule, no float anywhere in the tree, **§27.4** — the margin on a product restocked twice reproduces by hand — and **§27.29**, which is §27.4's other half: a cost that was never known must seed rather than average against zero |
 | **1 — Schema** | Every model in §11, the field conventions, the validation rules, the four lifecycles — and the second database file practice mode writes into | §11, §19.4 | layer 0, for units and scales | A movement can be posted and replayed (Phase 0's exit), and **§27.21**, **§27.31** and **§27.38** — neither `decimalPlaces` nor a unit's conversion factor will change once movements exist, because both silently reinterpret every historical quantity; and the money tables are `STRICT`, which is a keyword at creation and a full-table rewrite afterwards (§23.1, item 1). **§27.38 belongs to layer 2 as well**, for its import half |
-| **2 — Services** | Transactional use cases: checkout, debt sale, repayment, returns, receiving, purchase returns, write-offs, shift close. Then the non-transactional ones: catalogue and opening-debt import, the reorder-stats job, and every report query | §13.1 **first**, then §12.1–§12.5, §13.2, §13.3, §13.5–§13.7, §10.4, §10.7, §19.1, §20.2 | layer 1 | Each commits in one transaction and is testable with no HTTP: **§27.2, §27.3, §27.5, §27.6, §27.7, §27.18, §27.20, §27.22, §27.23, §27.25, §27.26, §27.27, §27.30, §27.33** and **§27.38**'s import half — all provable before a screen exists. The five added in 3.48 are the same kind of proof as the nine before them: drawer arithmetic that must account for a refund, a return that splits across tenders and carries its share of a discount, a ledger replay that reproduces both cached columns, and a restatement that leaves history untouched |
+| **2 — Services** | Transactional use cases: checkout, debt sale, repayment, returns, receiving, purchase returns, write-offs, shift close. Then the non-transactional ones: catalogue and opening-debt import, the reorder-stats job, **the ledger-vs-cache drift job**, erasure, the `nameSearch` derivation and its matching, and every report query | §13.1 **first**, then §12.1–§12.5, §13.2, §13.3, §13.5–§13.7, §10.4, §10.7, §19.1, §20.2, §20.3 | layer 1 | Each commits in one transaction and is testable with no HTTP: **§27.2, §27.3, §27.5, §27.6, §27.7, §27.18, §27.20, §27.22, §27.23, §27.25, §27.26, §27.27, §27.30, §27.33, §27.42, §27.43, §27.44, §27.45, §27.46** and **§27.38**'s import half — all provable before a screen exists. The three added in 3.71 are the same kind of proof: an erasure that leaves the ledger's arithmetic untouched, a drift job that reports rather than repairs, and a search that folds `malukh` onto `Մալուխ` — each a query or a service call, and each cheaper to get wrong here than on a screen (§27.43's alert and §27.44's two screens are layers 6 and 5, but neither is where the rule lives) |
 | **3 — HTTP** | Routes, Zod validation, RFC 7807 errors, response shaping | §15.1–§15.4, and **§16.5 built into the shaping from the very first endpoint** | layer 2 | **§27.9** — a `WORKER` token gets no cost field from any route — **§27.37**, which is the print routes and the rule that a jam never rolls back a commit — and **§27.28**, its mirror on the write side: the server owns sale arithmetic, so a client cannot set a line total or discount past the cap. The two are one rule about response and request shaping, tested in both directions |
-| **4 — Access** | PIN, sessions, devices, roles, re-authentication, audit — and `Session.mode`, which is what keeps practice per-device rather than shop-wide | §16.2–§16.4, §16.6, §10.7, §19.4 | layers 1 and 3 | **§27.9**, **§27.28** and **§27.19** (practice leaves the real database untouched), plus every lockout path in §16.2 |
+| **4 — Access** | PIN, sessions, devices, roles, re-authentication, audit — and `Session.mode`, which is what keeps practice per-device rather than shop-wide | §16.2–§16.4, §16.6, §10.7, §19.4 | layers 1 and 3 | **§27.9**, **§27.28** and **§27.19** (practice leaves the real database untouched), plus **§27.39** (every lockout path in §16.2, including the one that is not a way out), **§27.40** (a session dies with its shift, and a deactivated device's dies with it) and **§27.41** (every audited action writes its row, with the reason the person typed). Those three were *"plus every lockout path in §16.2"* until 3.71 — an instruction to a builder, which is not a criterion anyone can fail |
 | **5 — Client** | Outbox, IndexedDB cache, the sixteen screens, the four input paths, the setup wizard and quick-add, Armenian | §14.3–§14.6, §6, §7.1, §7.4, §18, §20.3 | layer 3 | **§27.1**, **§27.8**, **§27.24**, **§27.32**, **§27.34**, **§27.35** and **§27.36**, plus the whole usability set **§27.11–§27.17** — all of it in a shop, none of it at a desk. The three added in 3.48 are what an outage actually produces: a sale that arrives after its shift closed, two tills that allocated the same charge while unable to see each other, and a queue that must tell a transient failure from a permanent one |
 | **6 — Operations** | Backup, the restore drill, diagnostics, packaging | §19.2, §19.5, §22 | layer 1 — **except diagnostics**, which is an endpoint and a screen, so 3 and 5 | **§27.10** — restored onto a different machine, by the owner |
 
@@ -3900,7 +4286,7 @@ goes first.
 | **Owner stops trusting the numbers** | **Possible** — one unexplainable figure is enough | Severe — reverts to paper | Every figure drills to its source events (rule 3, H1) |
 | Shop Wi-Fi open to customers | **Likely** — it is the normal state of a shop | Moderate — the API is still reachable by strangers, even encrypted | **TLS in v1** (§16.6), plus staff SSID/VLAN and real auth as defence in depth. Impact stays moderate rather than low: TLS protects the transport, not the fact that the door is on the street, and §16.1 ranks insiders above remote attackers anyway |
 | Camera scanning needs a secure context | **Closed 2026-09-10** | — | TLS ships in v1 unconditionally (§16.6), which is what a secure context needs. HID remains the primary path (§18) |
-| Too many settings | **Possible** | Moderate — misconfigured, or never configured | §6.11 — every setting must justify its existence |
+| Too many settings | **Possible** | Moderate — misconfigured, or never configured | §6.11 — every setting must justify its existence. **The list is read in two halves**: what the owner is asked to decide, which is what this risk is about and which has barely moved, and the operational thresholds §6.11 absorbed in 3.71 — the cost-variance ratio, reorder safety days, the two till thresholds, clock skew — which have working defaults, are never surfaced to him, and exist so that no value is called *configurable* and specified nowhere. Growing the second half does not grow this risk; growing the first does, and that is the count to watch |
 | Money handled as floats | **Unlikely** — designed against from day one | Fatal — the books stop reconciling | §10.1, enforced by a lint rule and property tests (§21) |
 
 ---
@@ -4070,6 +4456,38 @@ already decided, and when?"*.
 | 2026-09-12 | **An offline discount above the cap is accepted on sync** up to §6.11's ceiling and flagged, not `422`-parked | §15.3, §14.5, §14.6 | §14.2's first guarantee, which the unconditional `422` had broken through the outbox |
 | 2026-09-12 | **Journeys are numbered once, in §6** | §5.4, §6 | Two sets both starting at J1, disagreeing about J3 |
 | 2026-09-13 | **§3.1 gains account lockout and the ordinary discount cap**, and family three gains the condition that a bound needs a route past it | §3.1, §16.2 | The table omitted the one case §16.2 argues against rule 1 by name |
+| 2026-09-15 | **Membership is checked in both directions**, and `npm test` runs the guards | §9, `package.json`, `scripts/` | A declaration only ever read is a second source of truth; the missing direction is the one a new term travels |
+| 2026-09-15 | **A repayment reversal needs admin re-auth, and §16.3 says so** | §16.3, §8.2, §14.5 | It had reached three other places and not the sentence that decides what needs a PIN |
+| 2026-09-15 | **`check:prd` enforces enumerated-set membership**, and has mutation tests of its own | §9, `scripts/check-prd.py`, `scripts/test-check-prd.py` | Six review rounds could not make a reader re-walk a set after adding a member; three defects in 3.76 alone |
+| 2026-09-15 | **Sets that live in prose declare their membership** in a `prd-check` marker beside the argument for them | §10.7, §16.2, §8.5 | The convention §9 already used for its criteria exemption, extended to the lists that kept drifting |
+| 2026-09-15 | **A correction `PAY_OUT` names the `DebtEntry` it answers** | §11 | Saying which repayment it undoes is the reason the movement exists |
+| 2026-09-15 | **A correction that re-attributes a repayment writes no cash movement** — the original stands; cash that must genuinely leave is a `PAY_OUT` with `reasonCode = CORRECTION` | §10.6, §12.3, §15.3 | 3.75 specified the debt half of the correction and not the drawer half: two movements for one payment closes the shift over |
+| 2026-09-15 | **An `AllocationOverride` leaves the projection's inputs with the entry it names** | §10.6 | An override pointing at a reversed credit is an instruction to allocate something that no longer stands |
+| 2026-09-15 | **Payables and debtor aging use the same bands** — `1–30 · 31–60 · 61–90 · 90+` | §20.2 | `31–60 · 60+` put day 60 in two bands, in the row beside buckets that do not overlap |
+| 2026-09-15 | **A repayment reversal is an audited action** | §10.7, §9, §27 | §8.2 promised it was logged and the list that enumerates auditing never named it |
+| 2026-09-15 | **A reversed `DebtEntry` leaves the allocation projection's inputs**, and the reversing row mirrors the type it reverses | §10.6, §8.2, §27.32 | An offsetting entry had no type that worked once `ADJUSTMENT` was fixed as a credit; a `CHARGE` would age the same money twice |
+| 2026-09-15 | **`outstanding` is one identity in both directions**, and the unallocated credit is a term in it | §10.6, §13.8 | Three screens sorted by a quantity the document never defined; dropping the credit reports an overpaying customer as a debtor |
+| 2026-09-15 | **Payables age in bands — not yet due · 1–30 · 31–60 · 60+ past term** | §20.2, §13.8 | *"Past due, and by how long"* left two implementations to invent different groupings |
+| 2026-09-15 | **§9 gains: when you add a model by analogy, diff the two field lists** | §9 | 3.74 produced three defects of one kind, and it is the only rule in that section a person can run mechanically |
+| 2026-09-15 | **`SupplierAllocation` names its credit polymorphically** — a payment, a purchase-return credit or a `SupplierAdjustment` | §11, §13.7, §13.8 | `supplierPaymentId` `NOT NULL` made §13.7's purchase-return credit unstorable; `DebtAllocation.creditEntryId` had already argued the fix |
+| 2026-09-15 | **`SupplierAdjustment` holds an overpayment credit**, and `SupplierPayment` gains `reversesId` | §11, §6.14, §10.7 | §6.14 promised a credit with no row for it, and §10.7 names payments among the documents corrected by a linked reversal |
+| 2026-09-15 | **`SupplierAllocation` stays a stored row while `DebtAllocation` is a projection**, and the divergence is argued | §11, §10.6 | Two of §10.6's three reasons are offline races; a supplier payment is online-only against a single writer |
+| 2026-09-15 | **Payables age against `paymentTerms`; receivables age from the charge date** | §13.8, §20.2, §6.14 | §10.6 forbids a movable bucket where the shop cannot know when money arrives; a payable has a date both sides agreed |
+| 2026-09-15 | **`DebtEntry.ADJUSTMENT` is always a credit** | §10.6 | *"The type carries direction"* was true of two of three types; a balance that grows is a `CHARGE` |
+| 2026-09-14 | **The cash ledger gets the stock ledger's discipline**: `createdAt`, `businessDate`, a source link, `reversesId`, a coded `PAY_OUT` reason, validation rows and an index | §11, §10.4, §10.7, §20.2 | `CashMovement` had six fields and no validation block while `StockMovement` had a dozen rules; §12.5's *"recomputable (rule 3)"* was true of the total and false of every line |
+| 2026-09-14 | **A cash supplier payment is a `PAY_OUT` with `reasonCode = SUPPLIER_PAYMENT`**, naming its `SupplierPayment` | §6.14, §11 | §6.14 said only *"a cash movement"*, and §12.5 has no supplier term |
+| 2026-09-14 | **`REPAYMENT` and `REFUND` cannot be posted standalone** — each belongs to its parent document's transaction | §14.5, §15.3, §14.4 | `REFUND` was queued as its own movement while the sale return already wrote it: one row of money, written twice |
+| 2026-09-14 | **§10.7's reversing-document checklist is scoped to documents that move goods, money and tax together** | §10.7 | A reversing `CashMovement` satisfies two of the five, and *"the same five things"* would have read as a rule broken rather than scoped |
+| 2026-09-14 | **`StockMovement.unitCostMdram` is nullable**, and required only on the two types that take a cost off an invoice | §11, §10.4 | `NOT NULL` forbade the movement §27.29 requires: a quick-added product sold before it was ever received has no average to carry |
+| 2026-09-14 | **A repayment writes a `CashMovement` only when it was taken in cash**, and `DebtEntry.method` is what records which | §15.3, §12.3, §11 | The endpoint table wrote one unconditionally — §12.5's 3.6 double-count, through the wire contract instead of the formula |
+| 2026-09-14 | **A blind return joins §10.7's audited-action list** | §10.7, §9, §27 | Required by `AuditLog.reason` and §16.3, absent from the list that enumerates auditing, so FR-SEC-05 and §27.41 both inherited the gap |
+| 2026-09-14 | **The two cache-reading thresholds are exempt from §14.4's empty-cache refusal**; nothing else is | §14.4, §6.11 | A till that would not decide it was offline until it had synced could never reach the offline path rule 1 depends on |
+| 2026-09-14 | **`StockMovement.unitCostMdram` is defined per movement type**, and exactly four types move `avgCostMdram` | §10.4 | One column served nine types with no statement of which of §4.4's three costs it held, so FR-STK-06's replay was unbuildable |
+| 2026-09-14 | **`OPENING_BALANCE` seeds the average**, alongside the first `PURCHASE_RECEIPT` | §10.5, §10.4, §11 | §13.7's worked table opens on imported stock; naming only receipts made the guard refuse the answer §27.22 requires |
+| 2026-09-14 | **`SALE_RETURN` averages returned units back in at the original cost**, and is the only removal-or-restock type that may move the average | §10.4 | Otherwise `stockQty × avgCostMdram` stops equalling the value of the goods actually held |
+| 2026-09-14 | **Six configurable values move into §6.11**; the two the till enforces also join `GET /settings/client`'s shape | §6.11, §14.4, §15.4 | The list asserted its own closure while five other sections declared settings outside it |
+| 2026-09-14 | **Resolving a `ReviewFlag` is gated by the flag's type** — `INSUFFICIENT_STOCK` for `STOCK`, every other type `ADMIN` | §15.4 | The route carried no gate, so a worker could clear the trace of §16.1's second-ranked threat |
+| 2026-09-14 | **Eight requirements gain acceptance criteria** instead of sheltering under §9's exemption, which is now argued per row | §9, §27, §23.1 | Four are §16's controls and one is a legal obligation; neither stated category covered them |
 | 2026-09-13 | **§3.1 collects every condition under which a sale is refused**, and names the three families a legitimate refusal belongs to | §3.1, §9 | Rule 1 is the rule the product rests on and its exceptions were argued in eight places and collected in none |
 | 2026-09-12 | **§27.7 asserts a worked expected-cash figure**, and names the wrong answers the two historical bugs produce | §27.7, §12.5 | It asserted three activities and no values, so a wrong §12.5 formula passed it completely |
 | 2026-09-12 | **`Shift.expectedCash` and `variance` freeze at `CLOSED`**, computed live before that, never drift-checked | §11, §12.5 | Stored and recomputable with nothing saying which wins; a late arrival would have moved a printed, signed figure |
@@ -4147,10 +4565,14 @@ Simon v1 is done when, **in a real store**:
    | **= expected** | **117 000** |
 
    Counted at 117 000 the variance is **zero**; counted at 116 500 it is **−500**, recorded, and a
-   note is prompted (§6.6). *The two wrong answers matter as much as the right one, because both
-   have actually been in this document (§12.5): a repayment counted twice gives **132 000**, and a
-   missing refund term gives **125 000**. A test built from a criterion without figures would have
-   passed on either.* An earlier wording asserted only that close *"computes expected cash, records
+   note is prompted (§6.6). **A card repayment of 30 000 ֏ taken in the same shift changes none of
+   these figures** — it writes no `CashMovement` at all (§12.3, §11 `DebtEntry.method`), so
+   expected cash stays 117 000. *Every wrong answer here has actually been in this document, which
+   is why the figures are in it (§12.5, §15.3): a repayment counted twice gives **132 000**; a
+   missing refund term gives **125 000**; and that card repayment counted as cash gives
+   **147 000** — the last of the three live in §15.3's endpoint table until 3.72, which is why
+   this criterion now names a tender. A test built from a criterion without figures would have
+   passed on any of them.* An earlier wording asserted only that close *"computes expected cash, records
    the counted variance, and produces a Z-report"* — three activities and no values, which a shift
    close built on a wrong formula satisfies completely.
 8. Selling continues through a two-minute Wi-Fi outage, and every queued sale syncs **exactly
@@ -4190,7 +4612,9 @@ Simon v1 is done when, **in a real store**:
     operations matters — an earlier wording said only what the real database must not contain,
     which a practice mode that refused every sale would have satisfied perfectly.*
 20. Two customer records for one person are merged, and the merged ledger's balance **and its
-    aging** equal the sum of the two originals (§6.13).
+    aging** equal the sum of the two originals (§6.13) — **including where one of them carries an
+    unallocated credit**, which must reduce the merged balance rather than be dropped from it
+    (§10.6's outstanding identity).
 21. `decimalPlaces` cannot be changed on a product that has stock movements (§6.12).
 22. Returning a delivery to a supplier credits the **invoice** amount, records the unrefunded
     freight separately, and leaves a weighted average that is **never outside the range of costs
@@ -4233,6 +4657,13 @@ Simon v1 is done when, **in a real store**:
 32. Two tills, both offline, each take a repayment allocating oldest-first against the same
     charge. Both post on sync, the charge is settled exactly once, the excess becomes a credit
     `ADJUSTMENT`, and the aging report gives the same answer when run twice (§10.6, §14.6).
+    **And a repayment taken against the wrong customer, reversed and re-entered against the right
+    one, leaves the first customer's aging exactly as it stood before the mistake** — the charges
+    it had briefly settled re-open at their **own** dates, not at the correction's, and no
+    `CHARGE` appears on that customer dated the day of the fix (§10.6, §8.2). **And the shift's
+    expected cash is unchanged by the correction**: that 15 000 ֏ is counted exactly once,
+    because re-attributing a repayment writes no second `CashMovement` — the failure that would
+    otherwise close the drawer 15 000 ֏ over (§12.3, §12.5).
 33. A cost typed as 14 000 ֏ instead of 1 400 ֏ and corrected a week later leaves every original
     sale line untouched, and §20.2 reports the affected period **as booked and restated**, naming
     the correction (§10.5, §11).
@@ -4277,6 +4708,80 @@ Simon v1 is done when, **in a real store**:
     (§19.1), and an `INSERT` of a `REAL` into a money column is refused **by the database
     itself** — `STRICT` tables (§11), not only §21's lint rule, which cannot see a value that
     arrives from a spreadsheet rather than from a source file.
+
+**Added 2026-09-14 — the requirements §9 had exempted without checking that they fitted**
+39. Four wrong PINs leave the worker able to sign in; the **fifth** locks the account and returns
+    `423 account-locked` with the minutes remaining. The lock is **per user**, so another worker
+    signs in and sells while it stands — and doing so does **not** clear it: `lockedUntil` is
+    unchanged afterwards. All three stated ways out work: any `ADMIN` clears it in one call, the
+    lock expires by itself at fifteen minutes, and the owner's single-use recovery code clears it
+    when the locked-out person is the only admin — after which that code is spent and the
+    reissued one is different. An eleventh attempt inside a minute from one device is
+    `429 too-many-attempts`, which §15.2 keeps distinct from `423`: a rate, not a state. **The
+    PIN and its hash appear in no request body, no response and no log line** at any point in
+    the flow (§16.2, §19.5).
+40. A session ends when its shift closes — the till that closed it needs a PIN before the next
+    sale, and the token it was holding is refused. An idle till signs out at **15 minutes** and
+    an idle dashboard at **8 hours** (§16.3), and neither prompt discards the basket it sits on
+    top of. An `ADMIN` lists sessions, sees the device each is on, and revokes another device's
+    in one call: that device's next request is `401`, while the row survives with `revokedAt`
+    set, because it is the record of who was signed in on what until when. **Deactivating a
+    device revokes its sessions in the same transaction** — a phone reported stolen mid-shift
+    stops selling on its next request, not at its next logout (§11 `Device`, §15.4).
+41. Each of §10.7's audited actions writes exactly one `AuditLog` row naming actor, time and
+    record: catalogue price change, line price override, stock adjustment, discount above the
+    cap, credit-limit override, basket void, sale return, **blind return**, **a repayment
+    reversed onto another customer**, held-basket transfer between shifts, permission change, and
+    **every opening of the cash drawer**. For the actions a person had to
+    justify — the price override, the credit-limit override, the over-cap discount, the blind
+    return, **the repayment reversal** and the stock adjustment — `reason` holds **the text they
+    typed** and is non-null; for practice entry and exit
+    and for a drawer open, `before`/`after` are null and the row is written anyway (§11). A
+    `WORKER` requesting the trail gets `403` — it is gated as a route rather than stripped field
+    by field, because `before`/`after` carry whole-record JSON and a price change carries
+    `avgCostMdram` inside it (§16.5, §15.4).
+42. A customer with three charges and two payments is erased. `anonymisedAt` is set, `fullName`
+    and `phone` go null — the one case §11's validation permits a null name — and **every
+    `DebtEntry` keeps its amount and its date**, so the aging report's totals are unchanged and
+    the books still balance. Their old receipts still resolve to the row. Nothing is deleted, and
+    no log line written before or after contains the name or the phone (§19.6, §6.13, §19.5).
+43. `Product.stockQty` and `avgCostMdram` are corrupted directly in the database so that both
+    disagree with a replay of that product's movements. The scheduled job raises a
+    `LEDGER_CACHE_DRIFT` flag for each and **corrects neither** — the cached columns still hold
+    the wrong figures afterwards, because a mismatch means a bug worth finding (§10.4). The flags
+    land in the same unresolved list as a recount and a sync conflict (§11 `ReviewFlag`, §14.6),
+    are counted by `GET /diagnostics`, and fire §19.5's alert. A sale that merely arrived an hour
+    late raises **none**, which §27.30 proves from the other side.
+44. Typing `malukh` finds `Մալուխ` in the product search (§6.1) and typing `Dav` finds `Դավիթ`
+    in the debtor list (§6.15) — the screen `Customer.nameSearch` exists for. Matching is by
+    substring in both directions, after NFC normalisation, with Armenian punctuation stripped and
+    mixed-layout homoglyphs folded, so a name stored in decomposed form matches one typed in
+    composed form (§20.3).
+
+**Added 2026-09-14 — the cash ledger, audited against the stock ledger**
+45. A `REPAYMENT` row on the shift screen drills through to the customer who paid, and a `REFUND`
+    row to the return it funded, because each names its source (§11) — which is what §12.5 means
+    by the drawer being recomputable *"(rule 3)"* and §6.9 means by every figure drilling to its
+    events. A `PAY_IN`, a `DROP` and a `NO_SALE` are self-sourced and carry the typed reason
+    instead. A supplier payment out of the drawer is a `PAY_OUT` with
+    `reasonCode = SUPPLIER_PAYMENT` naming its `SupplierPayment`, and §20.2's cash-out-by-reason
+    report separates it from a wage and an expense. **A 12 000 ֏ pay-out that should have been
+    1 200 ֏ is corrected by a linked reversing movement plus a new one**: the original row is
+    unchanged, both appear on the X-report, and expected cash is right afterwards (§10.7, §8.2).
+    Posting a `REPAYMENT` or a `REFUND` to `POST /api/cash-movements` is refused — each belongs to
+    its parent document's transaction, and a standalone one would double-count money (§14.5).
+
+**Added 2026-09-15 — the payables side, audited against the debt ledger**
+46. A supplier's payable is settled three ways and all three land in one allocation table (§11):
+    a `SupplierPayment` allocated oldest receipt first and overridable, a `PurchaseReturn` credit
+    allocated to the receipt it came from (§13.7), and a credit `SupplierAdjustment`. **Paying
+    50 000 ֏ against a 30 000 ֏ receipt settles it and leaves a 20 000 ֏ credit the next receipt
+    draws on — never a negative payable** (§6.14, §13.8). A `CASH` payment writes one `PAY_OUT`
+    naming it; a `CARD` payment writes none and the drawer is unmoved (§12.5). A payment recorded
+    against the wrong supplier is corrected by a linked reversing payment plus the right one, the
+    original row unchanged (§10.7). And a receipt whose `receivedAt + paymentTerms` has passed
+    reads overdue on §6.14 and is counted on §6.9 — **aged against the terms agreed, which is
+    deliberately the opposite of §10.6's rule for money owed to the shop.**
 
 ---
 
