@@ -14,6 +14,17 @@ the owner phones someone. Everything here exists to make that phone call short.
 **No error may stop the till.** A customer is waiting. Degrade, log, flag — never block.
 A white screen at the counter loses a sale and, worse, loses trust in the product.
 
+## What the owner actually reads
+
+- **`GET /health`** is liveness only — status and version, no session — because every till polls it.
+  Everything else lives behind **`GET /diagnostics`** (`ADMIN`): version, uptime, database and WAL size,
+  the age of the last WAL checkpoint, the last successful backup with its size, **whether** a backup
+  passphrase exists (never the passphrase), queue depths per device, open drift flags, and the three
+  settings installation sets. Settings renders it with a copy button and a file to save.
+- **Three alerts reach Home**, each saying what to do rather than what happened: no successful backup in
+  24 hours, ledger-vs-cache drift, and a sale older than an hour in some device's outbox (parked
+  baskets excluded — one may sit there all afternoon by design).
+
 ## Error boundaries (SPA, not Next.js)
 
 Plain React boundaries — there is no `error.tsx` / `global-error.tsx` / `not-found.tsx` file
@@ -35,7 +46,10 @@ convention here. Place them deliberately:
 ## Logging
 
 **Backend** — structured (`pino`), one line per request: method, path, status, duration,
-user id. Business events worth their own line: sale completed, shift closed with variance,
+user id. It writes to stdout and, when `SIMON_LOG_DIR` is set (the default on a host), to a rotating
+file: 10 MB each, 10 files, nothing older than 30 days — the database is on the same `C:` drive, so an
+uncapped log is a disk that fills and a shop that stops selling. Tests are silent unless
+`SIMON_TEST_LOG=1`, which is how a flake gets diagnosed. Business events worth their own line: sale completed, shift closed with variance,
 stock adjusted, sync conflict flagged, backup succeeded/failed.
 
 **Frontend** — a thin `logger` wrapper, not bare `console.log`. In production it buffers and

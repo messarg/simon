@@ -109,3 +109,26 @@ export function shapeCustomer(c: CustomerRow, role: Role, figures?: { outstandin
   };
   return isAdmin(role) ? { ...base, discountBp: c.discountBp, notes: c.notes } : base;
 }
+
+type FlagRow = {
+  id: string; type: string; sourceType: string; sourceId: string; productId: string | null; customerId: string | null;
+  note: string; createdAt: string; resolvedAt: string | null; resolvedBy: string | null;
+};
+
+/** Costs reach a flag's note as JSON, which no field-by-field rule would have looked inside (§16.5). */
+const COST_NOTE_KEY = /cost|mdram|margin/i;
+
+export function shapeFlag(f: FlagRow, role: Role, labels: { productName?: string | null; customerName?: string | null; sourceLabel?: string | null } = {}) {
+  let note: unknown = f.note;
+  try { note = f.note ? JSON.parse(f.note) : null; } catch { note = f.note; }
+  if (!isAdmin(role) && note && typeof note === "object" && !Array.isArray(note)) {
+    note = Object.fromEntries(Object.entries(note as Record<string, unknown>).filter(([k]) => !COST_NOTE_KEY.test(k)));
+  }
+  return {
+    id: f.id, type: f.type, sourceType: f.sourceType, sourceId: f.sourceId,
+    productId: f.productId, productName: labels.productName ?? null,
+    customerId: f.customerId, customerName: labels.customerName ?? null,
+    sourceLabel: labels.sourceLabel ?? null,
+    note, createdAt: f.createdAt, resolvedAt: f.resolvedAt,
+  };
+}

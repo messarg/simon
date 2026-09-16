@@ -5,7 +5,7 @@ import { AdjustmentBody, CostCorrectionBody, GoodsReceiptBody, PurchaseReturnBod
 import { auth, requireRole } from "../middleware/auth.ts";
 import { problem } from "../lib/problem.ts";
 import { isAdmin, shapeMovement, stripCost } from "../lib/shape.ts";
-import { correctCost, marginReport } from "../services/margin.service.ts";
+import { correctCost } from "../services/margin.service.ts";
 import { returnToSupplier } from "../services/purchase-return.service.ts";
 import { lastInvoiceCostPerStockUnit, loadReceipt, receiveGoods } from "../services/receiving.service.ts";
 import { adjustStock, writeOff } from "../services/stock-adjust.service.ts";
@@ -108,11 +108,6 @@ export function buyRoutes() {
   r.post("/cost-corrections", admin, async (req, res) => {
     const a = auth(req);
     res.status(201).json(await correctCost(a.db, a.userId, CostCorrectionBody.parse(req.body)));
-  });
-  r.get("/reports/margin", admin, async (req, res) => {
-    const a = auth(req);
-    const q = z.object({ from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }).parse(req.query);
-    res.json(await marginReport(a.db, q.from, q.to));
   });
 
   return r;

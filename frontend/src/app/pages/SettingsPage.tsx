@@ -10,6 +10,8 @@ import type { Role } from "@simon/shared";
 import { Button } from "@/components/ui/button.tsx";
 import { Input, Label } from "@/components/ui/input.tsx";
 import { Sheet } from "@/components/ui/sheet.tsx";
+import { BackupSection } from "@/features/control/BackupSection.tsx";
+import { DiagnosticsSection } from "@/features/control/DiagnosticsSection.tsx";
 import { Toggle } from "@/features/products/ProductEditor.tsx";
 import { problemMessage, t, type StringKey } from "@/i18n/t.ts";
 import { cn } from "@/lib/cn.ts";
@@ -79,6 +81,7 @@ function SettingsForm({ saved, refetch }: { saved: Settings; refetch: () => Prom
   const SELL = ["discount.maxBp", "offline.discountCeilingBp", "cash.roundingStep", "stock.strictNegative"];
   const DEBT = ["debt.enabled", "debt.defaultLimit", "offline.debtCap", "debt.strictLimit"];
   const SHIFT = ["shift.varianceNoteThreshold", "ui.textSize"];
+  const STOCK = ["reorder.safetyDays", "backup.destination"];
 
   return (
     <div className="mx-auto w-full max-w-3xl space-y-4 p-4 md:p-6">
@@ -129,8 +132,22 @@ function SettingsForm({ saved, refetch }: { saved: Settings; refetch: () => Prom
         <div><Label>{t("settings.textSize")}</Label><Choice value={s["ui.textSize"] as string} options={(["normal", "large", "xlarge"] as const).map((k) => [k, t(`settings.sizes.${k}`)])} onChange={set("ui.textSize")} /></div>
       </Section>
 
+      <Section title={t("settings.stock")} onSave={() => void save(STOCK)} dirty={dirty(STOCK)}>
+        <div>
+          <Label>{t("settings.safetyDays")}</Label>
+          <p className="mb-2 text-sm text-muted-foreground">{t("settings.safetyDaysHint")}</p>
+          <NumberField label="" value={s["reorder.safetyDays"] as number} onChange={set("reorder.safetyDays")} />
+        </div>
+        <div>
+          <Label>{t("backup.destination")}</Label>
+          <Choice value={s["backup.destination"] as string} options={(["LOCAL", "LOCAL+USB"] as const).map((k) => [k, t(`backup.destinations.${k}` as StringKey)])} onChange={set("backup.destination")} />
+        </div>
+      </Section>
+
       <UsersSection />
       <DevicesSection />
+      <BackupSection Section={Section} />
+      <DiagnosticsSection Section={Section} />
     </div>
   );
 }

@@ -67,12 +67,25 @@ will otherwise recur.
 
 Supertest against a temp SQLite file, migrations applied, per-test rollback or a fresh file.
 
+**Drive `t.server`, never `t.app`.** `createTestApp` listens once and every request goes to that
+server. Handing Supertest an Express app instead makes it start and tear down a server per request,
+and under a parallel run a client can reach another test file's server — seen as `socket hang up`,
+`Expected HTTP/`, a `404` on a route that plainly exists, and a write that lands in another test's
+database. A test file that builds its own app must `.listen(0)` and close it too.
+
+Tests write nothing into the working tree: `vitest.config.ts` points `SIMON_DATA_DIR`,
+`SIMON_BACKUP_DIR` and `SIMON_KEY_DIR` at a scratch path, and anything touching backups assigns its
+own temporary directories to `backupPaths` in `backup.service.ts`.
+
 Must cover:
 - **Idempotency:** POST the same sale id twice → exactly one sale and one set of movements.
 - **Field-level authorization:** enumerate endpoints; a `WORKER` token gets cost from none.
 - Transaction integrity: a failure mid-sale leaves no partial movements.
 - RFC 7807 shapes and status mapping.
 - Business rules: insufficient stock, credit limit, shift already closed, double return.
+- **Reports against a hand-worked day**, not against themselves: build the sales, the return, the
+  write-off and the receipt, then assert each report's rows and totals (`control.routes.test.ts`).
+- The audit trail and diagnostics are gated **as routes** — assert the `403` for `WORKER` and `STOCK`.
 
 Assert **ledger effects**, not just the response body. A sale that returns `201` but posts
 the wrong stock movement is the bug that matters.

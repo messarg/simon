@@ -10,7 +10,7 @@ async function reauth(t: TestApp, action: string) {
   return (await post(t, "/auth/reauth", { adminUserId: t.users.ADMIN.id, pin: PINS.ADMIN, action })).body.grant as string;
 }
 const ledger = async (t: TestApp, id: string, role: "WORKER" | "ADMIN" = "WORKER") => (await get(t, `/customers/${id}/ledger`, role)).body;
-const patch = (t: TestApp, path: string, body: object) => request(t.app).patch(`/api${path}`).set(bearer(t.tokens.ADMIN)).send(body);
+const patch = (t: TestApp, path: string, body: object) => request(t.server).patch(`/api${path}`).set(bearer(t.tokens.ADMIN)).send(body);
 
 describe("debt sale — §27.12, §12.2, §14.6", () => {
   let t: TestApp;
@@ -77,7 +77,7 @@ describe("debt sale — §27.12, §12.2, §14.6", () => {
     const sale = () => saleBody({ shiftId, customerId: c.id, lines: [{ product: item, qty: 1000 }], payments: [{ method: "DEBT" }] });
     expect((await post(t, "/sales", sale())).body.type).toMatch(/customer-blocked$/);
     expect((await post(t, "/sales", { ...sale(), queued: true })).body.warnings.map((w: { type: string }) => w.type)).toContain("customer-blocked-on-sync");
-    expect((await request(t.app).patch(`/api/customers/${c.id}`).set(bearer(t.tokens.WORKER)).send({ isBlocked: false })).status).toBe(403);
+    expect((await request(t.server).patch(`/api/customers/${c.id}`).set(bearer(t.tokens.WORKER)).send({ isBlocked: false })).status).toBe(403);
   });
 });
 

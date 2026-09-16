@@ -10,7 +10,13 @@ import { config, databaseFile } from "./lib/config.ts";
 import { closeAll, dbFor, registerClient, openDatabase } from "./lib/db.ts";
 import { logger } from "./lib/logger.ts";
 import { applyMigrations } from "./lib/migrate.ts";
+import { runProductStats } from "./jobs/product-stats.ts";
 import { runStockDriftCheck } from "./jobs/stock-drift.ts";
+import { applyPendingRestore, backupTick } from "./services/backup.service.ts";
+import { checkpoint } from "./lib/wal.ts";
+
+// A restore staged by the owner is swapped in here, before anything opens the database (§19.2).
+if (applyPendingRestore(databaseFile("LIVE"))) logger.warn("restored the database from a staged backup");
 
 const applied = applyMigrations(databaseFile("LIVE"));
 if (applied.length) logger.info({ applied }, "migrations applied");
@@ -30,9 +36,22 @@ const server = app.listen(config.port, config.host, () => {
 // Nightly-ish drift check; reports, never repairs (§10.4).
 const driftTimer = setInterval(() => { runStockDriftCheck(live).catch((err) => logger.error({ err }, "drift check failed")); }, 6 * 60 * 60_000);
 
+// Velocity, read by the tiles, the low-stock count and the reorder suggestion (§13.3).
+const statsTimer = setInterval(() => { runProductStats(live).catch((err) => logger.error({ err }, "product stats failed")); }, 6 * 60 * 60_000);
+runProductStats(live).catch((err) => logger.error({ err }, "product stats failed"));
+
+// Hourly while trading, daily regardless, and the WAL checkpointed so §19.5 can report its age.
+const backupTimer = config.backup.automatic
+  ? setInterval(() => { backupTick(live).catch((err) => logger.error({ err }, "backup failed")); }, 5 * 60_000)
+  : null;
+const walTimer = setInterval(() => { checkpoint(live).catch((err) => logger.error({ err }, "checkpoint failed")); }, 5 * 60_000);
+
 async function shutdown(signal: string) {
   logger.info({ signal }, "shutting down");
   clearInterval(driftTimer);
+  clearInterval(statsTimer);
+  clearInterval(walTimer);
+  if (backupTimer) clearInterval(backupTimer);
   server.close();
   await closeAll();
   process.exit(0);

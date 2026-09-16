@@ -121,7 +121,7 @@ export async function revokeSessionsForShift(tx: Tx, shiftId: string) {
 
 // ── Re-authentication grants ─────────────────────────────────────────────────
 
-export type ReauthAction = "discount" | "priceOverride" | "priceChange" | "stockAdjustment" | "blindReturn" | "repaymentReversal" | "noSaleDrawer" | "creditLimitOverride" | "unlock" | "backupPassphrase";
+export type ReauthAction = "discount" | "priceOverride" | "priceChange" | "stockAdjustment" | "blindReturn" | "repaymentReversal" | "noSaleDrawer" | "creditLimitOverride" | "unlock" | "backupPassphrase" | "backupRestore";
 
 interface Grant { adminId: string; action: ReauthAction; expires: number; }
 const grants = new Map<string, Grant>();

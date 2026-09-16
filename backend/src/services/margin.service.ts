@@ -30,7 +30,7 @@ export async function correctCost(db: Db, adminId: string, body: { id: string; g
 }
 
 interface ProductMargin {
-  productId: string; productName: string; qtySold: number;
+  productId: string; productName: string; uom: string; decimalPlaces: number; qtySold: number;
   netRevenue: number; revenueWithoutCost: number;
   cogsBooked: number; cogsRestated: number; marginBooked: number | null; marginRestated: number | null;
   corrections: Array<{ id: string; reason: string; wrongUnitCostMdram: number; correctUnitCostMdram: number }>;
@@ -61,7 +61,7 @@ async function restatedSaleCosts(db: Db, productId: string, corrections: Array<{
 
 export async function marginReport(db: Db, from: string, to: string) {
   const sales = await db.sale.findMany({ where: { status: "COMPLETED", businessDate: { gte: from, lte: to } }, include: { lines: { orderBy: { id: "asc" } } } });
-  const products = new Map((await db.product.findMany({ select: { id: true, name: true } })).map((p) => [p.id, p.name]));
+  const products = new Map((await db.product.findMany({ select: { id: true, name: true, stockUom: true, decimalPlaces: true } })).map((p) => [p.id, p]));
   const allCorrections = await db.costCorrection.findMany({ include: { receiptLine: { select: { productId: true } } } });
   const correctionsByProduct = new Map<string, typeof allCorrections>();
   for (const c of allCorrections) correctionsByProduct.set(c.receiptLine.productId, [...(correctionsByProduct.get(c.receiptLine.productId) ?? []), c]);
@@ -72,8 +72,9 @@ export async function marginReport(db: Db, from: string, to: string) {
   for (const sale of sales) {
     const shares = apportionByValue(sale.lines.map((l) => l.lineTotal), sale.discountTotal);
     for (const [i, l] of sale.lines.entries()) {
+      const product = products.get(l.productId);
       const row = rows.get(l.productId) ?? {
-        productId: l.productId, productName: products.get(l.productId) ?? l.productName, qtySold: 0, netRevenue: 0, revenueWithoutCost: 0, cogsBooked: 0, cogsRestated: 0, marginBooked: null, marginRestated: null,
+        productId: l.productId, productName: product?.name ?? l.productName, uom: product?.stockUom ?? l.uom, decimalPlaces: product?.decimalPlaces ?? 0, qtySold: 0, netRevenue: 0, revenueWithoutCost: 0, cogsBooked: 0, cogsRestated: 0, marginBooked: null, marginRestated: null,
         corrections: (correctionsByProduct.get(l.productId) ?? []).map((c) => ({ id: c.id, reason: c.reason, wrongUnitCostMdram: c.wrongUnitCostMdram, correctUnitCostMdram: c.correctUnitCostMdram })),
       };
       const net = l.lineTotal - shares[i] - (sale.priceBasis === "INCLUSIVE" ? l.lineTax : 0);

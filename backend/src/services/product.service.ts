@@ -13,6 +13,7 @@ import type { Prisma } from "../generated/prisma/client.ts";
 import type { Db, Tx } from "../lib/db.ts";
 import { problem } from "../lib/problem.ts";
 import { clock } from "../lib/time.ts";
+import { productStatuses } from "./stock-status.service.ts";
 import { writeAudit } from "./audit.service.ts";
 import { consumeGrant } from "./auth.service.ts";
 
@@ -133,7 +134,7 @@ export async function addUnit(db: Db, productId: string, unit: { uom: string; fa
   });
 }
 
-export type ProductFilter = "all" | "needs-detail" | "inactive" | "low-stock";
+export type ProductFilter = "all" | "needs-detail" | "inactive" | "low-stock" | "dead-stock";
 
 export async function listProducts(db: Db, opts: { q?: string; filter?: ProductFilter; categoryId?: string; cursor?: string; limit: number; role: Role }) {
   const tokens = opts.q ? searchTokens(opts.q) : [];
@@ -143,8 +144,12 @@ export async function listProducts(db: Db, opts: { q?: string; filter?: ProductF
     ...(opts.filter === "inactive" ? { isActive: 0 } : opts.filter === "all" || !opts.filter ? {} : { isActive: 1 }),
     ...(opts.filter === "needs-detail" ? { OR: [{ avgCostMdram: null }, { categoryId: null }, { barcodes: { none: {} } }] } : {}),
   };
-  let rows = await db.product.findMany({ where, include: productInclude, orderBy: { id: "asc" }, take: opts.limit + 1, ...(opts.cursor ? { cursor: { id: opts.cursor }, skip: 1 } : {}) });
-  if (opts.filter === "low-stock") rows = rows.filter((p) => p.trackStock === 1 && p.stockQty <= p.reorderPoint);
+  const attention = opts.filter === "low-stock" || opts.filter === "dead-stock" ? await productStatuses(db) : null;
+  const wanted = attention ? [...attention.values()].filter((s) => (opts.filter === "low-stock" ? s.low : s.dead)).map((s) => s.productId) : null;
+  const rows = await db.product.findMany({
+    where: { ...where, ...(wanted ? { id: { in: wanted } } : {}) }, include: productInclude,
+    orderBy: { id: "asc" }, take: opts.limit + 1, ...(opts.cursor ? { cursor: { id: opts.cursor }, skip: 1 } : {}),
+  });
   const next = rows.length > opts.limit ? rows[opts.limit - 1].id : null;
   return { items: rows.slice(0, opts.limit), nextCursor: next };
 }

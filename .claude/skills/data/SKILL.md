@@ -21,8 +21,11 @@ allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 >   synced by `?since=`), client settings (`app/settings.ts`) and the current shift (`app/shift.ts`).
 >   A till with no settings cache refuses to price rather than guessing (§14.4).
 > - Customers are cached like the catalogue (`lib/customers.ts`, `GET /customers/snapshot?since=`); `Customer.updatedAt` is touched on every debt entry so balances resync. Repayments go through the outbox as `debt-payment`; the offline debt cap sums debt already queued for that customer (`queuedDebtFor`).
+> - Filter and period state for the owner's screens lives in the **URL**, not in `useState`: `/reports?r=sales&by=product&from=…&to=…` and `/products?filter=low-stock`, so a figure on Home can link
+>   to the events behind it (§6.9, rule 3).
 > - Query keys in use: `["settings","client"]`, `["shifts","current",userId]`, `["products",…]`,
->   `["sales","held"]`, `["sales","recent"]`, `["customers","list",q]`, `["customers",id,"ledger"]`, `["shifts",id,"cash-movements"]`, `["users"]`, `["devices"]`, `["sessions"]`.
+>   `["sales","held"]`, `["sales","recent"]`, `["customers","list",q]`, `["customers",id,"ledger"]`, `["shifts",id,"cash-movements"]`, `["users"]`, `["devices"]`, `["sessions"]`,
+>   `["home"]`, `["reports",name,from,to,groupBy,productId]`, `["review-flags"]`, `["backups"]`, `["diagnostics"]`.
 
 # TanStack
 

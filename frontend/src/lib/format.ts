@@ -22,3 +22,10 @@ export function dateTime(iso: string) {
   const d = new Date(iso);
   return `${d.getDate()} ${hy.dates.months[d.getMonth()]} ${time(iso)}`;
 }
+
+/** "16 սեպ" from a business date; the year appears only when it is not this one. */
+export function dateLabel(date: string) {
+  const [y, m, d] = date.split("-").map(Number);
+  const month = hy.dates.months[(m ?? 1) - 1] ?? "";
+  return y === new Date().getFullYear() ? `${d} ${month}` : `${d} ${month} ${y}`;
+}

@@ -32,7 +32,8 @@ export function PinPad({ onSubmit, busy, error, minLength = 4, maxLength = 8, la
 
   const change = (next: string) => {
     setPin(next);
-    // Four digits submit on their own; longer PINs submit with Enter or the check button.
+    // A PIN of full length submits itself; a shorter one is submitted with Enter or the check key,
+    // since nothing can tell the fourth digit of a four-digit PIN from the fourth of a six-digit one.
     if (next.length === maxLength) onSubmit(next);
   };
 

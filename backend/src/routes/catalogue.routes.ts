@@ -7,6 +7,7 @@ import { problem } from "../lib/problem.ts";
 import { shapeMovement, shapeProduct } from "../lib/shape.ts";
 import { clock } from "../lib/time.ts";
 import { addBarcode, addUnit, createProduct, listProducts, productByBarcode, productInclude, retireBarcode, updateProduct } from "../services/product.service.ts";
+import { productStatuses } from "../services/stock-status.service.ts";
 
 export function catalogueRoutes() {
   const r = Router();
@@ -14,12 +15,17 @@ export function catalogueRoutes() {
   r.get("/products", async (req, res) => {
     const a = auth(req);
     const q = z.object({
-      q: z.string().max(80).optional(), filter: z.enum(["all", "needs-detail", "inactive", "low-stock"]).optional(),
+      q: z.string().max(80).optional(), filter: z.enum(["all", "needs-detail", "inactive", "low-stock", "dead-stock"]).optional(),
       categoryId: z.string().optional(), cursor: z.string().optional(), limit: z.coerce.number().int().min(1).max(200).default(50),
     }).parse(req.query);
     if (q.filter === "needs-detail" && a.role !== "ADMIN") throw problem("not-permitted");
     const page = await listProducts(a.db, { ...q, role: a.role });
-    res.json({ items: page.items.map((p) => shapeProduct(p, a.role)), nextCursor: page.nextCursor });
+    // The reorder suggestion travels with the row so the owner can accept it where he sees it (§13.3).
+    const statuses = await productStatuses(a.db, page.items.map((p) => p.id));
+    res.json({
+      items: page.items.map((p) => ({ ...shapeProduct(p, a.role), stockStatus: statuses.get(p.id) ?? null })),
+      nextCursor: page.nextCursor,
+    });
   });
 
   // The hottest path in the system (§11, §21). One indexed lookup, no writes.

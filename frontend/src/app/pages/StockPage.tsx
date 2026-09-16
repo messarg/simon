@@ -1,6 +1,6 @@
 /** Պահեստ — "do we have it, and how many?" (§6.16). The shelf, written down; last-known when offline. */
 import { useQuery } from "@tanstack/react-query";
-import { ClipboardList, PackageMinus, PackageSearch, Scale, Search, Truck } from "lucide-react";
+import { ClipboardList, PackageMinus, PackageSearch, Scale, Search, ShieldAlert, Truck } from "lucide-react";
 import { Link } from "react-router";
 import { Button } from "@/components/ui/button.tsx";
 import { ReceiptListSheet } from "@/features/buying/ReceiptSheet.tsx";
@@ -36,6 +36,13 @@ export function StockPage() {
   const onScan = useCallback(async (code: string) => { const p = await findByBarcode(code); if (p) setSelected(p); }, []);
   useScanner(onScan);
 
+  const flags = useQuery({
+    queryKey: ["review-flags"],
+    enabled: connection === "online",
+    queryFn: () => http.get<{ items: unknown[] }>("/review-flags", { query: { resolved: "false", limit: 200 } }),
+  });
+  const openFlags = flags.data?.items.length ?? 0;
+
   const history = useQuery({
     queryKey: ["products", selected?.id, "movements"],
     enabled: Boolean(selected) && connection === "online",
@@ -50,6 +57,14 @@ export function StockPage() {
             <Button asChild size="lg" disabled={connection === "offline"}><Link to="/stock/receive"><Truck />{t("stockOps.receive")}</Link></Button>
             <Button variant="secondary" size="lg" disabled={connection === "offline"} onClick={() => setOp("receipts")}><ClipboardList />{t("stockOps.receipts")}</Button>
           </div>
+        )}
+        {/* The recount list is stock's job, so it is reachable from here and not only from the owner's home (FR-STK-05). */}
+        {openFlags > 0 && (
+          <Link to="/attention" className="mx-3 mt-3 flex items-center gap-2 rounded-lg bg-attention-soft px-3 py-2 text-attention-foreground">
+            <ShieldAlert className="size-5 shrink-0" aria-hidden />
+            <span className="flex-1 font-medium">{t("attention.title")}</span>
+            <span className="tabular font-semibold">{openFlags}</span>
+          </Link>
         )}
         <div className="p-3">
           <div className="relative">

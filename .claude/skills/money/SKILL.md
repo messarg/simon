@@ -151,6 +151,11 @@ const stockQty = purchaseQty * unitsPerPurchaseUnit;
 Never convert through a float. If a factor is genuinely fractional, store it scaled and
 divide with `roundHalfUp` — and question the data model first.
 
+**Quantities in different units never add up.** A report grouped by product may total its money
+columns and must leave the quantity column blank: metres plus pieces is a number nobody can read.
+The same rule applies to an export — a quantity goes out as a plain number with its unit in a column
+of its own, so a spreadsheet can sum it.
+
 ## VAT
 
 `taxCategory` sits on the product; the regime sits in settings (PRD §16). Whether prices are

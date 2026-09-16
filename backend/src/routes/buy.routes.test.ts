@@ -14,7 +14,7 @@ async function reauth(t: TestApp, action: string) {
 async function supplier(t: TestApp, name: string, paymentTerms = 0) {
   const res = await post(t, "/suppliers", { id: uuidv7(), name, paymentTerms }, "ADMIN");
   if (res.status !== 201) throw new Error(JSON.stringify(res.body));
-  if (paymentTerms) await request(t.app).patch(`/api/suppliers/${res.body.id}`).set(bearer(t.tokens.ADMIN)).send({ paymentTerms });
+  if (paymentTerms) await request(t.server).patch(`/api/suppliers/${res.body.id}`).set(bearer(t.tokens.ADMIN)).send({ paymentTerms });
   return res.body.id as string;
 }
 function receipt(supplierId: string, lines: Array<{ product: FixtureProduct; qty: number; costDram: number; uom?: string; factor?: number }>, landedCostTotal = 0, receivedAt?: string) {
@@ -42,7 +42,7 @@ describe("receiving — §27.3, §27.31, §27.29", () => {
     expect(res.body.lines[0]).toMatchObject({ qty: 3000, uom: "կոճ", factorToStockUom: 50, invoiceUnitCostMdram: 25_000_000 });
     expect(res.body.lines[0]).not.toHaveProperty("landedUnitCostMdram"); // STOCK sees only the invoice cost it typed (§16.5)
     // There is no route that edits a factor: a new packaging is a new unit (§27.31).
-    expect((await request(t.app).patch(`/api/products/${cable.id}/units/x`).set(bearer(t.tokens.ADMIN)).send({ factorToStockUom: 100 })).status).toBe(404);
+    expect((await request(t.server).patch(`/api/products/${cable.id}/units/x`).set(bearer(t.tokens.ADMIN)).send({ factorToStockUom: 100 })).status).toBe(404);
     const again = await get(t, `/goods-receipts/${body.id}`, "ADMIN");
     expect(again.body.lines[0]).toMatchObject({ qty: 3000, uom: "կոճ", landedUnitCostMdram: 25_500_000 });
   });
@@ -52,7 +52,7 @@ describe("receiving — §27.3, §27.31, §27.29", () => {
     const shiftId = await openShift(t, "WORKER");
     expect((await post(t, "/sales", saleBody({ shiftId, lines: [{ product: sand, qty: 3000, taxRateBp: 0 }] }))).status).toBe(200);
     const report = (await get(t, `/reports/margin?from=${today()}&to=${today()}`, "ADMIN")).body;
-    const row = report.items.find((i: { productId: string }) => i.productId === sand.id);
+    const row = report.rows.find((i: { productId: string }) => i.productId === sand.id);
     expect(row).toMatchObject({ revenueWithoutCost: 300, netRevenue: 0, marginBooked: null });
     await post(t, "/goods-receipts", receipt(await supplier(t, "Քար"), [{ product: sand, qty: 10_000, costDram: 60 }]), "STOCK");
     expect(await avg(t, sand.id)).toBe(60_000);
@@ -80,7 +80,7 @@ describe("margin — §27.4 and §27.33", () => {
     await post(t, "/sales", saleBody({ shiftId, lines: [{ product: pipe, qty: 5_000, taxRateBp: 0 }] }));
     await post(t, "/goods-receipts", receipt(s, [{ product: pipe, qty: 10_000, costDram: 15 }]), "STOCK");
     await post(t, "/sales", saleBody({ shiftId, lines: [{ product: pipe, qty: 5_000, taxRateBp: 0 }] }));
-    const row = (await get(t, `/reports/margin?from=${today()}&to=${today()}`, "ADMIN")).body.items.find((i: { productId: string }) => i.productId === pipe.id);
+    const row = (await get(t, `/reports/margin?from=${today()}&to=${today()}`, "ADMIN")).body.rows.find((i: { productId: string }) => i.productId === pipe.id);
     // By hand: revenue 2 × 5 × 20 = 200; cost 5 × 12 + 5 × 14 (the average after the second delivery) = 130.
     expect(row).toMatchObject({ netRevenue: 200, cogsBooked: 130, marginBooked: 70 });
   });
@@ -97,7 +97,7 @@ describe("margin — §27.4 and §27.33", () => {
     const res = await post(t, "/cost-corrections", { id: uuidv7(), goodsReceiptLineId: bad.lines[0].id, correctUnitCostMdram: 1_400_000, reason: "տասնորդական կետ" }, "ADMIN");
     expect(res.status).toBe(201);
     expect(await t.db.saleLine.findMany({ where: { saleId: sale.id } })).toEqual(linesBefore);
-    const row = (await get(t, `/reports/margin?from=${today()}&to=${today()}`, "ADMIN")).body.items.find((i: { productId: string }) => i.productId === tile.id);
+    const row = (await get(t, `/reports/margin?from=${today()}&to=${today()}`, "ADMIN")).body.rows.find((i: { productId: string }) => i.productId === tile.id);
     expect(row).toMatchObject({ netRevenue: 4_000, cogsBooked: 28_000, marginBooked: -24_000, cogsRestated: 2_800, marginRestated: 1_200 });
     expect(row.corrections).toEqual([expect.objectContaining({ reason: "տասնորդական կետ", wrongUnitCostMdram: 14_000_000, correctUnitCostMdram: 1_400_000 })]);
     expect((await get(t, `/reports/margin?from=${today()}&to=${today()}`, "STOCK")).status).toBe(403);

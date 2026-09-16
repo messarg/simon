@@ -2,6 +2,7 @@
 import path from "node:path";
 
 const root = path.resolve(import.meta.dirname, "../..");
+const isTest = process.env.NODE_ENV === "test";
 
 export const config = {
   port: Number(process.env.PORT ?? 5000),
@@ -12,6 +13,8 @@ export const config = {
   printerHost: process.env.SIMON_PRINTER_HOST ?? "",
   printerPort: Number(process.env.SIMON_PRINTER_PORT ?? 9100),
   logLevel: process.env.LOG_LEVEL ?? "info",
+  /** Rotating log files (§19.5). Empty disables the file; tests never write one. */
+  logDir: process.env.SIMON_LOG_DIR ?? (isTest ? "" : path.join(root, "var/logs")),
   version: process.env.SIMON_VERSION ?? "0.1.0",
   /** Argon2id cost. §16.2 asks for ≥ 250 ms on the host; tests lower it. */
   argon2: {
@@ -20,6 +23,15 @@ export const config = {
   },
   tillIdleMinutes: 15,
   ownerIdleMinutes: 8 * 60,
+  backup: {
+    /** Where the passphrase lives: on the host, outside the data directory and never in the database (§19.2). */
+    keyDir: process.env.SIMON_KEY_DIR ?? path.join(root, "var/keys"),
+    dir: process.env.SIMON_BACKUP_DIR ?? path.join(root, "var/backups"),
+    /** The removable drive's mount point. Empty means none is configured. */
+    usbDir: process.env.SIMON_USB_DIR ?? "",
+    /** The hourly timer and the backup at shift close. Off under test, where each test takes its own. */
+    automatic: !isTest && process.env.SIMON_BACKUP_AUTOMATIC !== "0",
+  },
 };
 
 export const databaseFile = (mode: "LIVE" | "PRACTICE") =>

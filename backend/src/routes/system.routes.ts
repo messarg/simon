@@ -6,6 +6,7 @@ import { config } from "../lib/config.ts";
 import { problem } from "../lib/problem.ts";
 import { DeviceRateLimiter } from "../domain/pin-policy.ts";
 import { login, recover, reauth } from "../services/auth.service.ts";
+import { createInstallPassphrase } from "../services/backup.service.ts";
 import { createOwner, listSignInUsers, needsSetup } from "../services/user.service.ts";
 
 const pin = z.string().regex(/^\d{4,8}$/);
@@ -22,7 +23,9 @@ export function systemRoutes(live: Db) {
   r.post("/setup/owner", async (req, res) => {
     const body = z.object({ shopName: z.string().trim().min(1).max(120), ownerName: z.string().trim().min(1).max(60), pin }).parse(req.body);
     if (!(await needsSetup(live))) throw problem("not-permitted");
-    res.status(201).json(await createOwner(live, body));
+    const owner = await createOwner(live, body);
+    // The wizard ends by showing two secrets once, written down together (§7.1, §19.2).
+    res.status(201).json({ ...owner, backupPassphrase: createInstallPassphrase() });
   });
 
   r.get("/auth/users", async (_req, res) => {
@@ -38,7 +41,7 @@ export function systemRoutes(live: Db) {
   r.post("/auth/reauth", async (req, res) => {
     const body = z.object({
       adminUserId: z.string().min(1), pin: z.string(),
-      action: z.enum(["discount", "priceOverride", "priceChange", "stockAdjustment", "blindReturn", "repaymentReversal", "noSaleDrawer", "creditLimitOverride", "unlock", "backupPassphrase"]),
+      action: z.enum(["discount", "priceOverride", "priceChange", "stockAdjustment", "blindReturn", "repaymentReversal", "noSaleDrawer", "creditLimitOverride", "unlock", "backupPassphrase", "backupRestore"]),
     }).parse(req.body);
     res.json(await reauth(live, limiter, { ...body, rateKey: req.ip ?? "unknown" }));
   });

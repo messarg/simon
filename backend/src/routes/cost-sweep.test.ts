@@ -36,7 +36,7 @@ export async function sweepForCost(t: TestApp, fill: (path: string) => string | 
   for (const raw of collectGetPaths(t.app)) {
     const path = fill(raw);
     if (!path) continue;
-    const res = await request(t.app).get(`/api${path}`).set(bearer(t.tokens.WORKER));
+    const res = await request(t.server).get(`/api${path}`).set(bearer(t.tokens.WORKER));
     leaks.push(...findCostKeys(res.body).map((k) => `${path} → ${k}`));
   }
   return leaks;
@@ -69,7 +69,7 @@ describe("§27.9 cost sweep", () => {
     };
     expect(await sweepForCost(t, fill)).toEqual([]);
     // The same routes do carry cost for ADMIN, so the sweep is not vacuous.
-    const admin = await request(t.app).get(`/api/products/${ids.product}`).set(bearer(t.tokens.ADMIN));
+    const admin = await request(t.server).get(`/api/products/${ids.product}`).set(bearer(t.tokens.ADMIN));
     expect(admin.body.avgCostMdram).toBe(800_000);
   });
 });

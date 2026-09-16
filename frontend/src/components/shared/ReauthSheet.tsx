@@ -13,7 +13,7 @@ import { ApiProblem, http } from "@/lib/http.ts";
 import { cn } from "@/lib/cn.ts";
 import { PinPad } from "./PinPad.tsx";
 
-export type ReauthAction = "discount" | "priceOverride" | "priceChange" | "stockAdjustment" | "blindReturn" | "repaymentReversal" | "noSaleDrawer" | "creditLimitOverride";
+export type ReauthAction = "discount" | "priceOverride" | "priceChange" | "stockAdjustment" | "blindReturn" | "repaymentReversal" | "noSaleDrawer" | "creditLimitOverride" | "backupPassphrase" | "backupRestore";
 
 export interface ReauthSheetProps {
   open: boolean;

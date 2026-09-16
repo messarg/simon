@@ -12,7 +12,8 @@
     "db:new-migration": "prisma migrate dev --create-only && node --experimental-strip-types prisma/strictify.ts $(ls -d prisma/migrations/*/ | tail -1)migration.sql",
     "db:migrate": "prisma migrate deploy",
     "db:seed": "node --experimental-strip-types prisma/seed.ts",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "restore": "node --experimental-strip-types scripts/restore.ts"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.10.0",

@@ -21,9 +21,9 @@ export function SetupPage() {
   const [pin2, setPin2] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [recoveryCode, setRecoveryCode] = useState<string | null>(null);
+  const [secrets, setSecrets] = useState<{ recoveryCode: string; backupPassphrase: string } | null>(null);
 
-  if (status.data && !status.data.needsOwner && !recoveryCode) return <Navigate to="/sign-in" replace />;
+  if (status.data && !status.data.needsOwner && !secrets) return <Navigate to="/sign-in" replace />;
 
   const pinValid = /^\d{4,8}$/.test(pin);
   const canSubmit = shopName.trim() && ownerName.trim() && pinValid && pin === pin2 && !busy;
@@ -32,8 +32,8 @@ export function SetupPage() {
     setBusy(true);
     setError(null);
     try {
-      const res = await http.post<{ recoveryCode: string }>("/setup/owner", { shopName, ownerName, pin });
-      setRecoveryCode(res.recoveryCode);
+      const res = await http.post<{ recoveryCode: string; backupPassphrase: string }>("/setup/owner", { shopName, ownerName, pin });
+      setSecrets({ recoveryCode: res.recoveryCode, backupPassphrase: res.backupPassphrase });
     } catch (err) {
       setError(problemMessage(err instanceof ApiProblem ? err.type : "network"));
     } finally {
@@ -44,12 +44,15 @@ export function SetupPage() {
   return (
     <div className="flex min-h-dvh items-start justify-center bg-background px-4 py-10 safe-top">
       <div className="w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-sm">
-        {recoveryCode ? (
+        {secrets ? (
           <>
             <div className="mb-4 grid size-14 place-items-center rounded-2xl bg-attention-soft text-attention-foreground"><ShieldCheck className="size-7" aria-hidden /></div>
             <h1 className="text-2xl font-semibold">{t("setup.recoveryTitle")}</h1>
             <p className="mt-2 text-muted-foreground">{t("setup.recoveryHint")}</p>
-            <p className="tabular my-6 rounded-lg bg-muted p-5 text-center text-2xl font-semibold tracking-wider">{recoveryCode}</p>
+            <p className="tabular my-4 rounded-lg bg-muted p-5 text-center text-2xl font-semibold tracking-wider">{secrets.recoveryCode}</p>
+            <h2 className="text-lg font-semibold">{t("setup.passphraseTitle")}</h2>
+            <p className="mt-1 text-muted-foreground">{t("setup.passphraseHint")}</p>
+            <p className="tabular my-4 rounded-lg bg-muted p-5 text-center text-xl font-semibold tracking-wider">{secrets.backupPassphrase}</p>
             <p className="mb-5 rounded-lg bg-attention-soft p-3 text-sm text-attention-foreground">{t("setup.taxPending")}</p>
             <Button size="lg" className="w-full" onClick={() => navigate("/sign-in", { replace: true })}>{t("setup.recoveryConfirm")}</Button>
           </>

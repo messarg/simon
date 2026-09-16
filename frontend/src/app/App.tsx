@@ -7,7 +7,9 @@ import { connection } from "@/lib/connection.ts";
 import { onSessionExpired } from "@/lib/http.ts";
 import { sessionStore, useSession } from "@/lib/session-store.ts";
 import { Bootstrap } from "./Bootstrap.tsx";
-import { PlaceholderPage } from "./pages/PlaceholderPage.tsx";
+import { AttentionPage } from "./pages/AttentionPage.tsx";
+import { HomePage } from "./pages/HomePage.tsx";
+import { ReportsPage } from "./pages/ReportsPage.tsx";
 import { DebtsPage } from "./pages/DebtsPage.tsx";
 import { ProductsPage } from "./pages/ProductsPage.tsx";
 import { ReceivingPage } from "./pages/ReceivingPage.tsx";
@@ -68,9 +70,10 @@ export function App() {
             <Route path="/stock" element={<StockPage />} />
             <Route path="/stock/receive" element={<ReceivingPage />} />
             <Route path="/shift" element={<ShiftPage />} />
+            <Route path="/attention" element={<AttentionPage />} />
             <Route element={<RequireAdmin />}>
-              <Route path="/home" element={<PlaceholderPage screen="nav.home" />} />
-              <Route path="/reports" element={<PlaceholderPage screen="nav.reports" />} />
+              <Route path="/home" element={<HomePage />} />
+              <Route path="/reports" element={<ReportsPage />} />
               <Route path="/products" element={<ProductsPage />} />
               <Route path="/customers" element={<DebtsPage admin />} />
               <Route path="/suppliers" element={<SuppliersPage />} />

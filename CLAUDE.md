@@ -20,7 +20,7 @@ docs/event-storming/  domain-discovery output (events, commands, bounded context
 
 ### Current state of the tree
 
-Built phase by phase in PRD §23's order, each phase committed and reviewed before the next. **Phases 0–3 (foundations, Sell, Trust, Buy) are done**; Phase 4 (Control — owner home, reports, reorder suggestions, backup and restore, diagnostics) is next.
+Built phase by phase in PRD §23's order, each phase committed and reviewed before the next. **Phases 0–4 (foundations, Sell, Trust, Buy, Control) are done**; Phase 5 (Adopt — the full wizard, import, practice mode, coach marks, PWA, Docker/TLS) is next.
 
 What exists:
 - `packages/shared/src/` — money (`groupDigits`, `formatDram`), `tax.ts`, `sale-math.ts` (`computeSale`, the one sale total the till shows and the server recomputes), `return-math.ts` (`computeReturn`), `cash.ts` (denominations), `search.ts` (Latin-typed Armenian), `time.ts`, `enums.ts`, `problems.ts`, `settings.ts`, `schemas.ts` (request bodies both sides validate).
@@ -30,9 +30,11 @@ What exists:
 - `frontend/src/` — theme, Armenian strings, `lib/` (http, session, connection probe, IndexedDB, catalogue cache, outbox, HID scanner, device receipt numbers), shells, and screens: sign-in, first-run owner setup, till (scan/search/tiles/camera, keypad, swipe-undo, price override, held baskets, quick-add, discount, payment with split), returns, shift (open, X-report, cash movements, denomination close, Z-report), stock, products, settings (with users, devices, sessions).
 - Debt book (Phase 2): `backend/src/services/{debt,customer}.service.ts` and `routes/debt.routes.ts` — debt sales with limit/block (refused at the counter, flagged from the queue), repayments (cash writes REPAYMENT, card writes nothing), reversal with re-entry, merge, erasure, aging, a debt-reduction tender on returns, linked reversal of cash movements with drill-through; `frontend/src/features/debt/` — customer picker with inline create, the four-line debt panel, repayment, ledger, owner controls; `lib/customers.ts` IndexedDB cache with the offline debt cap.
 - Buying (Phase 3): `backend/src/services/{supplier,receiving,purchase-return,supplier-payment,stock-adjust,margin}.service.ts` and `routes/buy.routes.ts` — receiving with unit conversion, landed cost and the weighted average; purchase returns at landed cost with §13.7's band guard (applied identically by the ledger replay); payables through one allocation table with overpayment credits and linked payment reversal; write-offs and admin-re-authed adjustments; cost corrections and a margin report as booked and restated; `frontend/src/features/buying/` and `features/stock/` — receiving, receipts and returns, suppliers with payment, write-off and adjustment sheets.
-- `tests/e2e/` — Playwright journey J1 → J2 → offline sale synced exactly once → J4.
+- Control (Phase 4): `backend/src/services/{report,home,diagnostics,backup,stock-status}.service.ts`, `jobs/product-stats.ts` and `routes/control.routes.ts` — §20.2's thirteen reports behind one `GET /reports/:name` shape, owner home aggregates with every figure drilling to a report or a ledger, velocity and reorder suggestions, the audit trail as a route, `GET /diagnostics`, and encrypted backups (`VACUUM INTO` → AES-256-GCM, GFS rotation, USB copy at close, staged one-click restore, `npm run restore -w backend` for the drill); `frontend/src/features/{reports,control}/` with `app/pages/{HomePage,ReportsPage,AttentionPage}.tsx` — the report catalogue, one table with CSV export, the needs-attention list, and the backup and diagnostics panels in Settings.
+- `tests/e2e/` — Playwright journeys: J1 → J2 → offline sale synced exactly once → J4, and the owner's day-end (passphrase, first backup, the alert clearing).
+- `docs/runbook.md` (§27.10's restore drill and what each in-app alert means) and `docs/adr/` (the decisions that deviate from a literal reading of the PRD, with the reasoning).
 
-Not yet: owner home, reports screen, reorder suggestions, backup, diagnostics (4); full wizard, import, practice data, PWA, Docker/TLS (5). The Home and Reports destinations are placeholders.
+Not yet: the full wizard, import, practice data, coach marks, PWA, Docker/TLS (5).
 
 ### Invariants from the PRD that are expensive to fix later
 
@@ -41,7 +43,8 @@ Not yet: owner home, reports screen, reorder suggestions, backup, diagnostics (4
 - **Rounding is half-up on the absolute value, and happens exactly once** — on a line total, never on a unit price or an intermediate product. A return of 12.5 must round to the same magnitude as the sale of 12.5, or a one-dram ghost balance survives it.
 - **Stock is an append-only `StockMovement` ledger.** `Product.stockQty` is a rebuildable cache, never the source of truth. Debt works the same way.
 - **Costing is moving weighted average**, and `unitCost` is snapshotted onto each sale line so historical margins stay immutable.
-- **Cost prices must be stripped server-side** for non-admin roles — hiding them in the UI is not access control.
+- **Cost prices must be stripped server-side** for non-admin roles — hiding them in the UI is not access control. Costs also travel inside a `ReviewFlag.note`, which no field-by-field rule would look inside: notes are stripped in `shapeFlag`.
+- **The backup passphrase never enters the database.** It lives in a file on the host (`SIMON_KEY_DIR`), so a stolen USB drive carries no way to decrypt itself, and a restore needs only the file and the owner's paper (§19.2, §27.10).
 - **Sale ids are client-generated (UUIDv7) and `POST /sales` is idempotent** on them, so a retried request cannot double-charge.
 - Business logic belongs in `backend/src/domain` (pure, unit-tested), not in routes or components. The test for correct layering: can the rule be unit-tested with no HTTP and no database?
 - UI strings are Armenian and live in resource files; code, schema, and comments are English.
@@ -76,6 +79,7 @@ npm test                     # vitest, single root run across all workspaces
 npm run test:watch
 npm run check:prd            # PRD index consistency (python3 scripts/check-prd.py)
 npm run db:seed -w backend   # dev database: owner 1111, stock 2222, worker 3333, 12 products (refuses if users exist)
+npm run restore -w backend -- --from <backup.simonbak>   # restore drill (§27.10); asks for the passphrase
 npm run test:e2e             # Playwright journeys; starts its own API (:5065) and SPA (:5175) on a throwaway database
 npm run db:new-migration -w backend   # prisma migrate dev --create-only, then strictify the new SQL
 ```
@@ -88,6 +92,8 @@ Single test file or case:
 npm test -- money                    # by file/path pattern
 npm test -- -t "rounds half up"      # by test name
 ```
+
+Tests never write into the working tree: `vitest.config.ts` points the data directory, the backup directory and the host key file at a scratch path, and each `createTestApp` **listens once** and sends every request to that server — Supertest otherwise starts and tears down a server per request, and under a parallel run a client could reach another test file's server, which showed up as `socket hang up`, `Expected HTTP/`, a 404 on a route that exists, and writes landing in another test's database.
 
 `TZ` is pinned to `Asia/Yerevan` in `vitest.config.ts` — shift and report boundaries are shop-local time (PRD §19.3), so an unpinned machine would produce different results.
 

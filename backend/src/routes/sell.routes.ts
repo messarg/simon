@@ -3,9 +3,11 @@ import { Router } from "express";
 import { z } from "zod";
 import { BeginCloseBody, CashMovementBody, CloseShiftBody, OpenShiftBody, SaleBody, SaleReturnBody, ReviewFlagType } from "@simon/shared";
 import { auth, requireRole } from "../middleware/auth.ts";
+import { config } from "../lib/config.ts";
 import { problem } from "../lib/problem.ts";
-import { isAdmin, shapeSale } from "../lib/shape.ts";
+import { isAdmin, shapeFlag, shapeSale } from "../lib/shape.ts";
 import { clock } from "../lib/time.ts";
+import { takeBackup } from "../services/backup.service.ts";
 import { openDrawer } from "../services/drawer.service.ts";
 import { printRepaymentReceipt, printReturnReceipt, printSaleReceipt, printShiftReport } from "../services/print.service.ts";
 import { loadSaleReturn, returnableLines, submitSaleReturn } from "../services/sale-return.service.ts";
@@ -107,6 +109,8 @@ export function sellRoutes() {
     // Printed here, after the close has committed: the session dies with the shift (§16.3), so the
     // till could not ask for the Z-report afterwards. A jam is reported, never a rollback (§18).
     const printed = await printShiftReport(a.db, req.params.id).then(() => true, () => false);
+    // §19.2's daily backup: the shop's day is over and this is the copy the USB drive carries.
+    if (config.backup.automatic && a.mode === "LIVE") void takeBackup(a.live, "CLOSE").catch(() => undefined);
     res.json({ ...report, printed });
   });
   const reportRoute = async (req: import("express").Request, res: import("express").Response) => {
@@ -170,7 +174,17 @@ export function sellRoutes() {
     const a = auth(req);
     const q = z.object({ resolved: z.enum(["true", "false"]).default("false"), type: ReviewFlagType.optional(), limit: z.coerce.number().int().min(1).max(200).default(100) }).parse(req.query);
     const rows = await a.db.reviewFlag.findMany({ where: { resolvedAt: q.resolved === "true" ? { not: null } : null, type: q.type }, orderBy: { createdAt: "desc" }, take: q.limit });
-    res.json({ items: rows.map((f) => ({ id: f.id, type: f.type, sourceType: f.sourceType, sourceId: f.sourceId, productId: f.productId, customerId: f.customerId, note: f.note, createdAt: f.createdAt, resolvedAt: f.resolvedAt })) });
+    // The list is the needs-attention screen (FR-STK-05): reading it is any session, so it names the
+    // product and the document rather than an id, and a flag's note is stripped like any other payload.
+    const [products, customers, sales] = await Promise.all([
+      a.db.product.findMany({ where: { id: { in: rows.flatMap((f) => (f.productId ? [f.productId] : [])) } }, select: { id: true, name: true } }),
+      a.db.customer.findMany({ where: { id: { in: rows.flatMap((f) => (f.customerId ? [f.customerId] : [])) } }, select: { id: true, fullName: true } }),
+      a.db.sale.findMany({ where: { id: { in: rows.filter((f) => f.sourceType === "Sale").map((f) => f.sourceId) } }, select: { id: true, number: true } }),
+    ]);
+    const productName = new Map(products.map((p) => [p.id, p.name]));
+    const customerName = new Map(customers.map((x) => [x.id, x.fullName]));
+    const saleNumber = new Map(sales.map((x) => [x.id, x.number]));
+    res.json({ items: rows.map((f) => shapeFlag(f, a.role, { productName: f.productId ? productName.get(f.productId) : null, customerName: f.customerId ? customerName.get(f.customerId) : null, sourceLabel: saleNumber.get(f.sourceId) ?? null })) });
   });
   r.post("/review-flags/:id/resolve", requireRole("STOCK"), async (req, res) => {
     const a = auth(req);

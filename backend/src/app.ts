@@ -9,6 +9,7 @@ import { errorHandler, problem } from "./lib/problem.ts";
 import { requireSession } from "./middleware/auth.ts";
 import { accountRoutes, adminRoutes } from "./routes/admin.routes.ts";
 import { catalogueRoutes } from "./routes/catalogue.routes.ts";
+import { controlRoutes } from "./routes/control.routes.ts";
 import { buyRoutes } from "./routes/buy.routes.ts";
 import { debtRoutes } from "./routes/debt.routes.ts";
 import { sellRoutes } from "./routes/sell.routes.ts";
@@ -43,6 +44,7 @@ export function createApp(deps: AppDeps) {
   api.use(sellRoutes());
   api.use(debtRoutes());
   api.use(buyRoutes());
+  api.use(controlRoutes());
   for (const router of deps.extraRouters ?? []) api.use(router);
   api.use(adminRoutes());
   api.use((_req, _res, next) => next(problem("not-found")));

@@ -20,7 +20,11 @@ export default defineConfig({
     {
       command: `rm -rf ${DATA} && node --experimental-strip-types backend/prisma/seed.ts && node --experimental-strip-types backend/src/index.ts`,
       url: `http://localhost:${API_PORT}/api/health`,
-      env: { SIMON_DATA_DIR: DATA, SIMON_PRINT_DIR: path.join(DATA, "prints"), PORT: String(API_PORT), LOG_LEVEL: "warn" },
+      env: {
+        SIMON_DATA_DIR: DATA, SIMON_PRINT_DIR: path.join(DATA, "prints"), PORT: String(API_PORT), LOG_LEVEL: "warn",
+        // Keys and backups belong to the throwaway data directory too — never the dev shop's (§19.2).
+        SIMON_KEY_DIR: path.join(DATA, "keys"), SIMON_BACKUP_DIR: path.join(DATA, "backups"),
+      },
       reuseExistingServer: false,
       timeout: 60_000,
     },

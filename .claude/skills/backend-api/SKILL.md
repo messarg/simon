@@ -16,9 +16,19 @@ backend/src/
   domain/     pure logic — money, costing, allocation, units. No HTTP, no Prisma.
   services/   transactional use cases — createSale, receiveGoods, recordRepayment
   routes/     thin HTTP — parse, authorize, call a service, map errors
-  jobs/       backup, cache reconciliation, reorder stats
+  jobs/       cache reconciliation (stock drift), reorder stats (product velocity)
   lib/        prisma client, logger, config
 ```
+
+**Reports return one shape.** `GET /reports/:name` answers `{ name, from, to, columns, rows, totals?, notes? }`
+with codes rather than Armenian, so one screen renders and exports all thirteen of §20.2's reports and
+the words stay in `hy.ts`. Every report is `ADMIN`; the audit trail and `GET /diagnostics` are gated as
+routes rather than stripped field by field, because they carry whole-record JSON and the shop's business.
+
+**Backups are the live database only** (`a.live`, never a practice session's), taken with `VACUUM INTO`
+and encrypted with the passphrase from the host key file — never a `Setting` row. Restoring cannot
+happen under a running server, so the API stages the decrypted file and `applyPendingRestore` swaps it
+in at the next start, keeping the replaced database beside it.
 
 **Business logic lives in `domain/`.** A route that computes a total or decides a stock
 delta is misplaced. The test for correct layering: can you unit-test the rule with no HTTP

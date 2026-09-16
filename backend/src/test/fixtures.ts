@@ -22,7 +22,7 @@ export async function makeProduct(t: TestApp, opts: { name: string; priceDram: n
 
 export async function openShift(t: TestApp, role: Role, openingFloat = 20_000, token = t.tokens[role]) {
   const id = uuidv7();
-  const res = await request(t.app).post("/api/shifts").set(bearer(token)).send({ id, openingFloat });
+  const res = await request(t.server).post("/api/shifts").set(bearer(token)).send({ id, openingFloat });
   if (res.status !== 201) throw new Error(`open shift failed ${res.status} ${JSON.stringify(res.body)}`);
   return id;
 }
@@ -72,11 +72,11 @@ export function saleBody(opts: {
 }
 
 export const post = (t: TestApp, path: string, body: unknown, role: Role = "WORKER", token?: string) =>
-  request(t.app).post(`/api${path}`).set(bearer(token ?? t.tokens[role])).send(body as object);
-export const get = (t: TestApp, path: string, role: Role = "WORKER") => request(t.app).get(`/api${path}`).set(bearer(t.tokens[role]));
+  request(t.server).post(`/api${path}`).set(bearer(token ?? t.tokens[role])).send(body as object);
+export const get = (t: TestApp, path: string, role: Role = "WORKER") => request(t.server).get(`/api${path}`).set(bearer(t.tokens[role]));
 
 export async function makeCustomer(t: TestApp, fullName: string, phone: string | null = null, role: Role = "WORKER") {
-  const res = await request(t.app).post("/api/customers").set(bearer(t.tokens[role])).send({ id: uuidv7(), fullName, phone });
+  const res = await request(t.server).post("/api/customers").set(bearer(t.tokens[role])).send({ id: uuidv7(), fullName, phone });
   if (res.status !== 201) throw new Error(`customer failed ${res.status} ${JSON.stringify(res.body)}`);
   return res.body as { id: string; fullName: string };
 }
