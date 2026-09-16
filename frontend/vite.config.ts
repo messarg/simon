@@ -1,8 +1,24 @@
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
+
+/**
+ * A phone gets the camera and the install prompt only on a secure context (§18, §16.6). Set
+ * SIMON_TLS=1 after `scripts/dev-cert.sh` to serve the dev and preview servers over the shop's own
+ * certificate, which is what production does through Nginx.
+ */
+const certDir = path.resolve(import.meta.dirname, "../docker/certs");
+const tls = process.env.SIMON_TLS === "1" && existsSync(path.join(certDir, "simon.crt"))
+  ? { key: readFileSync(path.join(certDir, "simon.key")), cert: readFileSync(path.join(certDir, "simon.crt")) }
+  : undefined;
+
+// In dev the SPA proxies to the local API; in production they share one origin behind Nginx.
+const proxy = {
+  "/api": { target: process.env.SIMON_API_URL ?? "http://localhost:5000", changeOrigin: true, secure: false },
+};
 
 export default defineConfig({
   plugins: [
@@ -50,12 +66,17 @@ export default defineConfig({
     },
   },
   server: {
+    // Bound on every interface so a phone on the shop's Wi-Fi can reach it — never a hardcoded
+    // LAN IP in the client. On macOS the AirPlay Receiver holds :5000, so SIMON_API_URL points
+    // the proxy elsewhere.
     host: true,
-    proxy: {
-      // The API is same-origin in production (Nginx). In dev, proxy to the local
-      // Express server — never hardcode a LAN IP anywhere in the client. On macOS the
-      // AirPlay Receiver holds :5000, so SIMON_API_URL points the proxy elsewhere.
-      "/api": { target: process.env.SIMON_API_URL ?? "http://localhost:5000", changeOrigin: true },
-    },
+    https: tls,
+    proxy,
+  },
+  // `vite preview` serves the built app, service worker and all — the way to test installing it.
+  preview: {
+    host: true,
+    https: tls,
+    proxy,
   },
 });
