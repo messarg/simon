@@ -34,6 +34,13 @@ export async function syncCustomers() {
   connection.reportSuccess();
 }
 
+export async function clearCustomers() {
+  const db = await localDb();
+  await db.clear("customers");
+  await setMeta("customers.since", undefined);
+  bump();
+}
+
 export async function getCachedCustomer(id: string) {
   return (await localDb()).get("customers", id);
 }

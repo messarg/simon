@@ -2,9 +2,45 @@ import path from "node:path";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
+import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [
+    react(),
+    tailwindcss(),
+    // Installed on a shop phone, the till opens from the home screen and starts without the network:
+    // the shell is precached and everything else already works offline (§14.4, §18).
+    VitePWA({
+      registerType: "autoUpdate",
+      includeAssets: ["favicon.svg", "icon-192.png", "icon-512.png", "icon-maskable-512.png"],
+      manifest: {
+        name: "Սիմոն",
+        short_name: "Սիմոն",
+        description: "Խանութի վաճառքի և պահեստի համակարգ",
+        lang: "hy",
+        dir: "ltr",
+        start_url: "/sell",
+        scope: "/",
+        display: "standalone",
+        orientation: "portrait",
+        background_color: "#f7f4ee",
+        theme_color: "#1f6b6b",
+        icons: [
+          { src: "/icon-192.png", sizes: "192x192", type: "image/png" },
+          { src: "/icon-512.png", sizes: "512x512", type: "image/png" },
+          { src: "/icon-maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+        ],
+      },
+      workbox: {
+        // The shell only. Data has its own cache (IndexedDB) and its own queue: a service worker
+        // answering an API call from a cache would be a second, silent source of truth (§14.4).
+        globPatterns: ["**/*.{js,css,html,svg,png,woff2}"],
+        navigateFallback: "/index.html",
+        navigateFallbackDenylist: [/^\/api\//],
+        cleanupOutdatedCaches: true,
+      },
+    }),
+  ],
   resolve: {
     alias: {
       // Consumed as TypeScript source so there is no build-ordering step, and so the

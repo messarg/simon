@@ -73,7 +73,7 @@ export function ReportsPage() {
         ) : (
           <div className="mx-auto w-full max-w-5xl space-y-4">
             <div className="flex items-baseline gap-3">
-              <button onClick={() => set({ r: undefined })} className="h-10 text-muted-foreground md:hidden">← {t("common.back")}</button>
+              <button onClick={() => set({ r: undefined })} className="h-touch text-muted-foreground md:hidden">← {t("common.back")}</button>
               <h2 className="text-xl font-semibold">{t(`reports.names.${entry.name}` as StringKey)}</h2>
             </div>
 
@@ -84,7 +84,7 @@ export function ReportsPage() {
                   <button
                     key={g}
                     onClick={() => set({ by: g })}
-                    className={cn("h-10 rounded-lg border px-3 text-sm font-medium", groupBy === g ? "border-primary bg-primary-soft text-accent-foreground" : "border-border bg-card text-muted-foreground")}
+                    className={cn("h-touch rounded-lg border px-4 text-sm font-medium", groupBy === g ? "border-primary bg-primary-soft text-accent-foreground" : "border-border bg-card text-muted-foreground")}
                   >
                     {t(`reports.groupings.${g}` as StringKey)}
                   </button>
@@ -117,7 +117,7 @@ function ProductChooser({ value, onChange }: { value: string; onChange: (id: str
         <ul className="flex flex-wrap gap-2">
           {items.map((p) => (
             <li key={p.id}>
-              <button onClick={() => { onChange(p.id); setQ(""); }} className="h-10 rounded-lg border border-border bg-card px-3 text-sm font-medium hover:bg-muted">{p.name}</button>
+              <button onClick={() => { onChange(p.id); setQ(""); }} className="h-touch rounded-lg border border-border bg-card px-4 text-sm font-medium hover:bg-muted">{p.name}</button>
             </li>
           ))}
         </ul>

@@ -3,6 +3,7 @@
  * The dev seed provides the worker Գոռ (PIN 3333) and a small hardware catalogue.
  */
 import { expect, test, type Page } from "@playwright/test";
+import { dismissCoach, signIn } from "./helpers.ts";
 
 async function scan(page: Page, code: string) {
   await page.keyboard.type(code, { delay: 5 });
@@ -15,13 +16,10 @@ async function tapKeys(page: Page, keys: string) {
 
 test("a worker opens a shift, sells, keeps selling offline, syncs exactly once and closes", async ({ page }) => {
   // J1 — sign in and open on a counted float.
-  await page.goto("/");
-  await page.getByRole("button", { name: "Գոռ" }).click();
-  await page.keyboard.type("3333");
-  await page.keyboard.press("Enter");
-  await expect(page).toHaveURL(/\/sell/);
+  await signIn(page, "Գոռ", "3333");
   await expect(page.getByText("Հերթափոխը բաց չէ")).toBeVisible();
   await page.goto("/shift");
+  await dismissCoach(page);
   await tapKeys(page, "20000");
   await page.getByRole("button", { name: "Բացել հերթափոխ" }).click();
   await expect(page).toHaveURL(/\/sell/);
@@ -61,6 +59,7 @@ test("a worker opens a shift, sells, keeps selling offline, syncs exactly once a
 
   // J4 — close: expected 20 000 + 100 + 3 200 = 23 300; count it exactly, variance zero.
   await page.goto("/shift");
+  await dismissCoach(page);
   await expect(page.getByText("23 300 ֏").first()).toBeVisible();
   await page.getByRole("button", { name: /Փակել հերթափոխ/ }).click();
   await page.getByRole("button", { name: /Փակել հերթափոխ/ }).click();

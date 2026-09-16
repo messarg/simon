@@ -1,0 +1,45 @@
+# One shop, one machine, two containers. `docker compose up -d` after `scripts/dev-cert.sh`.
+services:
+  api:
+    build:
+      context: .
+      target: runtime
+    restart: unless-stopped
+    environment:
+      # The passphrase key file lives outside the database, and the USB drive is a bind mount below.
+      SIMON_USB_DIR: /var/simon/usb
+      SIMON_VERSION: ${SIMON_VERSION:-0.1.0}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      # Printing: console writes rendered receipts to a file; escpos-tcp talks to a network printer.
+      SIMON_PRINTER: ${SIMON_PRINTER:-console}
+      SIMON_PRINTER_HOST: ${SIMON_PRINTER_HOST:-}
+    volumes:
+      - simon-data:/var/simon/data
+      - simon-backups:/var/simon/backups
+      - simon-keys:/var/simon/keys
+      - simon-prints:/var/simon/prints
+      - simon-logs:/var/simon/logs
+      # The removable drive, when one is plugged in (§19.2). Absent is reported, never fatal.
+      - ${SIMON_USB_PATH:-./docker/usb}:/var/simon/usb
+    expose:
+      - "5000"
+
+  web:
+    build:
+      context: .
+      target: web
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/certs:/etc/nginx/certs:ro
+
+volumes:
+  simon-data:
+  simon-backups:
+  simon-keys:
+  simon-prints:
+  simon-logs:

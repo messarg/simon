@@ -28,15 +28,21 @@ export interface TestApp extends TestDb {
   loginAs: (role: Role) => Promise<{ token: string; deviceId: string }>;
 }
 
-export async function createTestApp(opts: { extraRouters?: express.Router[]; configure?: (t: TestDb) => Promise<void> } = {}): Promise<TestApp> {
+export async function createTestApp(opts: { extraRouters?: express.Router[]; configure?: (t: TestDb) => Promise<void>; practice?: () => Promise<TestDb["db"]> } = {}): Promise<TestApp> {
   const t = await createTestDb();
   const owner = await createOwner(t.db, { shopName: "Փորձնական խանութ", ownerName: "Արամ", pin: PINS.ADMIN });
   const stock = await createUser(t.db, owner.user.id, { name: "Լուսինե", pin: PINS.STOCK, role: "STOCK" });
   const worker = await createUser(t.db, owner.user.id, { name: "Գոռ", pin: PINS.WORKER, role: "WORKER" });
   await t.db.$transaction((tx) => writeSettings(tx, { "tax.regime": "VAT", "tax.priceBasis": "INCLUSIVE", "tax.rateBp": 2000 }, null));
   await opts.configure?.(t);
-  const app = createApp({ live: t.db, practice: async () => t.db, extraRouters: opts.extraRouters });
+  // Most suites never leave LIVE, so practice points back at the same database unless a test asks for the real thing.
+  const app = createApp({ live: t.db, practice: opts.practice ?? (async () => t.db), extraRouters: opts.extraRouters });
   const server = app.listen(0);
+  // Node's client agent keeps a socket alive for 5 s and the server closes idle sockets after 5 s:
+  // when both fire at once the client loses a socket it was about to reuse ("socket hang up").
+  // The server must outlive the client's idle window.
+  server.keepAliveTimeout = 120_000;
+  server.headersTimeout = 125_000;
   const users = { ADMIN: owner.user, STOCK: { id: stock.id, name: stock.name }, WORKER: { id: worker.id, name: worker.name } };
 
   const loginAs = async (role: Role) => {

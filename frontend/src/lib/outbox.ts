@@ -35,7 +35,8 @@ export const outbox = {
     const db = await localDb();
     const offline = connection.get() === "offline";
     await db.put("outbox", {
-      id, kind, body, dependsOn: opts.dependsOn ?? [], enqueuedAt: new Date().toISOString(), attempts: 0, state: "pending", lastError: null,
+      id, kind, body, mode: sessionStore.get()?.session.mode ?? "LIVE",
+      dependsOn: opts.dependsOn ?? [], enqueuedAt: new Date().toISOString(), attempts: 0, state: "pending", lastError: null,
       nextAttemptAt: 0, isParkedBasket: opts.isParkedBasket ?? false, requeuedOnce: false, enqueuedOffline: offline,
       afterSync: offline ? null : (opts.afterSync ?? null), label: opts.label,
     });
@@ -57,6 +58,12 @@ export const outbox = {
   subscribe(l: () => void) { listeners.add(l); return () => { listeners.delete(l); }; },
   onResult(l: (item: OutboxItem, response: unknown) => void) { resultListeners.add(l); return () => { resultListeners.delete(l); }; },
   async dismissParked(id: string) { await (await localDb()).delete("outbox", id); await refresh(); },
+  /** Leaving practice throws away everything practice queued — it was never going to be sent (§19.4). */
+  async discardPractice() {
+    const db = await localDb();
+    for (const i of await db.getAll("outbox")) if (i.mode === "PRACTICE") await db.delete("outbox", i.id);
+    await refresh();
+  },
   /** After a sign-in, held items (401) become sendable again. */
   async releaseHeld() {
     const db = await localDb();

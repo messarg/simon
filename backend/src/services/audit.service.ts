@@ -15,7 +15,7 @@ export const AUDITED_ACTIONS = [
   "device.deactivate", "settings.update", "session.practiceEnter", "session.practiceExit", "auth.unlock", "auth.recover", "cashMovement.create", "cashMovement.reverse",
   "customer.update", "customer.merge", "customer.erase", "debt.payment",
   "supplier.update", "supplier.payment", "supplier.paymentReversal", "stock.writeOff", "cost.correction", "goodsReceipt.create", "purchaseReturn.create",
-  "backup.passphraseReveal", "backup.passphraseRotate", "backup.restore",
+  "backup.passphraseReveal", "backup.passphraseRotate", "backup.restore", "import.run",
 ] as const;
 export type AuditAction = (typeof AUDITED_ACTIONS)[number];
 

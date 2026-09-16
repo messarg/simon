@@ -9,6 +9,7 @@ import { useConnection } from "@/lib/connection.ts";
 import { useSession } from "@/lib/session-store.ts";
 import { useOutboxCounts } from "@/lib/outbox.ts";
 import { useCurrentShift } from "@/app/shift.ts";
+import { ScreenHelp } from "@/components/shared/ScreenHelp.tsx";
 
 export function StatusStrip({ className }: { className?: string }) {
   const session = useSession();
@@ -33,6 +34,7 @@ export function StatusStrip({ className }: { className?: string }) {
         <span className={cn("flex items-center gap-1.5 text-muted-foreground", counts.pendingSales === 0 && "ml-auto")} aria-label={offline ? t("status.offline") : t("status.online")}>
           {offline ? <CloudOff className="size-4" aria-hidden /> : <Wifi className="size-4" aria-hidden />}
         </span>
+        <ScreenHelp />
       </div>
       {offline && (
         <div className="flex items-center gap-2 bg-attention-soft px-4 py-2 text-sm text-attention-foreground" role="status">

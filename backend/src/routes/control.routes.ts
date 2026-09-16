@@ -8,7 +8,7 @@
  */
 import { Router } from "express";
 import { z } from "zod";
-import { businessDate } from "@simon/shared";
+import { businessDate, ImportBody } from "@simon/shared";
 import { auth, requireRole } from "../middleware/auth.ts";
 import { config, databaseFile } from "../lib/config.ts";
 import { problem } from "../lib/problem.ts";
@@ -16,6 +16,7 @@ import { clock } from "../lib/time.ts";
 import { consumeGrant } from "../services/auth.service.ts";
 import { listBackups, revealPassphrase, rotatePassphrase, stageRestore, takeBackup } from "../services/backup.service.ts";
 import { diagnostics } from "../services/diagnostics.service.ts";
+import { listImports, loadImport, runImport } from "../services/import.service.ts";
 import { ownerHome } from "../services/home.service.ts";
 import { auditRows, REPORT_NAMES, runReport, type ReportName } from "../services/report.service.ts";
 import { readSettings } from "../services/settings.service.ts";
@@ -55,6 +56,25 @@ export function controlRoutes() {
   });
 
   r.get("/diagnostics", admin, async (req, res) => { res.json(await diagnostics(auth(req).live)); });
+
+  // ── Import (§19.1, §7.3). Preview first, then the same call without dryRun. ─
+  r.post("/imports", admin, async (req, res) => {
+    const a = auth(req);
+    const body = ImportBody.parse(req.body);
+    const result = await runImport(a.db, a.userId, body);
+    res.status(body.dryRun ? 200 : 201).json(result);
+  });
+
+  r.get("/imports", admin, async (req, res) => { res.json({ items: await listImports(auth(req).db) }); });
+
+  r.get("/imports/:id", admin, async (req, res) => {
+    const batch = await loadImport(auth(req).db, String(req.params.id));
+    res.json({
+      id: batch.id, kind: batch.kind, rowCount: batch.rowCount, appliedCount: batch.appliedCount,
+      skippedCount: batch.skippedCount, failedCount: batch.failedCount, startedAt: batch.startedAt, completedAt: batch.completedAt,
+      rows: batch.rows.map((x) => ({ rowNumber: x.rowNumber, naturalKey: x.naturalKey, status: x.status, entityId: x.entityId, error: x.error })),
+    });
+  });
 
   // ── Backups (§19.2). Always the live database, never the practice one. ─────
   r.get("/backups", admin, async (req, res) => { res.json(await listBackups(auth(req).live)); });

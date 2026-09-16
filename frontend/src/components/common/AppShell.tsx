@@ -3,9 +3,10 @@
  * reach (§5.2). On a wide screen an owner gets a left rail with every destination. A
  * worker's tabs are the four of §5.1 and there is no drawer, no hamburger.
  */
-import { LogOut, MoreHorizontal } from "lucide-react";
+import { FlaskConical, LogOut, MoreHorizontal } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { NavLink, useNavigate } from "react-router";
+import { Button } from "@/components/ui/button.tsx";
 import { Sheet } from "@/components/ui/sheet.tsx";
 import { destinationsFor, type Destination } from "@/config/navigation.ts";
 import { t } from "@/i18n/t.ts";
@@ -13,6 +14,7 @@ import { cn } from "@/lib/cn.ts";
 import { useSession } from "@/lib/session-store.ts";
 import { useClientSettings } from "@/app/settings.ts";
 import { useSignOut } from "@/app/session.ts";
+import { usePracticeMode } from "@/app/practice.ts";
 import { StatusStrip } from "./StatusStrip.tsx";
 
 function TabLink({ d, compact }: { d: Destination; compact?: boolean }) {
@@ -60,6 +62,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   const signOut = useSignOut();
   const navigate = useNavigate();
   const [moreOpen, setMoreOpen] = useState(false);
+  const [practiceOpen, setPracticeOpen] = useState(false);
+  const practice = usePracticeMode();
   if (!session) return null;
   const { worker, owner } = destinationsFor(session.user.role, settings.data?.debtBookEnabled ?? true);
   const isOwner = owner.length > 0;
@@ -77,7 +81,11 @@ export function AppShell({ children }: { children: ReactNode }) {
             <div className="my-2 border-t border-border" />
             {worker.map((d) => <RailLink key={d.path} d={d} />)}
           </nav>
-          <button onClick={signOut} className="mt-auto flex h-touch items-center gap-3 rounded-lg px-3 text-muted-foreground hover:bg-muted">
+          <button onClick={() => setPracticeOpen(true)} className="mt-auto flex h-touch items-center gap-3 rounded-lg px-3 text-muted-foreground hover:bg-muted">
+            <FlaskConical className="size-5" aria-hidden />
+            {practice.isPractice ? t("practice.leave") : t("practice.title")}
+          </button>
+          <button onClick={signOut} className="flex h-touch items-center gap-3 rounded-lg px-3 text-muted-foreground hover:bg-muted">
             <LogOut className="size-5" aria-hidden />
             {t("common.signOut")}
           </button>
@@ -99,9 +107,9 @@ export function AppShell({ children }: { children: ReactNode }) {
                 {t("nav.more")}
               </button>
             ) : (
-              <button onClick={signOut} className="flex min-h-touch flex-1 flex-col items-center justify-center gap-0.5 py-1.5 text-xs font-medium text-muted-foreground">
-                <span className="grid h-8 w-14 place-items-center"><LogOut className="size-6" aria-hidden /></span>
-                {t("common.signOut")}
+              <button onClick={() => setMoreOpen(true)} className="flex min-h-touch flex-1 flex-col items-center justify-center gap-0.5 py-1.5 text-xs font-medium text-muted-foreground">
+                <span className="grid h-8 w-14 place-items-center"><MoreHorizontal className="size-6" aria-hidden /></span>
+                {t("nav.more")}
               </button>
             )}
           </div>
@@ -119,10 +127,30 @@ export function AppShell({ children }: { children: ReactNode }) {
               </button>
             );
           })}
+          <button onClick={() => { setMoreOpen(false); setPracticeOpen(true); }} className="col-span-2 flex h-touch items-center justify-center gap-2 rounded-lg border border-border text-muted-foreground">
+            <FlaskConical className="size-5" aria-hidden />
+            {practice.isPractice ? t("practice.leave") : t("practice.title")}
+          </button>
           <button onClick={signOut} className="col-span-2 flex h-touch items-center justify-center gap-2 rounded-lg border border-border text-muted-foreground">
             <LogOut className="size-5" aria-hidden />
             {t("common.signOut")}
           </button>
+        </div>
+      </Sheet>
+
+      {/* Փորձնական (§7.2): the same shop, writing nothing that counts. */}
+      <Sheet open={practiceOpen} onOpenChange={setPracticeOpen} title={t("practice.title")}>
+        <div className="space-y-4">
+          <p className="text-muted-foreground">{t("practice.hint")}</p>
+          {practice.isPractice && <p className="rounded-lg bg-attention-soft p-3 text-sm text-attention-foreground">{t("practice.receipt")}</p>}
+          <Button
+            size="lg"
+            className="w-full"
+            variant={practice.isPractice ? "secondary" : "primary"}
+            onClick={() => void practice.switchTo(practice.isPractice ? "LIVE" : "PRACTICE").then((ok) => { if (ok) { setPracticeOpen(false); navigate("/sell"); } })}
+          >
+            {practice.isPractice ? t("practice.leave") : t("practice.enter")}
+          </Button>
         </div>
       </Sheet>
     </div>

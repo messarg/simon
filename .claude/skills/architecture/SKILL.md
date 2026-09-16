@@ -158,3 +158,17 @@ A criterion that deliberately has no requirement is declared in the PRD itself, 
 `<!-- prd-check: criteria-without-requirement = ... -->` comment beside the prose that justifies
 it — so the exemption and its reasoning live together, and the tool honours it. Add to that
 comment rather than weakening the check.
+
+
+---
+
+## Packaging (phase 5)
+
+One repository, one artifact: `Dockerfile` builds two images — `runtime` (Express, TypeScript run
+directly under `--experimental-strip-types`) and `web` (Nginx serving the built SPA and proxying
+`/api` on the same origin). `docker-compose.yml` names the volumes that hold the database, the
+backups, the host key file, the prints and the logs; `scripts/dev-cert.sh` writes the certificate.
+
+**TLS is not optional** (§16.6): there is no plain-HTTP deployment, because the camera needs a secure
+context and a daily warning teaches people to tap through warnings. The certificate has to be trusted
+on each staff device — that step belongs in the install, not in a footnote.

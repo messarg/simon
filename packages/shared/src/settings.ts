@@ -8,6 +8,8 @@
 import type { PriceBasis, TaxRegime } from "./enums.ts";
 
 export interface ClientSettings {
+  /** Quick-add offers weight and length units first in a shop that sells that way (§7.1 Q3, §7.4). */
+  sellsByMeasure: boolean;
   shopName: string;
   taxRegime: TaxRegime | null;
   priceBasis: PriceBasis;
@@ -54,6 +56,11 @@ export const SETTING_DEFAULTS = {
   "settings.staleAfterMinutes": 240,
   "device.clockSkewMinutes": 2,
   "ui.textSize": "normal" as ClientSettings["textSize"],
+  // The wizard writes each answer as it is given, so closing the laptop halfway costs nothing (§7.1).
+  "setup.step": 0,
+  "setup.sellsByMeasure": false,
+  "setup.catalogue": "" as "" | "import" | "as-you-sell",
+  "setup.completedAt": "",
 } as const;
 
 export type SettingKey = keyof typeof SETTING_DEFAULTS;
@@ -78,5 +85,6 @@ export function toClientSettings(v: SettingValues): ClientSettings {
     textSize: v["ui.textSize"],
     varianceNoteThreshold: v["shift.varianceNoteThreshold"],
     timezone: v["shop.timezone"],
+    sellsByMeasure: v["setup.sellsByMeasure"],
   };
 }

@@ -127,3 +127,17 @@ the result. Getting this subtly wrong makes the UI read as machine-translated.
 - [ ] Shift/report boundaries in shop-local time
 - [ ] Longest-string layout checked
 - [ ] Backend returns error `type`, not Armenian prose
+
+
+---
+
+## Simon additions (phase 5)
+
+- **A shop's spreadsheet has Armenian headers.** `packages/shared/src/csv-import.ts` maps column
+  names in both languages (`անուն`/`name`, `գին`/`price`, `շտրիխկոդ`/`barcode`, …) and accepts the
+  number and date forms people actually type: spaces and non-breaking spaces group thousands, a comma
+  is a decimal point, and `14.03.2026` is a date. Add an alias there, never a second parser.
+- **Import errors are codes, not sentences**: `not-whole:price` is rendered by the screen as
+  «գին»՝ պետք է լինի ամբողջ թիվ. The server never sends Armenian prose (§15.2).
+- **Coach marks and the `?` are two sentences per screen**, in `hy.help.screens`, keyed by the route
+  (`lib/screens.ts`). Per person, not per device (`User.coachMarksSeen`).

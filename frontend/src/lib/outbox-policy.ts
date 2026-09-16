@@ -39,13 +39,16 @@ export function nextToSend(items: readonly OutboxItem[], now: number): OutboxIte
 }
 
 export function counts(items: readonly OutboxItem[]) {
-  const live = items.filter((i) => i.state !== "parked");
+  // Practice documents are discarded rather than sent, so counting them would give the owner a queue
+  // figure that can never reach zero and an alert that never clears (§19.4).
+  const real = items.filter((i) => i.mode !== "PRACTICE");
+  const live = real.filter((i) => i.state !== "parked");
   const sales = live.filter((i) => !i.isParkedBasket);
   return {
     pendingSales: sales.filter((i) => i.kind === "sale").length,
     pendingDocuments: sales.length,
     parkedBaskets: live.filter((i) => i.isParkedBasket).length,
-    needsAttention: items.filter((i) => i.state === "parked").length,
+    needsAttention: real.filter((i) => i.state === "parked").length,
     oldestAt: sales.map((i) => i.enqueuedAt).sort()[0] ?? null,
   };
 }

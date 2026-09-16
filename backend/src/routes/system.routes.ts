@@ -7,6 +7,7 @@ import { problem } from "../lib/problem.ts";
 import { DeviceRateLimiter } from "../domain/pin-policy.ts";
 import { login, recover, reauth } from "../services/auth.service.ts";
 import { createInstallPassphrase } from "../services/backup.service.ts";
+import { readSettings } from "../services/settings.service.ts";
 import { createOwner, listSignInUsers, needsSetup } from "../services/user.service.ts";
 
 const pin = z.string().regex(/^\d{4,8}$/);
@@ -18,7 +19,17 @@ export function systemRoutes(live: Db) {
   // Liveness only (§15.4): no session, nothing an unauthenticated probe should not know.
   r.get("/health", (_req, res) => { res.json({ status: "ok", version: config.version }); });
 
-  r.get("/setup/status", async (_req, res) => { res.json({ needsOwner: await needsSetup(live) }); });
+  // What the wizard needs to know before anyone has signed in: whether to start, and where to resume
+  // (§7.1, §27.35). Nothing here is the shop's business — no name, no figures.
+  r.get("/setup/status", async (_req, res) => {
+    const settings = await readSettings(live);
+    res.json({
+      needsOwner: await needsSetup(live),
+      step: settings["setup.step"],
+      completedAt: settings["setup.completedAt"] || null,
+      taxRegimeSet: settings["tax.regime"] !== null,
+    });
+  });
 
   r.post("/setup/owner", async (req, res) => {
     const body = z.object({ shopName: z.string().trim().min(1).max(120), ownerName: z.string().trim().min(1).max(60), pin }).parse(req.body);

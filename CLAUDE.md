@@ -20,7 +20,7 @@ docs/event-storming/  domain-discovery output (events, commands, bounded context
 
 ### Current state of the tree
 
-Built phase by phase in PRD §23's order, each phase committed and reviewed before the next. **Phases 0–4 (foundations, Sell, Trust, Buy, Control) are done**; Phase 5 (Adopt — the full wizard, import, practice mode, coach marks, PWA, Docker/TLS) is next.
+Built phase by phase in PRD §23's order, each phase committed and reviewed before the next. **Phases 0–5 are done, which is §9's v1 feature list**: foundations, Sell, Trust, Buy, Control, Adopt. What remains is §9's v2 list (phase 6): stocktake sessions, purchase orders, labels, multi-location, Tauri packaging, the fiscal adapter.
 
 What exists:
 - `packages/shared/src/` — money (`groupDigits`, `formatDram`), `tax.ts`, `sale-math.ts` (`computeSale`, the one sale total the till shows and the server recomputes), `return-math.ts` (`computeReturn`), `cash.ts` (denominations), `search.ts` (Latin-typed Armenian), `time.ts`, `enums.ts`, `problems.ts`, `settings.ts`, `schemas.ts` (request bodies both sides validate).
@@ -32,9 +32,11 @@ What exists:
 - Buying (Phase 3): `backend/src/services/{supplier,receiving,purchase-return,supplier-payment,stock-adjust,margin}.service.ts` and `routes/buy.routes.ts` — receiving with unit conversion, landed cost and the weighted average; purchase returns at landed cost with §13.7's band guard (applied identically by the ledger replay); payables through one allocation table with overpayment credits and linked payment reversal; write-offs and admin-re-authed adjustments; cost corrections and a margin report as booked and restated; `frontend/src/features/buying/` and `features/stock/` — receiving, receipts and returns, suppliers with payment, write-off and adjustment sheets.
 - Control (Phase 4): `backend/src/services/{report,home,diagnostics,backup,stock-status}.service.ts`, `jobs/product-stats.ts` and `routes/control.routes.ts` — §20.2's thirteen reports behind one `GET /reports/:name` shape, owner home aggregates with every figure drilling to a report or a ledger, velocity and reorder suggestions, the audit trail as a route, `GET /diagnostics`, and encrypted backups (`VACUUM INTO` → AES-256-GCM, GFS rotation, USB copy at close, staged one-click restore, `npm run restore -w backend` for the drill); `frontend/src/features/{reports,control}/` with `app/pages/{HomePage,ReportsPage,AttentionPage}.tsx` — the report catalogue, one table with CSV export, the needs-attention list, and the backup and diagnostics panels in Settings.
 - `tests/e2e/` — Playwright journeys: J1 → J2 → offline sale synced exactly once → J4, and the owner's day-end (passphrase, first backup, the alert clearing).
-- `docs/runbook.md` (§27.10's restore drill and what each in-app alert means) and `docs/adr/` (the decisions that deviate from a literal reading of the PRD, with the reasoning).
+- Adopt (Phase 5): `backend/src/services/{import,practice}.service.ts` with `routes/control.routes.ts`'s import endpoints and `POST /session/mode` — CSV import for products, customers, opening stock and opening debts (idempotent on a natural key, per-row errors, never partially applied, original dates preserved), and practice mode as a second database file seeded from the shop and deleted on exit; `frontend/src/app/pages/{SetupPage,ImportPage}.tsx`, `app/practice.ts` and `components/shared/ScreenHelp.tsx` — the five-question wizard (skippable, resumable, ending on the two secrets), the import preview, the practice toggle, and contextual help with one-time coach marks.
+- Packaging: `Dockerfile` (one file, two images — Express and Nginx+SPA), `docker-compose.yml`, `docker/nginx.conf` and `scripts/dev-cert.sh`. TLS is required, not optional (§16.6). The SPA is installable: `vite-plugin-pwa` precaches the shell only — data has its own cache and queue.
+- `docs/runbook.md` (installing a shop, the restore drill, and what each in-app alert means) and `docs/adr/` (the decisions that deviate from a literal reading of the PRD, with the reasoning).
 
-Not yet: the full wizard, import, practice data, coach marks, PWA, Docker/TLS (5).
+Unbuilt by choice: everything §9 assigns to v2. The Docker images are written but have not been built on this machine (no daemon), and Armenian on a real ESC/POS printer is still unverified.
 
 ### Invariants from the PRD that are expensive to fix later
 
@@ -44,6 +46,8 @@ Not yet: the full wizard, import, practice data, coach marks, PWA, Docker/TLS (5
 - **Stock is an append-only `StockMovement` ledger.** `Product.stockQty` is a rebuildable cache, never the source of truth. Debt works the same way.
 - **Costing is moving weighted average**, and `unitCost` is snapshotted onto each sale line so historical margins stay immutable.
 - **Cost prices must be stripped server-side** for non-admin roles — hiding them in the UI is not access control. Costs also travel inside a `ReviewFlag.note`, which no field-by-field rule would look inside: notes are stripped in `shapeFlag`.
+- **Practice mode is a second database file, never a flag on a row** (§19.4). Nothing in `schema.prisma` knows practice exists except `Session.mode`, so no report, export or replay has to remember a `WHERE` clause. A queued practice document is tagged in the outbox and discarded on exit, never drained.
+- **A money or quantity cell that is not whole in its scaled unit is an import row error, never a rounded value** (§19.1, §27.38). This is the one path where decimals arrive by design.
 - **The backup passphrase never enters the database.** It lives in a file on the host (`SIMON_KEY_DIR`), so a stolen USB drive carries no way to decrypt itself, and a restore needs only the file and the owner's paper (§19.2, §27.10).
 - **Sale ids are client-generated (UUIDv7) and `POST /sales` is idempotent** on them, so a retried request cannot double-charge.
 - Business logic belongs in `backend/src/domain` (pure, unit-tested), not in routes or components. The test for correct layering: can the rule be unit-tested with no HTTP and no database?
@@ -80,6 +84,8 @@ npm run test:watch
 npm run check:prd            # PRD index consistency (python3 scripts/check-prd.py)
 npm run db:seed -w backend   # dev database: owner 1111, stock 2222, worker 3333, 12 products (refuses if users exist)
 npm run restore -w backend -- --from <backup.simonbak>   # restore drill (§27.10); asks for the passphrase
+scripts/dev-cert.sh simon.local 192.168.1.50             # the shop's TLS certificate (§16.6); trust it on every device
+docker compose up -d --build                             # Nginx + Express on one origin; see docs/runbook.md §0
 npm run test:e2e             # Playwright journeys; starts its own API (:5065) and SPA (:5175) on a throwaway database
 npm run db:new-migration -w backend   # prisma migrate dev --create-only, then strictify the new SQL
 ```

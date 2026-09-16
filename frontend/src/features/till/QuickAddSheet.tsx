@@ -9,6 +9,7 @@ import { Input, Label } from "@/components/ui/input.tsx";
 import { Sheet } from "@/components/ui/sheet.tsx";
 import { problemMessage, t } from "@/i18n/t.ts";
 import { UNITS } from "@/lib/units.ts";
+import { useClientSettings } from "@/app/settings.ts";
 import { cn } from "@/lib/cn.ts";
 import { putProducts, toCached, type ApiProduct } from "@/lib/catalogue.ts";
 import { useConnection } from "@/lib/connection.ts";
@@ -18,6 +19,10 @@ import type { CachedProduct } from "@/lib/local-db.ts";
 
 export function QuickAddSheet({ open, onOpenChange, barcode, initialName, onCreated }: { open: boolean; onOpenChange: (o: boolean) => void; barcode: string | null; initialName?: string; onCreated: (p: CachedProduct) => void }) {
   const connection = useConnection();
+  const settings = useClientSettings().data;
+  // Q3's answer decides what this sheet offers first: a shop selling cable and cement should not
+  // have to scroll past "piece" every time (§7.1, §7.4).
+  const units = settings?.sellsByMeasure ? [...UNITS].sort((a, b) => Number(b.decimals > 0) - Number(a.decimals > 0)) : UNITS;
   // The parent remounts this sheet with a new key each time it opens, so state starts fresh.
   const [name, setName] = useState(initialName ?? "");
   const [price, setPrice] = useState("");
@@ -30,7 +35,7 @@ export function QuickAddSheet({ open, onOpenChange, barcode, initialName, onCrea
     setError(null);
     try {
       const p = await http.post<ApiProduct>("/products", {
-        id: uuidv7(), name: name.trim(), sellPriceMdram: Number(price) * 1000, stockUom: t(UNITS[unit].key), decimalPlaces: UNITS[unit].decimals, barcode: barcode || null,
+        id: uuidv7(), name: name.trim(), sellPriceMdram: Number(price) * 1000, stockUom: t(units[unit].key), decimalPlaces: units[unit].decimals, barcode: barcode || null,
       }, { timeoutMs: 5000 });
       await putProducts([p]);
       onCreated(toCached(p));
@@ -65,7 +70,7 @@ export function QuickAddSheet({ open, onOpenChange, barcode, initialName, onCrea
           <div>
             <Label>{t("quickAdd.unit")}</Label>
             <div className="grid grid-cols-3 gap-2">
-              {UNITS.map((u, i) => (
+              {units.map((u, i) => (
                 <button type="button" key={u.key} onClick={() => setUnit(i)} className={cn("h-touch rounded-lg border font-medium", unit === i ? "border-primary bg-primary-soft text-accent-foreground" : "border-border bg-card")}>
                   {t(u.key)}
                 </button>

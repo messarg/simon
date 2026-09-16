@@ -26,7 +26,8 @@ export function createApp(deps: AppDeps) {
   const app = express();
   app.disable("x-powered-by");
   app.set("trust proxy", "loopback");
-  app.use(express.json({ limit: "2mb" }));
+  // 2 MB is a generous sale and a small spreadsheet; an import file is the reason for the rest (§19.1).
+  app.use(express.json({ limit: "6mb" }));
 
   app.use((req, res, next) => {
     const start = performance.now();

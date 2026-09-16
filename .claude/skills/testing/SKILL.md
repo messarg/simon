@@ -92,6 +92,14 @@ the wrong stock movement is the bug that matters.
 
 ## Layer 4 — E2E (Playwright)
 
+**A first-time person meets a coach mark on every screen** (§7.5), and it covers what the journey is
+about to tap. `tests/e2e/helpers.ts` has `signIn` and `dismissCoach`; call `dismissCoach` after each
+navigation rather than seeding the flags away — the mark is part of the experience §27.11 measures.
+
+**Wait for the thing itself, not the control that asked for it.** Asserting on a sheet's title after
+pressing its button passes while the request is still in flight; assert on the state that changed
+(the toast, the badge, the closed sheet).
+
 Few, high-value, slow. The PRD §25 acceptance criteria are the shortlist:
 
 - Cash sale of three scanned items completes.

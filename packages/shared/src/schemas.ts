@@ -3,7 +3,7 @@
  * Money and quantity are integers on the wire — a decimal is a 400, never coerced (§15.1).
  */
 import { z } from "zod";
-import { CashReasonCode, PriceBasis, Role, WriteOffReason } from "./enums.ts";
+import { CashReasonCode, ImportKind, PriceBasis, Role, WriteOffReason } from "./enums.ts";
 
 const id = z.string().uuid();
 const int = z.number().int();
@@ -190,6 +190,17 @@ export const ReverseSupplierPaymentBody = z.object({ reason: text(240).min(1), r
 export const WriteOffBody = z.object({ id, productId: id, qty: pos, reasonCode: WriteOffReason, note: text(240).optional() });
 export const AdjustmentBody = z.object({ id, productId: id, qtyDelta: int.refine((v) => v !== 0), note: text(240).optional(), reauthGrant: z.string().min(1), reason: text(240).min(1) });
 export const CostCorrectionBody = z.object({ id, goodsReceiptLineId: id, correctUnitCostMdram: nonNeg, reason: text(240).min(1) });
+
+/** An import is the file itself: the client reads it, the server parses it (§19.1). */
+export const ImportBody = z.object({
+  id,
+  kind: ImportKind,
+  fileName: text(200),
+  content: z.string().min(1).max(4_000_000),
+  /** Validate and report, change nothing — the preview the owner sees before pressing the button (§7.3). */
+  dryRun: z.boolean().optional(),
+});
+export type ImportBody = z.infer<typeof ImportBody>;
 
 export const OpenShiftBody = z.object({ id, openingFloat: nonNeg });
 export const BeginCloseBody = z.object({ unsyncedAtClose: nonNeg.max(100_000) });

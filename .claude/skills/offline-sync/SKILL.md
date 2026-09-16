@@ -128,3 +128,18 @@ Three states, in Armenian, non-technical:
 - [ ] Terminal failures are parked and visible, never dropped
 - [ ] Cached stock/prices labelled as last-known
 - [ ] Offline debt sales capped and flagged
+
+
+---
+
+## Simon additions (phases 4–5)
+
+- **Every outbox item carries `mode`.** A document queued in practice mode is discarded when the
+  person leaves practice — never drained into the real database — and is excluded from the queue
+  depth the heartbeat reports, because a figure that can never reach zero teaches an owner to ignore
+  the alert beside it (§19.4, §19.5).
+- **Leaving or entering practice drops the local caches** (catalogue, customers, basket) and their
+  `since` markers: the two databases answer the same questions differently.
+- **The service worker precaches the shell only** (`vite-plugin-pwa`, `globPatterns` for built
+  assets, `navigateFallbackDenylist` for `/api/`). A worker answering an API call from a cache would
+  be a second, silent source of truth beside IndexedDB and the outbox.

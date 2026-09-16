@@ -51,6 +51,8 @@ export interface OutboxItem {
   id: string;
   kind: OutboxKind;
   body: unknown;
+  /** Which database this document belongs to. A practice document is discarded, never sent (§19.4). */
+  mode?: "LIVE" | "PRACTICE";
   /** Documents this one depends on, which must drain first (§14.4). */
   dependsOn: string[];
   enqueuedAt: string;

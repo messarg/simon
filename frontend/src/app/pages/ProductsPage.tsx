@@ -62,7 +62,7 @@ export function ProductsPage() {
       <div className="mb-3 flex flex-col gap-2 sm:flex-row">
         <div className="flex overflow-x-auto rounded-lg bg-muted p-1">
           {tabs.map(([key, label]) => (
-            <button key={key} onClick={() => setFilter(key)} className={cn("h-10 flex-1 whitespace-nowrap rounded-md px-3 text-sm font-medium", filter === key ? "bg-card shadow-xs" : "text-muted-foreground")}>{label}</button>
+            <button key={key} onClick={() => setFilter(key)} className={cn("h-touch flex-1 whitespace-nowrap rounded-md px-3 text-sm font-medium", filter === key ? "bg-card shadow-xs" : "text-muted-foreground")}>{label}</button>
           ))}
         </div>
         <div className="relative flex-1">

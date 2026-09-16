@@ -27,7 +27,7 @@ if ((await db.user.count()) > 0) {
 const owner = await createOwner(db, { shopName: "Շինանյութ «Արարատ»", ownerName: "Արամ", pin: "1111" });
 await createUser(db, owner.user.id, { name: "Լուսինե", pin: "2222", role: "STOCK" });
 await createUser(db, owner.user.id, { name: "Գոռ", pin: "3333", role: "WORKER" });
-await db.$transaction((tx) => writeSettings(tx, { "tax.regime": "VAT", "tax.priceBasis": "INCLUSIVE", "tax.rateBp": 2000, "shop.address": "Երևան" }, owner.user.id));
+await db.$transaction((tx) => writeSettings(tx, { "tax.regime": "VAT", "tax.priceBasis": "INCLUSIVE", "tax.rateBp": 2000, "shop.address": "Երևան", "setup.step": 5, "setup.completedAt": new Date().toISOString() }, owner.user.id));
 
 // A small hardware-store catalogue: name, price ֏, unit, decimals, stock (display units), cost ֏, barcode, pinned.
 const catalogue: Array<[string, number, string, number, number, number | null, string | null, boolean]> = [

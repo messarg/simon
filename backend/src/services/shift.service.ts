@@ -15,7 +15,7 @@ import { revokeSessionsForShift } from "./auth.service.ts";
 import type { Actor } from "./sale.service.ts";
 import { readSettings } from "./settings.service.ts";
 
-export async function openShift(db: Db, live: Db, actor: Actor & { sessionId: string }, body: { id: string; openingFloat: number }) {
+export async function openShift(db: Db, live: Db, actor: Actor & { sessionId: string }, body: { id: string; openingFloat: number }, opts: { practice?: boolean } = {}) {
   const shift = await db.$transaction(async (tx) => {
     const existing = await tx.shift.findUnique({ where: { id: body.id } });
     if (existing) return existing;
@@ -23,7 +23,9 @@ export async function openShift(db: Db, live: Db, actor: Actor & { sessionId: st
     if (open) throw problem("illegal-transition", { shiftId: open.id, status: open.status });
     return tx.shift.create({ data: { id: body.id, userId: actor.userId, openedAt: clock.iso(), openingFloat: body.openingFloat, status: "OPEN" } });
   });
-  await live.session.update({ where: { id: actor.sessionId }, data: { shiftId: shift.id } });
+  // The session row lives in the real database and a practice shift does not exist there, so the two
+  // are only bound in LIVE. A practice shift is also not a reason to end somebody's real session (§19.4).
+  if (!opts.practice) await live.session.update({ where: { id: actor.sessionId }, data: { shiftId: shift.id } });
   return shift;
 }
 
@@ -100,7 +102,7 @@ export async function cancelClose(db: Db, actor: Actor, shiftId: string) {
   });
 }
 
-export async function closeShift(db: Db, live: Db, actor: Actor, shiftId: string, body: { breakdown: { value: number; count: number }[]; note?: string; unsyncedAtClose: number }) {
+export async function closeShift(db: Db, live: Db, actor: Actor, shiftId: string, body: { breakdown: { value: number; count: number }[]; note?: string; unsyncedAtClose: number }, opts: { practice?: boolean } = {}) {
   const settings = await readSettings(db);
   for (const d of body.breakdown) if (!DENOMINATIONS.includes(d.value)) throw problem("malformed-request", { field: "breakdown.value", value: d.value });
   await db.$transaction(async (tx) => {
@@ -120,8 +122,9 @@ export async function closeShift(db: Db, live: Db, actor: Actor, shiftId: string
       data: { status: "CLOSED", closedAt: clock.iso(), expectedCash: figures.expected, countedCash: counted, countedBreakdown: JSON.stringify(body.breakdown), variance, notes: note, unsyncedAtClose: body.unsyncedAtClose },
     });
   });
-  // Sessions die with their shift (§16.3). Sessions live in the live database.
-  await live.$transaction((tx) => revokeSessionsForShift(tx, shiftId));
+  // Sessions die with their shift (§16.3). Sessions live in the live database — and a practice shift
+  // never owned one, so closing it leaves the person signed in where they actually are.
+  if (!opts.practice) await live.$transaction((tx) => revokeSessionsForShift(tx, shiftId));
   return shiftReport(db, shiftId);
 }
 

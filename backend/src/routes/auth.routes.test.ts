@@ -9,7 +9,7 @@ describe("first-run setup (§7.1 Q1–Q2)", () => {
   it("creates the owner once, returns the recovery code once, then closes", async () => {
     const t = await createTestDb();
     const server = createApp({ live: t.db, practice: async () => t.db }).listen(0);
-    expect((await request(server).get("/api/setup/status")).body).toEqual({ needsOwner: true });
+    expect((await request(server).get("/api/setup/status")).body).toMatchObject({ needsOwner: true, step: 0, completedAt: null, taxRegimeSet: false });
     expect((await request(server).get("/api/auth/users")).body.type).toMatch(/setup-required$/);
     const res = await request(server).post("/api/setup/owner").send({ shopName: "Շինանյութ", ownerName: "Արամ", pin: "4321" });
     expect(res.status).toBe(201);

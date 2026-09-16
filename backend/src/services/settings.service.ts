@@ -37,6 +37,10 @@ export const SETTING_SCHEMAS: { [K in SettingKey]: z.ZodType } = {
   "settings.staleAfterMinutes": int(5, 10_080),
   "device.clockSkewMinutes": int(1, 1_440),
   "ui.textSize": z.enum(["normal", "large", "xlarge"]),
+  "setup.step": int(0, 5),
+  "setup.sellsByMeasure": z.boolean(),
+  "setup.catalogue": z.enum(["", "import", "as-you-sell"]),
+  "setup.completedAt": z.string().max(40),
 };
 
 export async function readSettings(db: Db | Tx): Promise<SettingValues & { updatedAt: string | null }> {

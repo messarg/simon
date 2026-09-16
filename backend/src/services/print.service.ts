@@ -22,6 +22,13 @@ const row = (left: string, right: string) => {
 const rule = "-".repeat(WIDTH);
 const when = (iso: string, tz: string) => new Intl.DateTimeFormat("hy-AM", { timeZone: tz, dateStyle: "short", timeStyle: "short" }).format(new Date(iso));
 
+/** ՓՈՐՁՆԱԿԱՆ on both ends, so a practice receipt cannot be mistaken for a real one (§19.4). */
+function watermark(lines: string[], practice: boolean) {
+  if (!practice) return lines;
+  const banner = R.practice.padStart(Math.floor((WIDTH + R.practice.length) / 2)).padEnd(WIDTH);
+  return [banner, rule, ...lines, rule, banner];
+}
+
 async function send(title: string, lines: string[]) {
   try {
     await printer.get().print(title, lines);
@@ -60,17 +67,17 @@ export async function renderSaleReceipt(db: Db, saleId: string) {
   return lines;
 }
 
-export async function printSaleReceipt(db: Db, saleId: string) {
-  return send(`sale-${saleId}`, await renderSaleReceipt(db, saleId));
+export async function printSaleReceipt(db: Db, saleId: string, opts: { practice?: boolean } = {}) {
+  return send(`sale-${saleId}`, watermark(await renderSaleReceipt(db, saleId), Boolean(opts.practice)));
 }
 
-export async function printReturnReceipt(db: Db, returnId: string) {
+export async function printReturnReceipt(db: Db, returnId: string, opts: { practice?: boolean } = {}) {
   const settings = await readSettings(db);
   const { saleReturn } = await loadSaleReturn(db, returnId);
   const lines = [settings["shop.name"], rule, row(`${R.return}${saleReturn.originalSale?.number ? ` ← ${saleReturn.originalSale.number}` : ""}`, when(saleReturn.createdAt, settings["shop.timezone"])), rule];
   for (const t of saleReturn.tenders) lines.push(row(t.method === "CASH" ? R.cash : t.method === "CARD" ? R.card : R.debt, `-${money(t.amount)}`));
   lines.push(row(R.total, `-${money(saleReturn.total)}`));
-  return send(`return-${returnId}`, lines);
+  return send(`return-${returnId}`, watermark(lines, Boolean(opts.practice)));
 }
 
 export async function printRepaymentReceipt(db: Db, paymentId: string) {
@@ -84,7 +91,7 @@ export async function printRepaymentReceipt(db: Db, paymentId: string) {
   return send(`repayment-${paymentId}`, lines);
 }
 
-export async function printShiftReport(db: Db, shiftId: string) {
+export async function printShiftReport(db: Db, shiftId: string, opts: { practice?: boolean } = {}) {
   const settings = await readSettings(db);
   const r = await shiftReport(db, shiftId);
   const f = r.figures;
@@ -95,5 +102,5 @@ export async function printShiftReport(db: Db, shiftId: string) {
   if (r.counted !== null) lines.push(row(R.counted, money(r.counted)), row(R.variance, money(r.variance ?? 0)));
   for (const l of r.lateArrivals) lines.push(row(`${l.amount >= 0 ? "+" : ""}${money(l.amount)}`, R.lateArrival));
   for (const t of r.transfers) lines.push(row(t.direction === "in" ? R.transferIn : R.transferOut, t.saleId.slice(-6)));
-  return send(`${r.kind}-${shiftId}`, lines);
+  return send(`${r.kind}-${shiftId}`, watermark(lines, Boolean(opts.practice)));
 }

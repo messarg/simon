@@ -1,14 +1,15 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { BrowserRouter, Navigate, Outlet, Route, Routes, useLocation } from "react-router";
 import { Toaster } from "sonner";
 import { AppShell } from "@/components/common/AppShell.tsx";
 import { connection } from "@/lib/connection.ts";
-import { onSessionExpired } from "@/lib/http.ts";
+import { http, onSessionExpired } from "@/lib/http.ts";
 import { sessionStore, useSession } from "@/lib/session-store.ts";
 import { Bootstrap } from "./Bootstrap.tsx";
 import { AttentionPage } from "./pages/AttentionPage.tsx";
 import { HomePage } from "./pages/HomePage.tsx";
+import { ImportPage } from "./pages/ImportPage.tsx";
 import { ReportsPage } from "./pages/ReportsPage.tsx";
 import { DebtsPage } from "./pages/DebtsPage.tsx";
 import { ProductsPage } from "./pages/ProductsPage.tsx";
@@ -35,7 +36,17 @@ function RequireSession() {
   const session = useSession();
   const location = useLocation();
   useClientSettings();
+  // An abandoned wizard resumes where it stopped, once there is an admin to resume it (§7.1, §27.35).
+  const setup = useQuery({
+    queryKey: ["setup", "status"],
+    queryFn: () => http.get<{ needsOwner: boolean; step: number; completedAt: string | null }>("/setup/status"),
+    enabled: session?.user.role === "ADMIN",
+    staleTime: 60_000,
+  });
   if (!session) return <Navigate to="/sign-in" replace state={{ from: location.pathname }} />;
+  if (setup.data && !setup.data.needsOwner && !setup.data.completedAt && setup.data.step >= 2 && location.pathname !== "/setup") {
+    return <Navigate to="/setup" replace />;
+  }
   return (
     <AppShell>
       <Bootstrap />
@@ -75,6 +86,7 @@ export function App() {
               <Route path="/home" element={<HomePage />} />
               <Route path="/reports" element={<ReportsPage />} />
               <Route path="/products" element={<ProductsPage />} />
+              <Route path="/import" element={<ImportPage />} />
               <Route path="/customers" element={<DebtsPage admin />} />
               <Route path="/suppliers" element={<SuppliersPage />} />
               <Route path="/settings" element={<SettingsPage />} />

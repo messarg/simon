@@ -5,6 +5,41 @@ Armenian; this file is English, like the rest of the code.
 
 Everything here is reachable from **Կարգավորումներ** (Settings) unless it says otherwise.
 
+## 0. Installing a shop
+
+Installation and the wizard are one sitting, in that order, with the owner present (§7.1).
+
+1. **Certificate.** `scripts/dev-cert.sh simon.local 192.168.1.50` (the host's LAN address). There is
+   no plain-HTTP deployment: TLS is what makes the phone camera work at all, and a warning every
+   morning teaches people to tap through warnings (§16.6, §18). Install `docker/certs/simon.crt` on
+   every till and phone that will open Simon.
+2. **Start it.** `docker compose up -d --build`. Nginx serves the SPA and proxies `/api` to the API
+   on one origin; the database, backups, the passphrase key file and the logs live in named volumes.
+   Plug the USB drive in and point `SIMON_USB_PATH` at its mount before starting, if the shop has one.
+3. **The wizard.** Open `https://simon.local/` and answer five questions: the shop's name; the owner's
+   own name and PIN, then the staff; whether goods are sold by weight or length; whether the shop
+   keeps a debt book; and whether there is a product list to import. It is skippable and resumable —
+   every answer is saved as it is given, and reopening resumes where it stopped.
+4. **Write down the two secrets.** The wizard shows the recovery code and the backup passphrase once,
+   together, because they are the same instruction: write this on paper and keep it away from this
+   computer. The passphrase can be re-displayed later; **the recovery code cannot**.
+5. **The three settings installation sets** (§7.1): the tax regime, the price basis and the timezone.
+   Settings → Տեղադրում. Until the regime is set a sale is refused rather than priced at a guess, and
+   the wizard's last screen says so.
+6. **Import, if there is a file.** Settings → Ներբեռնում, or the wizard's last button. Products and
+   customers first, then opening stock and opening debts — the last with their **original dates**, so
+   aging is right on day one.
+7. **Install the app on the tills.** Open the address in Chrome on each phone and "Add to home
+   screen": it opens full screen and starts without the network.
+
+## 0.1 Practice mode
+
+Anyone can turn on practice mode from **Ավելին → Փորձնական ռեժիմ**. It behaves exactly as normal and
+writes to a second database that is deleted on the way out; receipts print watermarked ՓՈՐՁՆԱԿԱՆ and
+the drawer never opens. Entry and exit are recorded in the real audit log, so "I was in practice
+mode" is checkable. It is per person and per device — one worker practising does not put the shop
+into practice mode — and it cannot be entered with a basket open.
+
 ## 1. Answer "is it healthy?" in one minute
 
 Open **Կարգավորումներ → Ախտորոշում** and read it down the phone, or press **Պատճենել** and send it.

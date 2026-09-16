@@ -53,6 +53,15 @@ export async function syncCatalogue() {
   return res.products.length;
 }
 
+/** Drops the cache and its sync marker, so the next sync rebuilds it from whichever database is now current (§19.4). */
+export async function clearCatalogue() {
+  const db = await localDb();
+  await db.clear("catalogue");
+  await setMeta("catalogue.since", undefined);
+  await setMeta("catalogue.syncedAt", undefined);
+  bump();
+}
+
 export async function findByBarcode(code: string): Promise<CachedProduct | null> {
   const db = await localDb();
   const local = await db.getFromIndex("catalogue", "byBarcode", code);

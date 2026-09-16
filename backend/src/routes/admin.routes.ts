@@ -6,17 +6,44 @@ import { auth, requireRole } from "../middleware/auth.ts";
 import { problem } from "../lib/problem.ts";
 import { shapeDevice, shapeSession, shapeUser } from "../lib/shape.ts";
 import { clock } from "../lib/time.ts";
+import { enterPractice, exitPractice } from "../services/practice.service.ts";
 import { deactivateDevice, logout, revokeSession, unlockUser } from "../services/auth.service.ts";
 import { clientSettings, readSettings, writeSettings } from "../services/settings.service.ts";
 import { createUser, listUsers, updateUser } from "../services/user.service.ts";
+
+const safeList = (json: string): string[] => {
+  try {
+    const parsed = JSON.parse(json);
+    return Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === "string") : [];
+  } catch {
+    return [];
+  }
+};
 
 export function accountRoutes() {
   const r = Router();
 
   r.get("/auth/me", async (req, res) => {
     const a = auth(req);
-    const device = await a.live.device.findUniqueOrThrow({ where: { id: a.deviceId } });
-    res.json({ user: { id: a.userId, name: a.userName, role: a.role }, session: { id: a.sessionId, mode: a.mode, shiftId: a.shiftId }, device: shapeDevice(device) });
+    const [device, user] = await Promise.all([
+      a.live.device.findUniqueOrThrow({ where: { id: a.deviceId } }),
+      a.live.user.findUniqueOrThrow({ where: { id: a.userId }, select: { coachMarksSeen: true } }),
+    ]);
+    res.json({
+      user: { id: a.userId, name: a.userName, role: a.role, coachMarksSeen: safeList(user.coachMarksSeen) },
+      session: { id: a.sessionId, mode: a.mode, shiftId: a.shiftId }, device: shapeDevice(device),
+    });
+  });
+
+  // First-run coach marks, once per screen per person, never again (§7.5).
+  r.post("/me/coach-marks", async (req, res) => {
+    const a = auth(req);
+    const { screen } = z.object({ screen: z.string().max(40) }).parse(req.body);
+    const user = await a.live.user.findUniqueOrThrow({ where: { id: a.userId }, select: { coachMarksSeen: true } });
+    const seen = new Set(safeList(user.coachMarksSeen));
+    seen.add(screen);
+    await a.live.user.update({ where: { id: a.userId }, data: { coachMarksSeen: JSON.stringify([...seen]) } });
+    res.json({ coachMarksSeen: [...seen] });
   });
 
   r.post("/auth/logout", async (req, res) => {
@@ -26,6 +53,14 @@ export function accountRoutes() {
 
   // Any session: the explicit enforce-or-render shape (§15.4, §16.5).
   r.get("/settings/client", async (req, res) => { res.json(await clientSettings(auth(req).db)); });
+
+  // Practice mode is entered and left per session; the file is the isolation (§7.2, §19.4).
+  r.post("/session/mode", async (req, res) => {
+    const a = auth(req);
+    const { mode } = z.object({ mode: z.enum(["LIVE", "PRACTICE"]) }).parse(req.body);
+    const actor = { userId: a.userId, sessionId: a.sessionId };
+    res.json(mode === "PRACTICE" ? await enterPractice(a.live, actor) : await exitPractice(a.live, actor));
+  });
 
   // Client-reported queue depths, on a one-minute heartbeat (§16.3). Bounded on write (§11).
   r.post("/devices/heartbeat", async (req, res) => {

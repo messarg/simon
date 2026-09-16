@@ -40,6 +40,14 @@ export async function dbFor(mode: Mode): Promise<PrismaClient> {
   return c;
 }
 
+/** Closes one mode's client and forgets it, so the file underneath can be replaced (§19.4). */
+export async function closeClient(mode: Mode) {
+  const client = clients.get(mode);
+  if (!client) return;
+  clients.delete(mode);
+  await client.$disconnect();
+}
+
 export async function closeAll() {
   await Promise.all([...clients.values()].map((c) => c.$disconnect()));
   clients.clear();

@@ -18,15 +18,15 @@ export function PeriodPicker({ today, value, onChange }: { today: string; value:
           key={preset}
           type="button"
           onClick={() => onChange(periodRange(preset, today))}
-          className={cn("h-10 rounded-lg border px-3 text-sm font-medium", active === preset ? "border-primary bg-primary-soft text-accent-foreground" : "border-border bg-card text-muted-foreground")}
+          className={cn("h-touch rounded-lg border px-4 text-sm font-medium", active === preset ? "border-primary bg-primary-soft text-accent-foreground" : "border-border bg-card text-muted-foreground")}
         >
           {t(`reports.periods.${preset}` as StringKey)}
         </button>
       ))}
       <div className="flex items-center gap-1">
-        <Input aria-label={t("reports.from")} type="date" value={value.from} max={value.to} onChange={(e) => e.target.value && onChange({ ...value, from: e.target.value })} className="h-10 w-40 tabular" />
+        <Input aria-label={t("reports.from")} type="date" value={value.from} max={value.to} onChange={(e) => e.target.value && onChange({ ...value, from: e.target.value })} className="h-touch w-40 tabular" />
         <span className="text-muted-foreground">—</span>
-        <Input aria-label={t("reports.to")} type="date" value={value.to} min={value.from} onChange={(e) => e.target.value && onChange({ ...value, to: e.target.value })} className="h-10 w-40 tabular" />
+        <Input aria-label={t("reports.to")} type="date" value={value.to} min={value.from} onChange={(e) => e.target.value && onChange({ ...value, to: e.target.value })} className="h-touch w-40 tabular" />
       </div>
     </div>
   );

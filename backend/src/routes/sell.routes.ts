@@ -90,7 +90,7 @@ export function sellRoutes() {
   });
   r.post("/shifts", async (req, res) => {
     const a = auth(req);
-    const shift = await openShift(a.db, a.live, actor(req), OpenShiftBody.parse(req.body));
+    const shift = await openShift(a.db, a.live, actor(req), OpenShiftBody.parse(req.body), { practice: a.mode === "PRACTICE" });
     res.status(201).json(await shiftReport(a.db, shift.id));
   });
   r.post("/shifts/:id/begin-close", async (req, res) => {
@@ -105,10 +105,10 @@ export function sellRoutes() {
   });
   r.post("/shifts/:id/close", async (req, res) => {
     const a = auth(req);
-    const report = await closeShift(a.db, a.live, actor(req), req.params.id, CloseShiftBody.parse(req.body));
+    const report = await closeShift(a.db, a.live, actor(req), req.params.id, CloseShiftBody.parse(req.body), { practice: a.mode === "PRACTICE" });
     // Printed here, after the close has committed: the session dies with the shift (§16.3), so the
     // till could not ask for the Z-report afterwards. A jam is reported, never a rollback (§18).
-    const printed = await printShiftReport(a.db, req.params.id).then(() => true, () => false);
+    const printed = await printShiftReport(a.db, req.params.id, { practice: a.mode === "PRACTICE" }).then(() => true, () => false);
     // §19.2's daily backup: the shop's day is over and this is the copy the USB drive carries.
     if (config.backup.automatic && a.mode === "LIVE") void takeBackup(a.live, "CLOSE").catch(() => undefined);
     res.json({ ...report, printed });
@@ -146,18 +146,21 @@ export function sellRoutes() {
     const a = auth(req);
     const body = z.object({ saleId: z.string().uuid().optional(), saleReturnId: z.string().uuid().optional(), debtPaymentId: z.string().uuid().optional() })
       .refine((b) => [b.saleId, b.saleReturnId, b.debtPaymentId].filter(Boolean).length === 1).parse(req.body);
-    const out = body.saleId ? await printSaleReceipt(a.db, body.saleId) : body.saleReturnId ? await printReturnReceipt(a.db, body.saleReturnId) : await printRepaymentReceipt(a.db, body.debtPaymentId!);
+    const practice = a.mode === "PRACTICE";
+    const out = body.saleId ? await printSaleReceipt(a.db, body.saleId, { practice })
+      : body.saleReturnId ? await printReturnReceipt(a.db, body.saleReturnId, { practice })
+      : await printRepaymentReceipt(a.db, body.debtPaymentId!);
     res.json({ printed: out.printed });
   });
   r.post("/print/x-report", async (req, res) => {
     const a = auth(req);
     const { shiftId } = z.object({ shiftId: z.string().uuid() }).parse(req.body);
-    res.json({ printed: (await printShiftReport(a.db, shiftId)).printed });
+    res.json({ printed: (await printShiftReport(a.db, shiftId, { practice: a.mode === "PRACTICE" })).printed });
   });
   r.post("/print/z-report", async (req, res) => {
     const a = auth(req);
     const { shiftId } = z.object({ shiftId: z.string().uuid() }).parse(req.body);
-    res.json({ printed: (await printShiftReport(a.db, shiftId)).printed });
+    res.json({ printed: (await printShiftReport(a.db, shiftId, { practice: a.mode === "PRACTICE" })).printed });
   });
   r.post("/cash-drawer/open", async (req, res) => {
     const a = auth(req);
@@ -166,6 +169,8 @@ export function sellRoutes() {
       purpose: z.enum(["document", "float", "close", "no-sale"]).optional(),
       reauthGrant: z.string().nullish(), reason: z.string().max(240).nullish(),
     }).parse(req.body);
+    // Practice never touches the drawer: the money in it is real (§19.4).
+    if (a.mode === "PRACTICE") { res.json({ decision: "practice", opened: false }); return; }
     res.json(await openDrawer(a.db, actor(req), body));
   });
 

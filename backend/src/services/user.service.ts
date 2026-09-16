@@ -21,7 +21,8 @@ export async function createOwner(db: Db, input: { shopName: string; ownerName: 
     const u = await tx.user.create({
       data: { id: uuidv7(), name: input.ownerName.normalize("NFC").trim(), pinHash, recoveryCodeHash, role: "ADMIN", createdAt: clock.iso() },
     });
-    await writeSettings(tx, { "shop.name": input.shopName.normalize("NFC").trim() }, null);
+    // Q1 and Q2 are answered; the wizard resumes at Q3 if this is where it was abandoned (§7.1, §27.35).
+    await writeSettings(tx, { "shop.name": input.shopName.normalize("NFC").trim(), "setup.step": 2 }, null);
     return u;
   });
   return { user: { id: user.id, name: user.name, role: user.role }, recoveryCode };

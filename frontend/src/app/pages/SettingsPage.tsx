@@ -3,8 +3,9 @@
  * installation settings are marked as such. Users, devices and sessions live here too (§16).
  */
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Lock, Plus, Smartphone, UserRound } from "lucide-react";
+import { Lock, Plus, Smartphone, Upload, UserRound } from "lucide-react";
 import { useState, type ReactNode } from "react";
+import { Link } from "react-router";
 import { toast } from "sonner";
 import type { Role } from "@simon/shared";
 import { Button } from "@/components/ui/button.tsx";
@@ -142,6 +143,10 @@ function SettingsForm({ saved, refetch }: { saved: Settings; refetch: () => Prom
           <Label>{t("backup.destination")}</Label>
           <Choice value={s["backup.destination"] as string} options={(["LOCAL", "LOCAL+USB"] as const).map((k) => [k, t(`backup.destinations.${k}` as StringKey)])} onChange={set("backup.destination")} />
         </div>
+      </Section>
+
+      <Section title={t("imports.title")} hint={t("imports.hint")}>
+        <Button asChild variant="soft"><Link to="/import"><Upload />{t("imports.choose")}</Link></Button>
       </Section>
 
       <UsersSection />
