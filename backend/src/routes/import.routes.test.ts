@@ -7,9 +7,11 @@ import { uuidv7 } from "@simon/shared";
 import { createTestApp, type TestApp } from "../test/app.ts";
 import { get, post } from "../test/fixtures.ts";
 
+// A date in shop-local time (TZ is pinned to Asia/Yerevan), as aging counts days (§19.3). In UTC,
+// between midnight and 04:00 in Yerevan, "100 days ago" was one shop day earlier and aged 101.
 const daysAgo = (n: number) => {
   const d = new Date(Date.now() - n * 86_400_000);
-  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 };
 
 const importFile = (t: TestApp, kind: string, content: string, opts: { dryRun?: boolean; id?: string } = {}) =>

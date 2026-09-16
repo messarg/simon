@@ -1,9 +1,13 @@
 /**
  * Sign in: pick your name, type your PIN (§16.2, J1 steps 1–2). A shared till shows every
  * active person as a large tile; the PIN is checked only by the server.
+ *
+ * One centred card at every size — a phone, a tablet on the counter, the Mac app's window — so
+ * the first thing anyone sees sits in the middle of the screen, not hanging from its top edge.
  */
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, KeyRound } from "lucide-react";
+import type { ReactNode } from "react";
 import { useState } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router";
 import { PinPad } from "@/components/shared";
@@ -11,10 +15,35 @@ import { Button } from "@/components/ui/button.tsx";
 import { Input, Label } from "@/components/ui/input.tsx";
 import { Sheet } from "@/components/ui/sheet.tsx";
 import { problemMessage, t } from "@/i18n/t.ts";
+import { cn } from "@/lib/cn.ts";
 import { ApiProblem, http } from "@/lib/http.ts";
 import { sessionStore, useSession, type SessionState } from "@/lib/session-store.ts";
 
 interface SignInUser { id: string; name: string; }
+
+function Avatar({ name, className }: { name: string; className?: string }) {
+  return (
+    <span aria-hidden className={cn("grid shrink-0 place-items-center rounded-full bg-primary-soft font-semibold text-accent-foreground", className)}>
+      {name.slice(0, 1)}
+    </span>
+  );
+}
+
+function Frame({ children }: { children: ReactNode }) {
+  return (
+    <div className="relative isolate flex min-h-dvh items-center justify-center overflow-hidden bg-background px-4 pt-[max(1.5rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+      {/* A soft wash of the brand colour behind the card; decoration only. */}
+      <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[45dvh] bg-gradient-to-b from-primary-soft to-transparent" />
+      <main className="w-full max-w-md">
+        <header className="mb-5 flex items-center justify-center gap-3">
+          <img src="/favicon.svg" alt="" width={44} height={44} className="rounded-xl shadow-md" />
+          <span className="text-2xl font-semibold tracking-tight">{t("app.name")}</span>
+        </header>
+        <section className="rounded-2xl bg-card p-5 shadow-lg ring-1 ring-border sm:p-7">{children}</section>
+      </main>
+    </div>
+  );
+}
 
 export function SignInPage() {
   const session = useSession();
@@ -56,50 +85,70 @@ export function SignInPage() {
   };
 
   return (
-    <div className="flex min-h-dvh flex-col bg-background px-4 py-8 safe-top safe-bottom">
-      <div className="mx-auto flex w-full max-w-md flex-1 flex-col">
-        <div className="mb-8 flex items-center justify-center gap-3">
-          <img src="/favicon.svg" alt="" width={40} height={40} className="rounded-xl" />
-          <span className="text-2xl font-semibold">{t("app.name")}</span>
-        </div>
-
-        {!selected ? (
-          <>
-            <h1 className="mb-5 text-center text-xl font-semibold">{t("signIn.title")}</h1>
-            <div className="grid grid-cols-2 gap-3">
-              {users.data?.items.map((u) => (
+    <Frame>
+      {!selected ? (
+        <>
+          <h1 className="text-center text-xl font-semibold">{t("signIn.title")}</h1>
+          <p className="mt-1 text-center text-sm text-muted-foreground">{t("signIn.pickHint")}</p>
+          {/* Two per row, and an odd one out sits in the middle rather than under the left column. */}
+          <ul className="mt-6 flex flex-wrap justify-center gap-3">
+            {users.isPending && [0, 1].map((i) => (
+              <li key={i} className="h-32 w-[calc(50%-0.375rem)] animate-pulse rounded-xl bg-muted" aria-hidden />
+            ))}
+            {users.data?.items.map((u) => (
+              <li key={u.id} className="w-[calc(50%-0.375rem)]">
                 <button
-                  key={u.id}
                   onClick={() => { setSelected(u); setError(null); }}
-                  className="flex h-28 flex-col items-center justify-center gap-2 rounded-xl border border-border bg-card text-lg font-medium shadow-sm transition-colors active:bg-muted"
+                  className="flex h-32 w-full flex-col items-center justify-center gap-3 rounded-xl border border-border bg-background px-2 text-lg font-medium transition-colors hover:border-primary/40 hover:bg-primary-soft/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:bg-primary-soft"
                 >
-                  <span className="grid size-12 place-items-center rounded-full bg-primary-soft text-xl font-semibold text-accent-foreground">{u.name.slice(0, 1)}</span>
-                  {u.name}
+                  <Avatar name={u.name} className="size-14 text-2xl" />
+                  <span className="max-w-full truncate">{u.name}</span>
                 </button>
-              ))}
+              </li>
+            ))}
+          </ul>
+          {users.isError && !(users.error instanceof ApiProblem && users.error.type === "setup-required") && (
+            <div className="mt-6 text-center">
+              <p className="mb-3 text-muted-foreground">{problemMessage("network")}</p>
+              <Button variant="secondary" onClick={() => users.refetch()}>{t("common.retry")}</Button>
             </div>
-            {users.isError && !(users.error instanceof ApiProblem && users.error.type === "setup-required") && (
-              <div className="mt-6 text-center">
-                <p className="mb-3 text-muted-foreground">{problemMessage("network")}</p>
-                <Button variant="secondary" onClick={() => users.refetch()}>{t("common.retry")}</Button>
-              </div>
-            )}
-          </>
-        ) : (
-          <>
-            <button onClick={() => setSelected(null)} className="mb-4 flex h-touch items-center gap-2 self-start rounded-lg px-2 text-muted-foreground hover:bg-muted">
-              <ArrowLeft className="size-5" aria-hidden /> {t("common.back")}
+          )}
+        </>
+      ) : (
+        <>
+          {/* Who is signing in, and the way back to the list, on one row above the keypad. */}
+          <div className="flex items-center gap-3 border-b border-border pb-4">
+            <Avatar name={selected.name} className="size-12 text-xl" />
+            <div className="min-w-0 flex-1">
+              <h1 className="truncate text-lg font-semibold leading-tight">{selected.name}</h1>
+              <p className="truncate text-sm text-muted-foreground">{t("signIn.enterPin")}</p>
+            </div>
+            {/* Icon only on a phone, where the words would squeeze the name beside it. */}
+            <button
+              onClick={() => setSelected(null)}
+              aria-label={t("signIn.switchUser")}
+              title={t("signIn.switchUser")}
+              className="inline-flex size-11 shrink-0 items-center justify-center gap-1.5 rounded-full text-sm font-medium text-primary hover:bg-primary-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:w-auto sm:px-3"
+            >
+              <ArrowLeft className="size-5 sm:size-4" aria-hidden />
+              <span className="hidden sm:inline">{t("signIn.switchUser")}</span>
             </button>
-            <div className="mb-2 text-center text-2xl font-semibold">{selected.name}</div>
-            <PinPad key={attempt} label={t("signIn.enterPin")} onSubmit={submit} busy={busy} error={error} />
-            <button onClick={() => setRecoverOpen(true)} className="mx-auto mt-5 flex h-touch items-center gap-2 px-3 text-sm text-muted-foreground">
+          </div>
+          <div className="mt-5">
+            <PinPad key={attempt} submitLabel={t("signIn.submit")} onSubmit={submit} busy={busy} error={error} />
+          </div>
+          <div className="mt-2 text-center">
+            <button
+              onClick={() => setRecoverOpen(true)}
+              className="inline-flex h-11 items-center gap-2 rounded-lg px-3 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
+            >
               <KeyRound className="size-4" aria-hidden /> {t("signIn.forgot")}
             </button>
-            <RecoverySheet open={recoverOpen} onOpenChange={setRecoverOpen} user={selected} onRecovered={() => { setError(null); setAttempt((a) => a + 1); }} />
-          </>
-        )}
-      </div>
-    </div>
+          </div>
+          <RecoverySheet open={recoverOpen} onOpenChange={setRecoverOpen} user={selected} onRecovered={() => { setError(null); setAttempt((a) => a + 1); }} />
+        </>
+      )}
+    </Frame>
   );
 }
 

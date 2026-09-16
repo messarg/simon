@@ -14,7 +14,7 @@ export const hy = {
   common: {
     cancel: "Չեղարկել", save: "Պահպանել", close: "Փակել", back: "Հետ", done: "Պատրաստ է", next: "Առաջ",
     undo: "Հետարկել", retry: "Կրկին փորձել", signOut: "Դուրս գալ", loading: "Բեռնվում է…", search: "Փնտրել",
-    edit: "Խմբագրել", add: "Ավելացնել", yes: "Այո", no: "Ոչ", total: "Ընդամենը", clear: "Մաքրել",
+    edit: "Խմբագրել", add: "Ավելացնել", confirm: "Հաստատել", yes: "Այո", no: "Ոչ", total: "Ընդամենը", clear: "Մաքրել",
   },
   status: {
     shiftOpen: "Հերթափոխ բաց", shiftClosed: "Հերթափոխ փակ", online: "Կապը կա",
@@ -24,7 +24,8 @@ export const hy = {
     practice: "Փորձնական ռեժիմ",
   },
   signIn: {
-    title: "Ո՞վ է աշխատում", enterPin: "Մուտքագրե՛ք PIN-ը", forUser: "{name}",
+    title: "Ո՞վ է աշխատում", pickHint: "Ընտրե՛ք ձեր անունը՝ աշխատանքն սկսելու համար", enterPin: "Մուտքագրե՛ք PIN-ը", forUser: "{name}",
+    submit: "Մուտք", switchUser: "Այլ աշխատակից",
     attemptsLeft: { one: "Մնաց {n} փորձ", other: "Մնաց {n} փորձ" },
     locked: "Կողպված է։ Փորձե՛ք {n} րոպեից կամ դիմե՛ք ադմինին։",
     tooMany: "Չափից շատ փորձեր։ Սպասե՛ք {n} վայրկյան։",

@@ -27,7 +27,9 @@ Shared hooks that more than one feature needs (current shift, client settings) l
 
 - `Keypad` — the large numeric keypad (§6.1). Edits a digit string; callers parse with `parseQty`.
   Editing rules are in `lib/keypad.ts`.
-- `PinPad` — dots, keypad, server message. Parent clears it by remounting with a new `key`.
+- `PinPad` — dots, keypad, the server's message in a reserved line (it never pushes the keypad),
+  and a submit button that says what it does (`submitLabel`, «Հաստատել» by default). `label` is
+  optional where the screen already asks for the PIN. Parent clears it by remounting with a new `key`.
 - `QuantitySheet` — quantity on the keypad with a live line total; decimals only where the unit allows.
 - `ReauthSheet` — admin PIN (+ reason) for one action; returns a single-use grant. Sits over the
   basket, never replaces it (§16.3). Blocked offline with a plain message.
