@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import type { Role } from "@simon/shared";
 import { Button } from "@/components/ui/button.tsx";
 import { Input, Label } from "@/components/ui/input.tsx";
+import { ConfirmSheet } from "@/components/shared";
 import { Sheet } from "@/components/ui/sheet.tsx";
 import { BackupSection } from "@/features/control/BackupSection.tsx";
 import { DiagnosticsSection } from "@/features/control/DiagnosticsSection.tsx";
@@ -162,6 +163,7 @@ interface UserRow { id: string; name: string; role: Role; isActive: boolean; loc
 function UsersSection() {
   const users = useQuery({ queryKey: ["users"], queryFn: () => http.get<{ items: UserRow[] }>("/users") });
   const [editing, setEditing] = useState<UserRow | "new" | null>(null);
+  const [deactivating, setDeactivating] = useState<UserRow | null>(null);
   const [now] = useState(() => Date.now());
   const [name, setName] = useState("");
   const [role, setRole] = useState<Role>("WORKER");
@@ -188,12 +190,27 @@ function UsersSection() {
                 <div className="text-sm text-muted-foreground">{t(`settings.roles.${u.role}` as StringKey)}{locked ? ` · ${t("settings.locked")}` : ""}{!u.isActive ? ` · ${t("settings.inactiveUser")}` : ""}</div>
               </button>
               {locked && <Button size="sm" variant="attention" onClick={() => void act(() => http.post("/auth/unlock", { userId: u.id }))}><Lock />{t("settings.unlock")}</Button>}
-              <Button size="sm" variant="ghost" onClick={() => void act(() => http.patch(`/users/${u.id}`, { isActive: !u.isActive }))}>{u.isActive ? t("settings.deactivate") : t("settings.activate")}</Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => (u.isActive ? setDeactivating(u) : void act(() => http.patch(`/users/${u.id}`, { isActive: true })))}
+              >
+                {u.isActive ? t("settings.deactivate") : t("settings.activate")}
+              </Button>
             </li>
           );
         })}
       </ul>
       <Button variant="soft" onClick={() => openEditor("new")}><Plus />{t("settings.addUser")}</Button>
+      {/* Taking someone's access away is not undoable from their side (§27.16). */}
+      <ConfirmSheet
+        open={deactivating !== null}
+        onOpenChange={(o) => { if (!o) setDeactivating(null); }}
+        title={t("settings.deactivateUserTitle", { name: deactivating?.name ?? "" })}
+        description={t("settings.deactivateUserHint")}
+        confirmLabel={t("settings.confirmDeactivate")}
+        onConfirm={() => { const u = deactivating; setDeactivating(null); if (u) void act(() => http.patch(`/users/${u.id}`, { isActive: false })); }}
+      />
       <Sheet open={editing !== null} onOpenChange={(o) => { if (!o) setEditing(null); }} title={editing === "new" ? t("settings.addUser") : (editing?.name ?? "")}>
         <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); void submit(); }}>
           <div><Label>{t("products.name")}</Label><Input value={name} onChange={(e) => setName(e.target.value)} autoFocus /></div>
@@ -212,6 +229,7 @@ interface SessionRow { id: string; userName: string | null; deviceLabel: string 
 function DevicesSection() {
   const devices = useQuery({ queryKey: ["devices"], queryFn: () => http.get<{ items: DeviceRow[] }>("/devices") });
   const sessions = useQuery({ queryKey: ["sessions"], queryFn: () => http.get<{ items: SessionRow[] }>("/sessions") });
+  const [confirming, setConfirming] = useState<{ kind: "device" | "session"; id: string; label: string } | null>(null);
   const act = async (fn: () => Promise<unknown>) => {
     try { await fn(); await Promise.all([devices.refetch(), sessions.refetch()]); } catch (err) { toast.error(problemMessage(err instanceof ApiProblem ? err.type : "network")); }
   };
@@ -225,16 +243,29 @@ function DevicesSection() {
               <div className={cn("font-medium", !d.isActive && "text-muted-foreground line-through")}><span className="tabular mr-2 rounded bg-muted px-1.5 text-sm">{d.prefix}</span>{d.label}</div>
               <div className="text-sm text-muted-foreground">{d.lastSeenAt ? t("settings.lastSeen", { time: dateTime(d.lastSeenAt) }) : ""}{d.outboxDepth ? ` · ${t("settings.pending", { n: d.outboxDepth })}` : ""}</div>
             </div>
-            {d.isActive && <Button size="sm" variant="ghost" onClick={() => void act(() => http.patch(`/devices/${d.id}`, { isActive: false }))}>{t("settings.deactivate")}</Button>}
+            {d.isActive && <Button size="sm" variant="ghost" onClick={() => setConfirming({ kind: "device", id: d.id, label: d.label })}>{t("settings.deactivate")}</Button>}
           </li>
         ))}
       </ul>
+      <ConfirmSheet
+        open={confirming !== null}
+        onOpenChange={(o) => { if (!o) setConfirming(null); }}
+        title={confirming?.kind === "device" ? t("settings.deactivateDeviceTitle") : t("settings.revokeTitle")}
+        description={confirming?.kind === "device" ? t("settings.deactivateDeviceHint") : t("settings.revokeHint")}
+        confirmLabel={confirming?.kind === "device" ? t("settings.confirmDeactivate") : t("settings.confirmRevoke")}
+        onConfirm={() => {
+          const target = confirming;
+          setConfirming(null);
+          if (!target) return;
+          void act(() => (target.kind === "device" ? http.patch(`/devices/${target.id}`, { isActive: false }) : http.post(`/sessions/${target.id}/revoke`)));
+        }}
+      />
       <h3 className="pt-2 font-semibold">{t("settings.sessions")}</h3>
       <ul className="divide-y divide-border">
         {sessions.data?.items.map((s) => (
           <li key={s.id} className="flex items-center gap-3 py-2">
             <div className="min-w-0 flex-1"><div className="font-medium">{s.userName}</div><div className="text-sm text-muted-foreground">{s.devicePrefix} {s.deviceLabel} · {dateTime(s.lastSeenAt)}</div></div>
-            <Button size="sm" variant="ghost" onClick={() => void act(() => http.post(`/sessions/${s.id}/revoke`))}>{t("settings.revoke")}</Button>
+            <Button size="sm" variant="ghost" onClick={() => setConfirming({ kind: "session", id: s.id, label: s.userName ?? "" })}>{t("settings.revoke")}</Button>
           </li>
         ))}
       </ul>

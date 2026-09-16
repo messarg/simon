@@ -14,7 +14,7 @@ import { Input, Label } from "@/components/ui/input.tsx";
 import { Sheet } from "@/components/ui/sheet.tsx";
 import { problemMessage, t, warningMessage } from "@/i18n/t.ts";
 import { cn } from "@/lib/cn.ts";
-import { dateTime, money, moneyPlain, qty as formatQty } from "@/lib/format.ts";
+import { dateTime, money, qty as formatQty } from "@/lib/format.ts";
 import { ApiProblem, http } from "@/lib/http.ts";
 
 interface ReceiptLine { id: string; productId: string; productName: string; stockUom: string; qty: number; uom: string; factorToStockUom: number; invoiceUnitCostMdram: number; landedUnitCostMdram?: number; returnedQty: number }
@@ -79,8 +79,8 @@ export function ReceiptSheet({ receiptId, admin, onOpenChange, onChanged }: { re
                     <div className="min-w-0 flex-1">
                       <div className="truncate font-medium">{l.productName}</div>
                       <div className="tabular text-sm text-muted-foreground">
-                        {formatQty(l.qty, 3)} {l.uom} × {moneyPlain(l.invoiceUnitCostMdram / 1000)} ֏
-                        {admin && l.landedUnitCostMdram !== undefined && l.landedUnitCostMdram !== l.invoiceUnitCostMdram ? ` → ${moneyPlain(l.landedUnitCostMdram / 1000)} ֏` : ""}
+                        {formatQty(l.qty, 3)} {l.uom} × {money(l.invoiceUnitCostMdram / 1000)}
+                        {admin && l.landedUnitCostMdram !== undefined && l.landedUnitCostMdram !== l.invoiceUnitCostMdram ? ` → ${money(l.landedUnitCostMdram / 1000)}` : ""}
                         {l.returnedQty > 0 ? ` · ${t("buy.returnedQty", { qty: formatQty(l.returnedQty, 3) })}` : ""}
                       </div>
                     </div>
@@ -130,7 +130,7 @@ function CorrectCostSheet({ line, onClose, onDone }: { line: ReceiptLine; onClos
     } catch (err) { toast.error(problemMessage(err instanceof ApiProblem ? err.type : "network")); }
   };
   return (
-    <Sheet open onOpenChange={(o) => { if (!o) onClose(); }} title={t("buy.correctCost")} description={`${line.productName} · ${moneyPlain(line.invoiceUnitCostMdram / 1000)} ֏ / ${line.uom}`}>
+    <Sheet open onOpenChange={(o) => { if (!o) onClose(); }} title={t("buy.correctCost")} description={`${line.productName} · ${money(line.invoiceUnitCostMdram / 1000)} / ${line.uom}`}>
       <div className={cn("mb-2 rounded-lg bg-muted px-4 py-2")}><span className="text-sm text-muted-foreground">{t("buy.correctTo", { uom: line.uom })}</span><div className="tabular text-3xl font-semibold">{entry || "0"} ֏</div></div>
       <Label htmlFor="cc-reason">{t("buy.correctReason")}</Label>
       <Input id="cc-reason" value={reason} onChange={(e) => setReason(e.target.value)} className="mb-3" maxLength={200} />

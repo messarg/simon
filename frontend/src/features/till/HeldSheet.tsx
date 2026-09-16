@@ -4,10 +4,11 @@
  * is what moves it to the drawer that completes it.
  */
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { PauseCircle } from "lucide-react";
 import { toast } from "sonner";
 import type { SaleBody } from "@simon/shared";
-import { EmptyState } from "@/components/shared";
+import { ConfirmSheet, EmptyState } from "@/components/shared";
 import { Button } from "@/components/ui/button.tsx";
 import { Sheet } from "@/components/ui/sheet.tsx";
 import { problemMessage, t } from "@/i18n/t.ts";
@@ -38,6 +39,7 @@ async function toBasket(id: string, createdAt: string, lines: HeldSale["lines"],
 }
 
 export function HeldSheet({ open, onOpenChange, shiftId, basketEmpty }: { open: boolean; onOpenChange: (o: boolean) => void; shiftId: string | null; basketEmpty: boolean }) {
+  const [voiding, setVoiding] = useState<HeldSale | null>(null);
   const connection = useConnection();
   const qc = useQueryClient();
   const outboxItems = useOutboxItems();
@@ -102,12 +104,22 @@ export function HeldSheet({ open, onOpenChange, shiftId, basketEmpty }: { open: 
                 <div className="truncate font-medium">{s.lines[0]?.productName}{s.lines.length > 1 ? ` +${s.lines.length - 1}` : ""}</div>
                 <div className="tabular text-sm text-muted-foreground">{time(s.createdAt)} · {s.userName} · {money(s.total)}</div>
               </div>
-              <Button variant="ghost" size="md" onClick={() => void voidServer(s)}>{t("till.voidBasket")}</Button>
+              <Button variant="ghost" size="md" onClick={() => setVoiding(s)}>{t("till.voidBasket")}</Button>
               <Button size="md" disabled={!basketEmpty || !shiftId} onClick={() => void resumeServer(s)}>{t("till.resume")}</Button>
             </li>
           ))}
         </ul>
       )}
+
+      {/* Somebody's parked sale: cancelling it cannot be taken back, so it is asked first (§27.16). */}
+      <ConfirmSheet
+        open={voiding !== null}
+        onOpenChange={(o) => { if (!o) setVoiding(null); }}
+        title={t("till.voidConfirmTitle")}
+        description={t("till.voidConfirmHint")}
+        confirmLabel={t("till.voidConfirm")}
+        onConfirm={() => { const sale = voiding; setVoiding(null); if (sale) void voidServer(sale); }}
+      />
     </Sheet>
   );
 }

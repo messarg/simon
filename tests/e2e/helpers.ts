@@ -4,6 +4,8 @@ import { expect, type Page } from "@playwright/test";
 /** A screen opened for the first time by this person explains itself once; the person taps it away. */
 export async function dismissCoach(page: Page) {
   const gotIt = page.getByRole("button", { name: "Հասկացա" });
+  // It appears once this person's seen-list arrives, which is a round trip after the screen does.
+  await gotIt.waitFor({ state: "visible", timeout: 2_000 }).catch(() => undefined);
   if (await gotIt.isVisible().catch(() => false)) {
     await gotIt.click();
     await expect(gotIt).toBeHidden();

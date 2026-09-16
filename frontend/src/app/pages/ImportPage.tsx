@@ -33,12 +33,6 @@ interface ImportResult {
   duplicateOfBatchId: string | null; rows: ImportRow[];
 }
 
-const TEMPLATES: Record<Kind, string> = {
-  PRODUCTS: "Անուն,Գին,Շտրիխկոդ,Կոդ,Չափ\nՑեմենտ M400,3200,4850001234567,C-400,տուփ\nՄալուխ ՊՎՍ 3x2.5,1200,,MAL-325,մ\n",
-  CUSTOMERS: "Անուն,Հեռախոս,Սահմանաչափ\nԴավիթ Սարգսյան,+374 91 123456,50000\n",
-  OPENING_STOCK: "Անուն,Քանակ,Ինքնարժեք\nՑեմենտ M400,40,2600\n",
-  OPENING_DEBTS: "Անուն,Գումար,Ամսաթիվ\nԴավիթ Սարգսյան,12000,14.03.2026\n",
-};
 
 /** `not-whole:price` → "«գին»՝ պետք է լինի ամբողջ թիվ". */
 function errorMessage(code: string) {
@@ -115,7 +109,7 @@ export function ImportPage() {
 
       <div className="flex flex-wrap gap-2">
         <Button onClick={() => input.current?.click()} disabled={busy}><Upload />{t("imports.choose")}</Button>
-        <Button variant="ghost" onClick={() => downloadText(`${kind.toLowerCase()}-template.csv`, TEMPLATES[kind], "text/csv;charset=utf-8")}><FileDown />{t("imports.template")}</Button>
+        <Button variant="ghost" onClick={() => downloadText(`${kind.toLowerCase()}-template.csv`, t(`imports.templates.${kind}` as StringKey), "text/csv;charset=utf-8")}><FileDown />{t("imports.template")}</Button>
         <input ref={input} type="file" accept=".csv,text/csv,text/plain" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) void choose(f); }} />
       </div>
 

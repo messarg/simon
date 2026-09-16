@@ -21,7 +21,10 @@ interface Diagnostics {
 }
 
 const mb = (bytes: number | null) => (bytes === null ? "—" : `${(bytes / 1_048_576).toFixed(1)} MB`);
-const hours = (seconds: number) => (seconds >= 3600 ? `${Math.floor(seconds / 3600)} ժ ${Math.floor((seconds % 3600) / 60)} ր` : `${Math.floor(seconds / 60)} ր`);
+const hours = (seconds: number) =>
+  seconds >= 3600
+    ? `${Math.floor(seconds / 3600)} ${t("diagnostics.hoursShort")} ${Math.floor((seconds % 3600) / 60)} ${t("diagnostics.minutesShort")}`
+    : `${Math.floor(seconds / 60)} ${t("diagnostics.minutesShort")}`;
 
 function Row({ label, value }: { label: string; value: string }) {
   return (

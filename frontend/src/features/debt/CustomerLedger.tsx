@@ -7,7 +7,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, Ban, Download, HandCoins, Pencil, Undo2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { EmptyState, MoneyText, ReauthSheet } from "@/components/shared";
+import { ConfirmSheet, EmptyState, MoneyText, ReauthSheet } from "@/components/shared";
 import { Button } from "@/components/ui/button.tsx";
 import { Input, Label } from "@/components/ui/input.tsx";
 import { Sheet } from "@/components/ui/sheet.tsx";
@@ -32,6 +32,7 @@ export function CustomerLedger({ customerId, admin, shiftId, onBack }: { custome
   const qc = useQueryClient();
   const [cached, setCached] = useState<CachedCustomer | null>(null);
   const [sheet, setSheet] = useState<null | "repay" | "edit" | "merge" | "erase" | "reverse">(null);
+  const [mergeInto, setMergeInto] = useState<{ id: string; name: string } | null>(null);
   const [reversing, setReversing] = useState<LedgerEntry | null>(null);
   const ledger = useQuery({ queryKey: ["customers", customerId, "ledger"], enabled: connection === "online", queryFn: () => http.get<Ledger>(`/customers/${customerId}/ledger`) });
   useEffect(() => { void getCachedCustomer(customerId).then((c) => setCached(c ?? null)); }, [customerId]);
@@ -135,12 +136,28 @@ export function CustomerLedger({ customerId, admin, shiftId, onBack }: { custome
       {admin && data && (
         <>
           <EditCustomerSheet key={sheet === "edit" ? "edit-open" : "edit-closed"} open={sheet === "edit"} onOpenChange={(o) => setSheet(o ? "edit" : null)} ledger={data} onSaved={refresh} onMerge={() => setSheet("merge")} onErase={() => setSheet("erase")} />
-          <CustomerPickerSheet open={sheet === "merge"} onOpenChange={(o) => setSheet(o ? "merge" : null)} onPick={async (target) => {
-            if (target.id === customer.id) return;
-            if (!window.confirm(`${t("customers.mergeHint")}\n\n${customer.fullName} → ${target.fullName}`)) return;
-            try { await http.post(`/customers/${customer.id}/merge`, { intoId: target.id }); toast.success(t("customers.saved")); await refresh(); onBack?.(); }
-            catch (err) { toast.error(problemMessage(err instanceof ApiProblem ? err.type : "network")); }
-          }} />
+          <CustomerPickerSheet
+            open={sheet === "merge"}
+            onOpenChange={(o) => setSheet(o ? "merge" : null)}
+            onPick={(target) => { if (target.id !== customer.id) setMergeInto({ id: target.id, name: target.fullName ?? "" }); }}
+          />
+          {/* Merging moves one person's whole ledger onto another and cannot be undone (§27.16). */}
+          <ConfirmSheet
+            open={mergeInto !== null}
+            onOpenChange={(o) => { if (!o) setMergeInto(null); }}
+            title={t("customers.mergeConfirmTitle", { from: customer.fullName ?? "", into: mergeInto?.name ?? "" })}
+            description={t("customers.mergeHint")}
+            confirmLabel={t("customers.mergeConfirm")}
+            onConfirm={() => {
+              const target = mergeInto;
+              setMergeInto(null);
+              if (!target) return;
+              void (async () => {
+                try { await http.post(`/customers/${customer.id}/merge`, { intoId: target.id }); toast.success(t("customers.saved")); await refresh(); onBack?.(); }
+                catch (err) { toast.error(problemMessage(err instanceof ApiProblem ? err.type : "network")); }
+              })();
+            }}
+          />
           <Sheet open={sheet === "erase"} onOpenChange={(o) => setSheet(o ? "erase" : null)} title={t("customers.erase")} description={t("customers.eraseHint")}>
             <div className="grid grid-cols-2 gap-2">
               <Button variant="secondary" size="lg" onClick={() => setSheet(null)}>{t("common.cancel")}</Button>
