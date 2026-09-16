@@ -3,6 +3,7 @@
  * (§8.3) — the till keeps selling, and the strip says so.
  */
 import { CloudOff, Wifi } from "lucide-react";
+import { Link } from "react-router";
 import { t } from "@/i18n/t.ts";
 import { cn } from "@/lib/cn.ts";
 import { useConnection } from "@/lib/connection.ts";
@@ -30,7 +31,9 @@ export function StatusStrip({ className }: { className?: string }) {
         {counts.pendingSales > 0 && (
           <span className="ml-auto rounded-full bg-attention-soft px-2 py-0.5 text-xs font-medium text-attention-foreground">{t("status.pending", { n: counts.pendingSales })}</span>
         )}
-        {counts.needsAttention > 0 && <span className="rounded-full bg-destructive-soft px-2 py-0.5 text-xs font-medium text-destructive">! {counts.needsAttention}</span>}
+        {counts.needsAttention > 0 && (
+          <Link to="/attention" aria-label={t("outbox.deviceTitle")} className="rounded-full bg-destructive-soft px-2 py-0.5 text-xs font-medium text-destructive">! {counts.needsAttention}</Link>
+        )}
         <span className={cn("flex items-center gap-1.5 text-muted-foreground", counts.pendingSales === 0 && "ml-auto")} aria-label={offline ? t("status.offline") : t("status.online")}>
           {offline ? <CloudOff className="size-4" aria-hidden /> : <Wifi className="size-4" aria-hidden />}
         </span>

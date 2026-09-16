@@ -16,6 +16,8 @@ export const config = {
   /** Rotating log files (§19.5). Empty disables the file; tests never write one. */
   logDir: process.env.SIMON_LOG_DIR ?? (isTest ? "" : path.join(root, "var/logs")),
   version: process.env.SIMON_VERSION ?? "0.1.0",
+  /** The built SPA, when the API serves it itself — the desktop app, which has no Nginx. */
+  staticDir: process.env.SIMON_STATIC_DIR ?? "",
   /** Argon2id cost. §16.2 asks for ≥ 250 ms on the host; tests lower it. */
   argon2: {
     memoryCost: Number(process.env.SIMON_ARGON2_MEMORY ?? 65_536),

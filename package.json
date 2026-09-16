@@ -1,7 +1,7 @@
 {
   "name": "simon",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Self-hosted trade management for small retail. See docs/prd.md.",
   "type": "module",
   "workspaces": [

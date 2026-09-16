@@ -12,7 +12,7 @@
     "db:new-migration": "prisma migrate dev --create-only && node --experimental-strip-types prisma/strictify.ts $(ls -d prisma/migrations/*/ | tail -1)migration.sql",
     "db:migrate": "prisma migrate deploy",
     "db:seed": "node --experimental-strip-types prisma/seed.ts",
-    "postinstall": "prisma generate",
+    "postinstall": "node scripts/postinstall.mjs",
     "restore": "node --experimental-strip-types scripts/restore.ts"
   },
   "dependencies": {
@@ -21,14 +21,14 @@
     "@simon/shared": "*",
     "argon2": "^0.45.1",
     "express": "^5.2.1",
-    "pino": "^10.3.1",
-    "prisma": "^7.10.0"
+    "pino": "^10.3.1"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^9.6.0",
     "@types/express": "^5.0.6",
     "@types/node": "^24.13.4",
     "@types/supertest": "^7.2.1",
+    "prisma": "^7.10.0",
     "supertest": "^7.2.2"
   }
 }

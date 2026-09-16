@@ -5,7 +5,25 @@ Armenian; this file is English, like the rest of the code.
 
 Everything here is reachable from **Կարգավորումներ** (Settings) unless it says otherwise.
 
-## 0. Installing a shop
+## 0. The Mac app (a single-machine preview)
+
+`scripts/build-macos.sh` writes `release/Simon-<version>-arm64.dmg`. Open it and drag Simon to
+Applications. It carries its own Node runtime, so nothing else needs installing.
+
+- **First launch on another Mac:** the app is signed ad hoc, not notarised, so macOS refuses a
+  double-click. Right-click Simon → **Open** → **Open**, once. (Or
+  `xattr -dr com.apple.quarantine /Applications/Simon.app`.)
+- **Apple-silicon only.** It is built for the architecture of the Mac that built it.
+- **Where the shop lives:** `~/Library/Application Support/Simon` (database, backups, the
+  passphrase key file, printed receipts) and `~/Library/Logs/Simon`. Both are reachable from the
+  Simon menu. Replacing or deleting the app never touches them; deleting that folder starts a new
+  shop.
+- **It is not a shop install.** It listens on `127.0.0.1:47800` only, so phones cannot reach it —
+  §16.6 requires TLS for that, which is what the Docker install in §0.1 provides. The port is
+  fixed on purpose: the till's offline cache and its queue of unsent sales are stored per origin.
+- Receipts print to files (the console printer); set up a real printer with the Docker install.
+
+## 0.1 Installing a shop
 
 Installation and the wizard are one sitting, in that order, with the owner present (§7.1).
 
@@ -32,7 +50,7 @@ Installation and the wizard are one sitting, in that order, with the owner prese
 7. **Install the app on the tills.** Open the address in Chrome on each phone and "Add to home
    screen": it opens full screen and starts without the network.
 
-## 0.1 Practice mode
+## 0.2 Practice mode
 
 Anyone can turn on practice mode from **Ավելին → Փորձնական ռեժիմ**. It behaves exactly as normal and
 writes to a second database that is deleted on the way out; receipts print watermarked ՓՈՐՁՆԱԿԱՆ and

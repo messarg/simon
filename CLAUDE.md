@@ -33,7 +33,7 @@ What exists:
 - Control (Phase 4): `backend/src/services/{report,home,diagnostics,backup,stock-status}.service.ts`, `jobs/product-stats.ts` and `routes/control.routes.ts` — §20.2's thirteen reports behind one `GET /reports/:name` shape, owner home aggregates with every figure drilling to a report or a ledger, velocity and reorder suggestions, the audit trail as a route, `GET /diagnostics`, and encrypted backups (`VACUUM INTO` → AES-256-GCM, GFS rotation, USB copy at close, staged one-click restore, `npm run restore -w backend` for the drill); `frontend/src/features/{reports,control}/` with `app/pages/{HomePage,ReportsPage,AttentionPage}.tsx` — the report catalogue, one table with CSV export, the needs-attention list, and the backup and diagnostics panels in Settings.
 - `tests/e2e/` — Playwright journeys: J1 → J2 → offline sale synced exactly once → J4, and the owner's day-end (passphrase, first backup, the alert clearing).
 - Adopt (Phase 5): `backend/src/services/{import,practice}.service.ts` with `routes/control.routes.ts`'s import endpoints and `POST /session/mode` — CSV import for products, customers, opening stock and opening debts (idempotent on a natural key, per-row errors, never partially applied, original dates preserved), and practice mode as a second database file seeded from the shop and deleted on exit; `frontend/src/app/pages/{SetupPage,ImportPage}.tsx`, `app/practice.ts` and `components/shared/ScreenHelp.tsx` — the five-question wizard (skippable, resumable, ending on the two secrets), the import preview, the practice toggle, and contextual help with one-time coach marks.
-- Packaging: `Dockerfile` (one file, two images — Express and Nginx+SPA), `docker-compose.yml`, `docker/nginx.conf` and `scripts/dev-cert.sh`. TLS is required, not optional (§16.6). The SPA is installable: `vite-plugin-pwa` precaches the shell only — data has its own cache and queue.
+- Packaging: `Dockerfile` (one file, two images — Express and Nginx+SPA), `docker-compose.yml`, `docker/nginx.conf` and `scripts/dev-cert.sh`. And a Mac app: `desktop/macos/main.swift` (a WKWebView window that starts the bundled API on `127.0.0.1:47800`) built by `scripts/build-macos.sh` into `release/` — a single-machine preview, not a shop install, until Tauri arrives in v2. The API serves the SPA itself when `SIMON_STATIC_DIR` is set. TLS is required, not optional (§16.6). The SPA is installable: `vite-plugin-pwa` precaches the shell only — data has its own cache and queue.
 - `docs/runbook.md` (installing a shop, the restore drill, and what each in-app alert means) and `docs/adr/` (the decisions that deviate from a literal reading of the PRD, with the reasoning).
 
 Unbuilt by choice: everything §9 assigns to v2. The Docker images are written but have not been built on this machine (no daemon), and Armenian on a real ESC/POS printer is still unverified.
@@ -86,6 +86,7 @@ npm run db:seed -w backend   # dev database: owner 1111, stock 2222, worker 3333
 npm run restore -w backend -- --from <backup.simonbak>   # restore drill (§27.10); asks for the passphrase
 scripts/dev-cert.sh simon.local 192.168.1.50             # the shop's TLS certificate (§16.6); trust it on every device
 docker compose up -d --build                             # Nginx + Express on one origin; see docs/runbook.md §0
+scripts/build-macos.sh       # release/Simon-<version>-arm64.dmg — the Mac app (needs swiftc)
 npm run test:e2e             # Playwright journeys; starts its own API (:5065) and SPA (:5175) on a throwaway database
 npm run db:new-migration -w backend   # prisma migrate dev --create-only, then strictify the new SQL
 ```
@@ -114,6 +115,7 @@ Frontend `build` is `tsc -b && vite build`, so a build failure there is often a 
 - **Relative imports must carry the `.ts` extension** (`./domain/sale.ts`), because Node resolves the real file.
 - `erasableSyntaxOnly` is on: **no enums, no parameter properties, no namespaces** — only syntax that erases to nothing. Use union types and plain assignment instead.
 - `module`/`moduleResolution` are `nodenext` here, while the frontend and shared use `bundler`. The same import can typecheck in one workspace and fail in the other.
+- **The Prisma CLI is a dev dependency.** The running API needs only `@prisma/client` and the adapter; `backend/scripts/postinstall.mjs` generates the client when the CLI is present and otherwise requires it to have been generated at build time. A production install must be `--omit=dev --omit=optional --omit=peer`, or `@prisma/client`'s optional peer drags the CLI and ~150 MB back in.
 
 ### `@simon/shared` resolves two different ways
 

@@ -39,7 +39,8 @@ export function downloadCsv(name: string, csv: string) {
   document.body.append(a);
   a.click();
   a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 0);
+  // WebKit (the Mac app) fetches the blob after the click returns; revoking at once races it.
+  setTimeout(() => URL.revokeObjectURL(url), 30_000);
 }
 
 export function downloadText(name: string, text: string, type = "text/plain;charset=utf-8") {
@@ -50,5 +51,6 @@ export function downloadText(name: string, text: string, type = "text/plain;char
   document.body.append(a);
   a.click();
   a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 0);
+  // WebKit (the Mac app) fetches the blob after the click returns; revoking at once races it.
+  setTimeout(() => URL.revokeObjectURL(url), 30_000);
 }

@@ -28,6 +28,7 @@ registerClient("LIVE", live);
 const app = createApp({
   live,
   practice: openPractice,
+  staticDir: config.staticDir || undefined,
 });
 
 const server = app.listen(config.port, config.host, () => {

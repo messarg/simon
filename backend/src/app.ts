@@ -2,6 +2,7 @@
  * The Express application, separate from `index.ts` so Supertest drives the real thing.
  * PRD §15. Every route is mounted under /api and every error leaves through one handler.
  */
+import path from "node:path";
 import express from "express";
 import type { Db } from "./lib/db.ts";
 import { logger } from "./lib/logger.ts";
@@ -20,6 +21,11 @@ export interface AppDeps {
   practice: () => Promise<Db>;
   /** Phase routers, mounted behind the session gate. */
   extraRouters?: express.Router[];
+  /**
+   * The built SPA, served from the same origin. On a shop install Nginx does this (§22); the
+   * desktop app has no Nginx, so the API serves it itself.
+   */
+  staticDir?: string;
 }
 
 export function createApp(deps: AppDeps) {
@@ -51,6 +57,25 @@ export function createApp(deps: AppDeps) {
   api.use((_req, _res, next) => next(problem("not-found")));
 
   app.use("/api", api);
+
+  if (deps.staticDir) {
+    const dir = deps.staticDir;
+    // The shell and the service worker must never be served stale, or the app keeps opening
+    // yesterday's version; hashed assets can be cached for good.
+    app.use(express.static(dir, {
+      index: false,
+      setHeaders: (res, file) => {
+        if (/(index\.html|sw\.js|manifest\.webmanifest)$/.test(file)) res.setHeader("Cache-Control", "no-cache");
+        else if (file.includes(`${path.sep}assets${path.sep}`)) res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+      },
+    }));
+    // Every other path is a client-side route.
+    app.get("/{*route}", (_req, res) => {
+      res.setHeader("Cache-Control", "no-cache");
+      res.sendFile(path.join(dir, "index.html"));
+    });
+  }
+
   app.use(errorHandler);
   return app;
 }

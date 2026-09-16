@@ -1,3 +1,4 @@
+/// <reference types="node" />
 /**
  * §27.15 — no screen exposes an internal term from §4.1's right-hand column, and §4.2's rule that
  * every user-facing string lives in this file and nowhere else.
@@ -37,7 +38,7 @@ function walk(node: unknown, trail: string[] = []): Array<[string, string]> {
 }
 
 function sourceFiles(dir: string): string[] {
-  return readdirSync(dir).flatMap((name) => {
+  return readdirSync(dir).flatMap((name: string) => {
     const full = path.join(dir, name);
     if (statSync(full).isDirectory()) return sourceFiles(full);
     return /\.tsx?$/.test(name) && !/\.test\.tsx?$/.test(name) && name !== "hy.ts" ? [full] : [];
