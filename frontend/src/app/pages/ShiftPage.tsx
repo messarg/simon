@@ -92,9 +92,9 @@ export function ShiftPage() {
           <div className="tabular text-4xl font-semibold">{moneyPlain(Number(float || "0"))} ֏</div>
         </div>
         <Keypad value={float} onChange={setFloat} maxLength={8} />
-        <div className="mt-3 grid grid-cols-[auto_1fr] gap-2">
-          <Button variant="secondary" size="xl" onClick={() => http.post("/cash-drawer/open", { purpose: "float" }).catch(() => toast.error(t("payment.drawerFailed")))}>{t("shift.openDrawer")}</Button>
+        <div className="mt-3 grid gap-2">
           <Button size="xl" disabled={busy} onClick={() => void open()}>{t("shift.open")}</Button>
+          <Button variant="secondary" size="lg" onClick={() => http.post("/cash-drawer/open", { purpose: "float" }).catch(() => toast.error(t("payment.drawerFailed")))}>{t("shift.openDrawer")}</Button>
         </div>
       </div>
     );

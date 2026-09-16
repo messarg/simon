@@ -4,7 +4,7 @@
  */
 import { useQuery } from "@tanstack/react-query";
 import { Minus, Plus, Printer, Tags } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router";
 import { toast } from "sonner";
 import { Barcode, EmptyState } from "@/components/shared";
@@ -16,6 +16,30 @@ import { printPage } from "@/lib/print.ts";
 
 interface LabelItem { productId: string; name: string; priceDram: number; unit: string; barcode: string }
 
+/**
+ * The preview is a real A4 sheet, 210 mm wide, so what is on screen is what comes out of the
+ * printer. On a narrow screen it is scaled down to fit rather than left to run off the edge —
+ * scaled for the screen only; printing uses the sheet at its true size.
+ */
+function useFitToWidth() {
+  const box = useRef<HTMLDivElement>(null);
+  const sheet = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(1);
+  useEffect(() => {
+    if (!box.current || !sheet.current) return;
+    const fit = () => {
+      const available = box.current?.clientWidth ?? 0;
+      const natural = sheet.current?.offsetWidth ?? 0;
+      setScale(available && natural ? Math.min(1, available / natural) : 1);
+    };
+    fit();
+    const observer = new ResizeObserver(fit);
+    observer.observe(box.current);
+    return () => observer.disconnect();
+  }, []);
+  return { box, sheet, scale };
+}
+
 export function LabelsPage() {
   const [params] = useSearchParams();
   const ids = (params.get("ids") ?? "").split(",").filter(Boolean);
@@ -25,6 +49,7 @@ export function LabelsPage() {
     enabled: ids.length > 0,
   });
   const [copies, setCopies] = useState<Record<string, number>>({});
+  const { box: previewBox, sheet: previewSheet, scale } = useFitToWidth();
   const count = (id: string) => copies[id] ?? 1;
   const setCount = (id: string, n: number) => setCopies((c) => ({ ...c, [id]: Math.max(0, Math.min(500, n)) }));
 
@@ -45,15 +70,17 @@ export function LabelsPage() {
         <h1 className="text-2xl font-semibold">{t("labels.title")}</h1>
         <ul className="divide-y divide-border rounded-xl bg-card ring-1 ring-border">
           {items.map((l) => (
-            <li key={l.productId} className="flex items-center gap-3 px-4 py-2">
-              <div className="min-w-0 flex-1">
+            <li key={l.productId} className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2">
+              <div className="min-w-40 flex-1">
                 <div className="truncate font-medium">{l.name}</div>
                 <div className="tabular text-sm text-muted-foreground">{l.barcode} · {money(l.priceDram)}</div>
               </div>
-              <span className="text-sm text-muted-foreground">{t("labels.copies")}</span>
-              <Button size="icon" variant="secondary" aria-label="−" onClick={() => setCount(l.productId, count(l.productId) - 1)}><Minus /></Button>
-              <span className="tabular w-8 text-center font-semibold">{count(l.productId)}</span>
-              <Button size="icon" variant="secondary" aria-label="+" onClick={() => setCount(l.productId, count(l.productId) + 1)}><Plus /></Button>
+              <div className="flex items-center gap-2">
+                <span className="hidden text-sm text-muted-foreground sm:inline">{t("labels.copies")}</span>
+                <Button size="icon" variant="secondary" aria-label={`${l.name} −`} onClick={() => setCount(l.productId, count(l.productId) - 1)}><Minus /></Button>
+                <span className="tabular w-8 text-center font-semibold">{count(l.productId)}</span>
+                <Button size="icon" variant="secondary" aria-label={`${l.name} +`} onClick={() => setCount(l.productId, count(l.productId) + 1)}><Plus /></Button>
+              </div>
             </li>
           ))}
         </ul>
@@ -65,8 +92,12 @@ export function LabelsPage() {
       </div>
 
       {/* An A4 sheet of 3 × 8 labels, 70 × 37 mm — the common stock in Yerevan stationery shops. */}
-      <div className="print-area overflow-x-auto">
-        <div className="mx-auto grid w-[210mm] grid-cols-3 gap-0 bg-white text-black shadow-sm print:shadow-none" style={{ gridAutoRows: "37mm" }}>
+      <div ref={previewBox} className="print-area">
+        <div
+          ref={previewSheet}
+          className="grid w-[210mm] origin-top-left grid-cols-3 gap-0 bg-white text-black shadow-sm print:!scale-100 print:shadow-none"
+          style={{ gridAutoRows: "37mm", transform: `scale(${scale})`, marginBottom: `${(scale - 1) * (sheet.length / 3) * 37}mm` }}
+        >
           {sheet.map((l) => (
             <div key={l.key} className="flex flex-col justify-between overflow-hidden border border-dashed border-neutral-300 px-[3mm] py-[2mm] print:border-transparent">
               <div className="line-clamp-2 text-[9pt] font-semibold leading-tight">{l.name}</div>

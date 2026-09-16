@@ -11,7 +11,7 @@ import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 import { uuidv7 } from "@simon/shared";
-import { ReauthSheet } from "@/components/shared";
+import { ReauthSheet, Toggle } from "@/components/shared";
 import { Button } from "@/components/ui/button.tsx";
 import { Input, Label } from "@/components/ui/input.tsx";
 import { Sheet } from "@/components/ui/sheet.tsx";
@@ -37,18 +37,6 @@ const schema = z.object({
 });
 type FormValues = z.infer<typeof schema>;
 
-function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label: string }) {
-  return (
-    <button type="button" role="switch" aria-checked={checked} onClick={() => onChange(!checked)} className="flex h-touch w-full items-center justify-between rounded-lg px-1">
-      <span>{label}</span>
-      <span className={cn("relative h-7 w-12 shrink-0 rounded-full transition-colors", checked ? "bg-primary" : "bg-border")}>
-        <span className={cn("absolute top-0.5 left-0.5 size-6 rounded-full bg-card shadow transition-transform", checked && "translate-x-5")} />
-      </span>
-    </button>
-  );
-}
-
-export { Toggle };
 
 export function ProductEditor({ productId, open, onOpenChange }: { productId: string | null; open: boolean; onOpenChange: (o: boolean) => void }) {
   const qc = useQueryClient();
@@ -150,9 +138,9 @@ export function ProductEditor({ productId, open, onOpenChange }: { productId: st
               <option value="">{t("products.noneCategory")}</option>
               {categories.data?.items.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
-            <div className="mt-1 flex gap-1">
-              <Input value={newCategory} onChange={(e) => setNewCategory(e.target.value)} className="h-10" placeholder="+" />
-              <Button type="button" variant="secondary" size="sm" onClick={() => void addCategory()} aria-label={t("common.add")}><Plus /></Button>
+            <div className="mt-1 flex gap-2">
+              <Input value={newCategory} onChange={(e) => setNewCategory(e.target.value)} placeholder={t("products.newCategory")} />
+              <Button type="button" variant="secondary" disabled={!newCategory.trim()} onClick={() => void addCategory()} aria-label={t("common.add")}><Plus /></Button>
             </div>
           </div>
           <div>
@@ -182,9 +170,9 @@ export function ProductEditor({ productId, open, onOpenChange }: { productId: st
                 ))}
               </ul>
               <div className="flex gap-2">
-                <Input value={newBarcode} onChange={(e) => setNewBarcode(e.target.value.replace(/[^0-9A-Za-z-]/g, ""))} className="tabular" placeholder={t("quickAdd.barcode")} />
-                <Button type="button" variant="secondary" disabled={!newBarcode} onClick={() => void mutate(async () => { const p = await http.post<ApiProduct>(`/products/${d.id}/barcodes`, { barcode: newBarcode }); setNewBarcode(""); return p; })}>{t("products.addBarcode")}</Button>
-                <Button type="button" variant="ghost" onClick={() => void mutate(() => http.post(`/products/${d.id}/barcodes`, {}))} aria-label={t("products.generate")}><Wand2 /></Button>
+                <Input value={newBarcode} onChange={(e) => setNewBarcode(e.target.value.replace(/[^0-9A-Za-z-]/g, ""))} className="tabular min-w-0 flex-1" placeholder={t("quickAdd.barcode")} />
+                <Button type="button" variant="secondary" size="icon" disabled={!newBarcode} onClick={() => void mutate(async () => { const p = await http.post<ApiProduct>(`/products/${d.id}/barcodes`, { barcode: newBarcode }); setNewBarcode(""); return p; })} aria-label={t("products.addBarcode")}><Plus /></Button>
+                <Button type="button" variant="secondary" size="icon" onClick={() => void mutate(() => http.post(`/products/${d.id}/barcodes`, {}))} aria-label={t("products.generate")} title={t("products.generate")}><Wand2 /></Button>
               </div>
             </section>
             <section>
@@ -197,10 +185,10 @@ export function ProductEditor({ productId, open, onOpenChange }: { productId: st
                   </li>
                 ))}
               </ul>
-              <div className="flex gap-2">
-                <Input value={unit.uom} onChange={(e) => setUnit((s) => ({ ...s, uom: e.target.value }))} placeholder={t("products.unitName")} />
-                <Input value={unit.factor} onChange={(e) => setUnit((s) => ({ ...s, factor: e.target.value.replace(/\D/g, "") }))} inputMode="numeric" className="tabular w-24" placeholder={t("products.factor", { uom: d.stockUom })} />
-                <Button type="button" variant="secondary" disabled={!unit.uom || !Number(unit.factor)} onClick={() => void mutate(async () => { const p = await http.post<ApiProduct>(`/products/${d.id}/units`, { uom: unit.uom, factorToStockUom: Number(unit.factor), role: "PURCHASE" }); setUnit({ uom: "", factor: "" }); return p; })}>{t("products.addUnit")}</Button>
+              <div className="grid grid-cols-2 gap-2">
+                <Input value={unit.uom} onChange={(e) => setUnit((s) => ({ ...s, uom: e.target.value }))} placeholder={t("products.unitName")} aria-label={t("products.unitName")} />
+                <Input value={unit.factor} onChange={(e) => setUnit((s) => ({ ...s, factor: e.target.value.replace(/\D/g, "") }))} inputMode="numeric" className="tabular" placeholder={t("products.factor", { uom: d.stockUom })} aria-label={t("products.factor", { uom: d.stockUom })} />
+                <Button type="button" variant="secondary" className="col-span-2" disabled={!unit.uom || !Number(unit.factor)} onClick={() => void mutate(async () => { const p = await http.post<ApiProduct>(`/products/${d.id}/units`, { uom: unit.uom, factorToStockUom: Number(unit.factor), role: "PURCHASE" }); setUnit({ uom: "", factor: "" }); return p; })}><Plus />{t("products.addUnit")}</Button>
               </div>
             </section>
           </>

@@ -74,8 +74,8 @@ export function DiagnosticsSection({ Section }: { Section: (p: { title: string; 
         <Row label={t("diagnostics.labelPrinter")} value={t(`diagnostics.labelPrinters.${d.labelPrinter}` as StringKey)} />
       </dl>
       <div className="flex flex-wrap gap-2">
-        <Button variant="secondary" onClick={() => { void navigator.clipboard?.writeText(asText); toast.success(t("diagnostics.copied")); }}><ClipboardCopy />{t("diagnostics.copy")}</Button>
-        <Button variant="ghost" onClick={() => downloadText(`simon-diagnostics-${d.now.slice(0, 10)}.txt`, asText)}><FileDown />{t("diagnostics.save")}</Button>
+        <Button variant="secondary" className="flex-auto sm:flex-none" onClick={() => { void navigator.clipboard?.writeText(asText); toast.success(t("diagnostics.copied")); }}><ClipboardCopy />{t("diagnostics.copy")}</Button>
+        <Button variant="secondary" className="flex-auto sm:flex-none" onClick={() => downloadText(`simon-diagnostics-${d.now.slice(0, 10)}.txt`, asText)}><FileDown />{t("diagnostics.save")}</Button>
       </div>
     </Section>
   );

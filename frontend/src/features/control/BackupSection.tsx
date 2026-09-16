@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { ReauthSheet } from "@/components/shared";
 import { Button } from "@/components/ui/button.tsx";
 import { Sheet } from "@/components/ui/sheet.tsx";
-import { problemMessage, t } from "@/i18n/t.ts";
+import { problemMessage, t, type StringKey } from "@/i18n/t.ts";
 import { cn } from "@/lib/cn.ts";
 import { dateTime } from "@/lib/format.ts";
 import { ApiProblem, http } from "@/lib/http.ts";
@@ -24,6 +24,11 @@ interface Backups {
   usbPresent: boolean;
 }
 
+// What a failed run's code means to the owner. Anything else is a system message: it is shown in full
+// under diagnostics, for support, and the owner is pointed there instead of being shown English.
+const failureKeys: Record<string, StringKey> = { "passphrase-not-set": "backup.passphraseMissing", "usb-not-present": "backup.usbMissing" };
+const failureText = (error: string | null) => t(failureKeys[error ?? ""] ?? "backup.failedSeeDiagnostics");
+
 const size = (bytes: number) => (bytes >= 1_048_576 ? `${(bytes / 1_048_576).toFixed(1)} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`);
 
 export function BackupSection({ Section }: { Section: (p: { title: string; hint?: string; children: React.ReactNode }) => React.ReactElement }) {
@@ -33,6 +38,11 @@ export function BackupSection({ Section }: { Section: (p: { title: string; hint?
   const [passphrase, setPassphrase] = useState<{ value: string; rotated: boolean } | null>(null);
   const [staged, setStaged] = useState(false);
   const d = backups.data;
+  const latestFailures = (["LOCAL", "USB"] as const)
+    .map((destination) => d?.runs.find((r) => r.destination === destination))
+    .filter((r): r is BackupRun => r?.outcome === "FAILED")
+    // A missing passphrase already has its own notice above; saying it twice is noise.
+    .filter((r) => !(r.error === "passphrase-not-set" && !d?.passphraseSet));
 
   const act = async (fn: () => Promise<unknown>) => {
     setBusy(true);
@@ -85,11 +95,10 @@ export function BackupSection({ Section }: { Section: (p: { title: string; hint?
         </>
       )}
 
-      {d && d.runs.some((r) => r.outcome === "FAILED") && (
-        <p className="text-sm text-attention-foreground">
-          {t("backup.failed")}: {d.runs.find((r) => r.outcome === "FAILED")?.error}
-        </p>
-      )}
+      {/* Only a destination whose latest run failed: a failure a later backup has fixed is history. */}
+      {latestFailures.map((r) => (
+        <p key={r.id} className="text-sm text-attention-foreground">{t("backup.failed")}: {failureText(r.error)}</p>
+      ))}
 
       <ReauthSheet
         open={reauthFor !== null}

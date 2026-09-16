@@ -22,6 +22,9 @@ test("a worker practises a sale and leaves nothing behind", async ({ page }) => 
   for (const digit of "20000") await page.getByRole("button", { name: digit, exact: true }).click();
   await page.getByRole("button", { name: "Բացել հերթափոխ" }).click();
   await expect(page).toHaveURL(/\/sell/);
+  // Scan once the till is on screen: keys typed while it is still mounting reach no listener, which
+  // a slow machine turned into a failure. A real scanner is never that quick after the tap.
+  await expect(page.getByRole("button", { name: /ՎՃԱՐԵԼ/ }).filter({ visible: true })).toBeVisible();
   await page.keyboard.type("4820000000401");
   await page.keyboard.press("Enter");
   await expect(page.getByRole("button", { name: /Պտուտակ 4x40/ }).first()).toBeVisible();
@@ -35,7 +38,8 @@ test("a worker practises a sale and leaves nothing behind", async ({ page }) => 
   await page.getByRole("button", { name: "Վերադառնալ իրականին" }).click();
   await page.getByRole("button", { name: "Վերադառնալ իրականին" }).click();
   await expect(page.getByText("Իրական ռեժիմ")).toBeVisible();
-  await expect(page.getByText("Փորձնական ռեժիմ")).toHaveCount(0);
+  // On screen only: the rail, hidden on a phone, carries the words on its own practice button.
+  await expect(page.getByText("Փորձնական ռեժիմ").filter({ visible: true })).toHaveCount(0);
   await expect(page.getByText("Հերթափոխը բաց չէ")).toBeVisible();
 
   const token = await page.evaluate(() => JSON.parse(sessionStorage.getItem("simon.session") ?? "{}").token as string);

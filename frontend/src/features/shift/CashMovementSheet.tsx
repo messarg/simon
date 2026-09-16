@@ -36,9 +36,9 @@ export function CashMovementSheet({ type, shiftId, onOpenChange }: { type: Movem
         <div className="tabular text-4xl font-semibold">{moneyPlain(amount)} ֏</div>
       </div>
       {type === "PAY_OUT" && (
-        <div className="mb-3 grid grid-cols-3 gap-2">
+        <div className="mb-3 flex flex-wrap gap-2">
           {CODES.map((c) => (
-            <button key={c} onClick={() => setCode(c)} className={cn("h-touch rounded-lg border text-sm font-medium", code === c ? "border-primary bg-primary-soft" : "border-border")}>{t(`shift.reasonCodes.${c}`)}</button>
+            <button key={c} onClick={() => setCode(c)} className={cn("h-touch flex-auto whitespace-nowrap rounded-lg border px-3 text-sm font-medium", code === c ? "border-primary bg-primary-soft" : "border-border")}>{t(`shift.reasonCodes.${c}`)}</button>
           ))}
         </div>
       )}

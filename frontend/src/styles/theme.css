@@ -126,4 +126,6 @@
   .print-area, .print-area * { visibility: visible !important; }
   .print-area { position: absolute; inset: 0 auto auto 0; width: 100%; background: #fff; color: #000; }
   .print-hidden { display: none !important; }
+  /* A sheet scaled down to fit a phone screen prints at its true size. */
+  .print-area > * { transform: none !important; margin-bottom: 0 !important; }
 }

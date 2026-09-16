@@ -37,6 +37,14 @@ export async function listSignInUsers(db: Db) {
   return db.user.findMany({ where: { isActive: 1 }, orderBy: { name: "asc" }, select: { id: true, name: true } });
 }
 
+/**
+ * Who can approve an override (§16.3). The re-auth sheet listed everybody, so a worker was offered
+ * their colleague's name and a PIN that could never work. Names only, as the sign-in list is.
+ */
+export async function listAdmins(db: Db) {
+  return db.user.findMany({ where: { isActive: 1, role: "ADMIN" }, orderBy: { name: "asc" }, select: { id: true, name: true } });
+}
+
 export async function createUser(db: Db, adminId: string, input: { name: string; pin: string; role: Role }) {
   assertPinShape(input.pin);
   const pinHash = await hashSecret(input.pin);

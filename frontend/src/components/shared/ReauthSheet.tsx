@@ -26,7 +26,7 @@ export interface ReauthSheetProps {
 
 export function ReauthSheet({ open, onOpenChange, action, description, requireReason = true, onGranted }: ReauthSheetProps) {
   const connection = useConnection();
-  const users = useQuery({ queryKey: ["auth", "users"], queryFn: () => http.get<{ items: { id: string; name: string }[] }>("/auth/users"), enabled: open && connection === "online" });
+  const users = useQuery({ queryKey: ["auth", "admins"], queryFn: () => http.get<{ items: { id: string; name: string }[] }>("/auth/admins"), enabled: open && connection === "online" });
   const [adminId, setAdminId] = useState<string | null>(null);
   const [reason, setReason] = useState("");
   const [error, setError] = useState<string | null>(null);

@@ -76,7 +76,7 @@ export function AdjustSheet({ product, open, onOpenChange, onDone }: { product: 
             <button key={v} onClick={() => setSign(v)} className={cn("h-touch rounded-lg border font-medium", sign === v ? "border-primary bg-primary-soft" : "border-border")}>{v === 1 ? t("stockOps.add") : t("stockOps.subtract")}</button>
           ))}
         </div>
-        <div className="mb-2 rounded-lg bg-muted px-4 py-2"><span className="text-sm text-muted-foreground">{t("stockOps.qty")}</span><div className="tabular text-3xl font-semibold">{sign < 0 ? "−" : "+"}{entry || "0"} {product.stockUom}</div></div>
+        <div className="mb-2 rounded-lg bg-muted px-4 py-2"><span className="text-sm text-muted-foreground">{t("stockOps.qty")}</span><div className="tabular text-3xl font-semibold">{(qty ?? 0) > 0 ? (sign < 0 ? "−" : "+") : ""}{entry || "0"} {product.stockUom}</div></div>
         <Label htmlFor="adj-note">{t("stockOps.note")}</Label>
         <Input id="adj-note" value={note} onChange={(e) => setNote(e.target.value)} className="mb-3" maxLength={200} />
         <Keypad value={entry} onChange={setEntry} allowDecimal={product.decimalPlaces > 0} maxDecimals={product.decimalPlaces} maxLength={7} />

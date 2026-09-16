@@ -16,17 +16,41 @@ Modern responsive design patterns using Container Queries, fluid typography, and
 - Building design system components for multiple contexts
 - Optimizing for variable container sizes (sidebars, modals, grids)
 
-## Project content-padding pattern (Simon)
+## Project layout pattern (Simon)
 
-This repo's live page padding does **not** come from the `@utility container` rule. That utility *is* defined in `src/styles/theme.css` (responsive `padding-inline` `1rem → 2.5rem → 5rem → 7.5rem`) but is **unused** — grep for a `container` class in `src/` returns zero hits, and `DashboardShell`'s `<main id="main-content">` carries no `container` class. Do not tell contributors to apply `container` to `<main>`; that is not the current pattern.
-
-Instead, content padding lives in `src/components/common/PageContent.tsx`, whose wrapper is:
+There is no page wrapper component. Each page sets its own column in `app/pages/*` or its feature:
 
 ```tsx
-"flex min-h-0 flex-1 flex-col overflow-x-clip px-4 py-5 pb-10 md:px-8 md:py-7 md:pb-12"
+<div className="mx-auto w-full max-w-3xl space-y-4 p-4 md:p-6">
 ```
 
-So responsive horizontal padding is `px-4` → `md:px-8`, vertical `py-5 pb-10` → `md:py-7 md:pb-12`. For narrower form/detail content, add `max-w-4xl` on an inner wrapper. Match this when adding new full-width pages.
+— `max-w-*` sized to the content (`lg` for a keypad screen, `2xl`–`3xl` for forms, `5xl` for
+tables), `p-4` on a phone and `md:p-6` from `md` up. Master–detail screens (stock, debts,
+suppliers, reports) are a fixed-width list column beside a `flex-1` detail pane instead; when
+nothing is selected, the pane shows an `EmptyState`, not a blank area.
+
+The shell (`components/common/AppShell.tsx`) switches layout at **`lg`**, not `md`: below it a
+status strip on top and a tab bar at the bottom (phones *and* tablets); from `lg` a left rail for
+every role. It publishes three CSS variables on its root, measured rather than assumed, because the
+text-size setting and the safe area change them:
+
+| Variable | Is |
+|---|---|
+| `--strip-h` | the status strip's height — use `top-(--strip-h)` for a sticky header inside a page |
+| `--tabbar-h` | the tab bar's height, `0px` from `lg` — use `bottom-(--tabbar-h)` for a bottom bar |
+| `--rail-w` | the rail's width, `0px` below `lg` — use `left-(--rail-w)` for a fixed bar |
+
+Never hard-code `bottom-16`, `md:left-60` or `top-0` for these: a bar placed by breakpoint drifts
+out of step with the shell. A screen's single main action at the bottom goes in
+`<ActionBar width="…">` (`components/shared`), which places itself with these variables, reserves
+its own measured height in the flow, and pads to match `p-4 md:p-6`.
+
+Two padding utilities on one element fight: `safe-bottom` and `pb-5` both set `padding-bottom`, and
+which wins depends on utility order. Combine them in one value instead:
+`pb-[max(1.25rem,env(safe-area-inset-bottom))]`.
+
+Components that appear both full-width and in a narrow side panel (the till's quick tiles) size
+their columns with a container query (`@container` + `@md:grid-cols-3`), not a viewport breakpoint.
 
 ## Core Concepts
 

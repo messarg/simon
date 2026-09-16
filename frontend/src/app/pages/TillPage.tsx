@@ -5,7 +5,7 @@
  * the three ways in, and ՎՃԱՐԵԼ. Wide screen: the basket on the left, tiles and payment on the
  * right. The HID scanner works whatever has focus, except a text field.
  */
-import { Camera, CircleSlash, Clock, Grid3x3, PauseCircle, Percent, ScanLine, Search, Trash2, Undo2 } from "lucide-react";
+import { Camera, CircleSlash, Clock, Grid3x3, PauseCircle, Percent, ScanLine, Search, Trash2, Undo2, type LucideIcon } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router";
 import { toast } from "sonner";
@@ -37,6 +37,21 @@ import { useClientSettings } from "../settings.ts";
 import { useCurrentShift } from "../shift.ts";
 
 const RECEIPT_NUMBER = /^[A-Z0-9]{2}-\d{1,9}$/;
+
+/** One action above the basket: icon over label, equal width, never clipped and never scrolled. */
+function TillAction({ icon: Icon, label, onClick, disabled }: { icon: LucideIcon; label: string; onClick: () => void; disabled?: boolean }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className="flex min-h-touch flex-1 flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-1 text-[0.7rem] font-medium leading-tight text-muted-foreground transition-colors active:bg-muted disabled:opacity-40"
+    >
+      <Icon className="size-5" aria-hidden />
+      <span className="line-clamp-1">{label}</span>
+    </button>
+  );
+}
 
 export function TillPage() {
   const basket = useBasket();
@@ -131,24 +146,28 @@ export function TillPage() {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col md:flex-row">
-      <section className="flex min-h-0 flex-1 flex-col">
-        <div className="flex items-center gap-1 overflow-x-auto border-b border-border bg-card px-2 py-1.5">
-          <Button variant="ghost" size="sm" className="shrink-0" onClick={() => setSheet("held")}><PauseCircle />{t("till.held")}{parkedHere > 0 ? ` · ${parkedHere}` : ""}</Button>
-          <Button variant="ghost" size="sm" className="shrink-0" onClick={() => { setReturnNumber(null); setSheet("returns"); }}><Undo2 />{t("till.returns")}</Button>
-          <Button variant="ghost" size="sm" className="shrink-0" disabled={!hasLines} onClick={() => setSheet("discount")}><Percent />{t("till.discount")}</Button>
-          <span className="flex-1" />
-          {hasLines && <Button variant="ghost" size="sm" className="shrink-0" onClick={() => void hold()} disabled={!shiftOpen}><Clock />{t("till.hold")}</Button>}
-          {hasLines && <Button variant="ghost" size="sm" className="shrink-0" aria-label={t("till.clear")} onClick={() => { const snapshot = basket; basketStore.clear(); toast(t("till.basketCleared"), { duration: 5000, action: { label: t("common.undo"), onClick: () => basketStore.replace(snapshot) } }); }}><Trash2 /></Button>}
+      <section className="flex min-h-0 min-w-0 flex-1 flex-col">
+        <div className="flex items-stretch gap-1 border-b border-border bg-card px-2 py-1.5">
+          <TillAction icon={PauseCircle} label={`${t("till.held")}${parkedHere > 0 ? ` · ${parkedHere}` : ""}`} onClick={() => setSheet("held")} />
+          <TillAction icon={Undo2} label={t("till.returns")} onClick={() => { setReturnNumber(null); setSheet("returns"); }} />
+          <TillAction icon={Percent} label={t("till.discount")} disabled={!hasLines} onClick={() => setSheet("discount")} />
+          <TillAction icon={Clock} label={t("till.hold")} disabled={!hasLines || !shiftOpen} onClick={() => void hold()} />
+          <TillAction
+            icon={Trash2}
+            label={t("till.clear")}
+            disabled={!hasLines}
+            onClick={() => { const snapshot = basket; basketStore.clear(); toast(t("till.basketCleared"), { duration: 5000, action: { label: t("common.undo"), onClick: () => basketStore.replace(snapshot) } }); }}
+          />
         </div>
 
         {!shiftQuery.isLoading && !shiftOpen && (
-          <div className="m-3 flex items-center gap-3 rounded-lg bg-attention-soft p-3 text-attention-foreground">
-            <Clock className="size-6 shrink-0" aria-hidden />
-            <div className="flex-1">
+          <div className="m-3 flex flex-wrap items-center gap-3 rounded-lg bg-attention-soft p-3 text-attention-foreground">
+            <Clock className="size-6 shrink-0 self-start" aria-hidden />
+            <div className="min-w-48 flex-1">
               <div className="font-semibold">{t("till.noShiftTitle")}</div>
               <div className="text-sm">{t("till.noShiftHint")}</div>
             </div>
-            <Button asChild size="md" variant="attention"><Link to="/shift">{t("till.openShift")}</Link></Button>
+            <Button asChild size="md" variant="attention" className="w-full sm:w-auto"><Link to="/shift">{t("till.openShift")}</Link></Button>
           </div>
         )}
         {settings.taxRegime === null && <div className="mx-3 mt-3 rounded-lg bg-attention-soft p-3 text-sm text-attention-foreground">{t("till.taxNotSet")}</div>}
@@ -174,7 +193,7 @@ export function TillPage() {
           )}
         </div>
 
-        <div className="safe-bottom sticky bottom-0 space-y-2 border-t border-border bg-background/95 p-3 backdrop-blur md:hidden">
+        <div className="sticky bottom-(--tabbar-h) z-20 space-y-2 border-t border-border bg-background/95 p-3 backdrop-blur md:hidden">
           {(totals.discountTotal > 0 || totals.roundingAdjustment !== 0) && (
             <div className="tabular flex justify-between px-1 text-sm text-muted-foreground">
               {totals.discountTotal > 0 && <span>{t("till.discount")} −{totals.discountTotal}</span>}
@@ -186,7 +205,7 @@ export function TillPage() {
         </div>
       </section>
 
-      <aside className="hidden w-[400px] shrink-0 flex-col border-l border-border bg-muted/40 md:flex lg:w-[440px]">
+      <aside className="hidden w-[20rem] shrink-0 flex-col border-l border-border bg-muted/40 md:flex lg:w-[24rem] xl:w-[27rem]">
         <div className="border-b border-border p-3">
           <div className="relative">
             <Search className="pointer-events-none absolute left-3 top-1/2 size-5 -translate-y-1/2 text-muted-foreground" aria-hidden />

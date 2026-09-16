@@ -11,7 +11,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
 import { toast } from "sonner";
 import { uuidv7 } from "@simon/shared";
-import { ConfirmSheet, EmptyState, MoneyText, QuantitySheet } from "@/components/shared";
+import { ActionBar, ConfirmSheet, EmptyState, MoneyText, QuantitySheet } from "@/components/shared";
 import { Button } from "@/components/ui/button.tsx";
 import { Input } from "@/components/ui/input.tsx";
 import { problemMessage, t, type StringKey } from "@/i18n/t.ts";
@@ -148,7 +148,7 @@ function CountView({ st, onChange }: { st: Stocktake; onChange: () => void }) {
     .sort((a, b) => a.productName.localeCompare(b.productName));
 
   return (
-    <div className="mx-auto w-full max-w-2xl space-y-3 p-4 pb-28 md:p-6">
+    <div className="mx-auto w-full max-w-2xl space-y-3 p-4 md:p-6">
       <div className="flex items-baseline gap-3">
         <h1 className="flex-1 text-2xl font-semibold">{t("stocktake.title")}</h1>
         <span className="tabular text-muted-foreground">{t("stocktake.progress", { counted: st.progress.counted, total: st.progress.total })}</span>
@@ -193,11 +193,9 @@ function CountView({ st, onChange }: { st: Stocktake; onChange: () => void }) {
         ))}
       </ul>
 
-      <div className="safe-bottom fixed inset-x-0 bottom-16 z-20 border-t border-border bg-card/95 p-3 backdrop-blur md:bottom-0 md:left-60">
-        <div className="mx-auto max-w-2xl">
-          <Button size="lg" className="w-full" disabled={st.progress.counted === 0} onClick={() => setFinishing(true)}><ClipboardCheck />{t("stocktake.finish")}</Button>
-        </div>
-      </div>
+      <ActionBar width="2xl">
+        <Button size="lg" className="w-full" disabled={st.progress.counted === 0} onClick={() => setFinishing(true)}><ClipboardCheck />{t("stocktake.finish")}</Button>
+      </ActionBar>
 
       {counting && (
         <QuantitySheet

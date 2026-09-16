@@ -155,9 +155,9 @@ function DraftEditor({ order, onBack, onSaved }: { order: Order | null; onBack: 
         <MoneyText amount={total} className="text-2xl font-bold" />
       </div>
       {missing.length > 0 && <p className="text-sm text-attention-foreground">{t("orders.missing", { items: missing.join(", ") })}</p>}
-      <div className="flex flex-wrap gap-2">
+      <div className="grid gap-2 sm:grid-cols-[auto_1fr]">
         <Button size="lg" variant="secondary" disabled={!ready || busy} onClick={() => void save(false)}>{t("orders.save")}</Button>
-        <Button size="lg" className="flex-1" disabled={!ready || busy} onClick={() => setSending(true)}><Send />{t("orders.send")}</Button>
+        <Button size="lg" disabled={!ready || busy} onClick={() => setSending(true)}><Send />{t("orders.send")}</Button>
       </div>
 
       <SupplierPickerSheet open={picking} onOpenChange={setPicking} onPick={(s) => { setSupplier({ id: s.id, name: s.name }); setPicking(false); }} />
@@ -176,13 +176,16 @@ function SentOrder({ order: o, onBack, onChanged }: { order: Order; onBack: () =
   };
   return (
     <div className="mx-auto w-full max-w-3xl space-y-4 p-4">
-      <div className="print-hidden flex flex-wrap items-center gap-2">
-        <button onClick={onBack} className="h-touch text-muted-foreground md:hidden">← {t("common.back")}</button>
-        <span className={cn("rounded-full px-3 py-1 text-sm font-medium", statusTone(o.status))}>{t(`orders.statuses.${o.status}` as StringKey)}</span>
-        <span className="flex-1" />
-        <Button variant="secondary" onClick={printPage}><Printer />{t("orders.print")}</Button>
-        <Button asChild variant="ghost"><Link to={`/labels?ids=${o.lines.map((l) => l.productId).join(",")}`}><Tags />{t("labels.title")}</Link></Button>
-        {o.status === "OPEN" && <Button variant="ghost" onClick={() => setCancelling(true)}><X />{t("orders.cancel")}</Button>}
+      <div className="print-hidden space-y-3">
+        <div className="flex items-center gap-3">
+          <button onClick={onBack} className="h-touch text-muted-foreground md:hidden">← {t("common.back")}</button>
+          <span className={cn("rounded-full px-3 py-1 text-sm font-medium", statusTone(o.status))}>{t(`orders.statuses.${o.status}` as StringKey)}</span>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="secondary" onClick={printPage}><Printer />{t("orders.print")}</Button>
+          <Button asChild variant="secondary"><Link to={`/labels?ids=${o.lines.map((l) => l.productId).join(",")}`}><Tags />{t("labels.title")}</Link></Button>
+          {o.status === "OPEN" && <Button variant="ghost" onClick={() => setCancelling(true)}><X />{t("orders.cancel")}</Button>}
+        </div>
       </div>
 
       {/* The document the supplier gets: no status, no buttons. */}

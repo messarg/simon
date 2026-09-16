@@ -48,7 +48,7 @@ export function ScreenHelp() {
         type="button"
         onClick={() => setAsked(true)}
         aria-label={t("help.open")}
-        className="grid size-8 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-muted"
+        className="-me-1 grid size-11 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-muted"
       >
         <HelpCircle className="size-5" aria-hidden />
       </button>

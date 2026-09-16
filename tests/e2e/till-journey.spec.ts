@@ -23,6 +23,8 @@ test("a worker opens a shift, sells, keeps selling offline, syncs exactly once a
   await tapKeys(page, "20000");
   await page.getByRole("button", { name: "Բացել հերթափոխ" }).click();
   await expect(page).toHaveURL(/\/sell/);
+  // Scan once the till is on screen: keys typed while it is still mounting reach no listener.
+  await expect(page.getByRole("button", { name: /ՎՃԱՐԵԼ/ }).filter({ visible: true })).toBeVisible();
 
   // J2 — scan twice (one line, incremented), then pay with the exact-cash shortcut.
   await scan(page, "4820000000401");

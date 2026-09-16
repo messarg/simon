@@ -99,19 +99,21 @@ export function PaymentSheet({ open, onOpenChange, total, onComplete, renderDebt
             <div className="space-y-3">
               <div className="rounded-xl border-2 border-primary/30 bg-primary-soft p-3">
                 <div className="mb-2 flex items-center gap-2 font-semibold text-accent-foreground"><Banknote className="size-5" aria-hidden />{t("payment.cash")}</div>
+                {/* An odd count gives «exact» — the commonest tap — the whole first row, so no button is left alone. */}
                 <div className="grid grid-cols-2 gap-2">
                   {options.map((v, i) => (
-                    <Button key={v} size="xl" disabled={busy} onClick={() => finish([{ method: "CASH", amount: total, tenderedAmount: v }])} className="tabular">
+                    <Button key={v} size="xl" disabled={busy} onClick={() => finish([{ method: "CASH", amount: total, tenderedAmount: v }])} className={cn("tabular", i === 0 && options.length % 2 === 1 && "col-span-2")}>
                       {i === 0 ? t("payment.exact") : moneyPlain(v)}
                     </Button>
                   ))}
                 </div>
                 <Button variant="ghost" className="mt-2 w-full" onClick={() => setMode("cash")}>{t("payment.other")}</Button>
               </div>
-              <div className={cn("grid gap-3", renderDebt ? "grid-cols-3" : "grid-cols-2")}>
-                <Button variant="secondary" size="xl" disabled={busy} onClick={() => finish([{ method: "CARD", amount: total }])}><CreditCard />{t("payment.card")}</Button>
-                {renderDebt && <Button variant="secondary" size="xl" onClick={() => setMode("debt")}><BookUser />{t("payment.debt")}</Button>}
-                <Button variant="secondary" size="xl" onClick={() => setMode("split")}><Split />{t("payment.split")}</Button>
+              {/* Icon over label: three tenders side by side must fit the narrowest phone unclipped. */}
+              <div className={cn("grid gap-2", renderDebt ? "grid-cols-3" : "grid-cols-2")}>
+                <Button variant="secondary" size="xl" className="flex-col gap-1 px-1 text-sm" disabled={busy} onClick={() => finish([{ method: "CARD", amount: total }])}><CreditCard />{t("payment.card")}</Button>
+                {renderDebt && <Button variant="secondary" size="xl" className="flex-col gap-1 px-1 text-sm" onClick={() => setMode("debt")}><BookUser />{t("payment.debt")}</Button>}
+                <Button variant="secondary" size="xl" className="flex-col gap-1 px-1 text-sm" onClick={() => setMode("split")}><Split />{t("payment.split")}</Button>
               </div>
             </div>
           )}

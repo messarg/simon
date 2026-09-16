@@ -76,6 +76,13 @@ describe("PIN login — §27.39", () => {
     await t2.close();
   });
 
+  it("offers only admins as approvers, while the PIN pad still lists everybody", async () => {
+    const admins = (await request(t.server).get("/api/auth/admins")).body.items as Array<{ name: string }>;
+    expect(admins.map((a) => a.name)).toEqual(["Արամ"]);
+    const all = (await request(t.server).get("/api/auth/users")).body.items as Array<{ name: string }>;
+    expect(all.map((a) => a.name).sort()).toEqual(["Արամ", "Գոռ", "Լուսինե"]);
+  });
+
   it("rate limits ten attempts a minute per device with 429", async () => {
     const statuses: number[] = [];
     for (let i = 0; i < 11; i++) statuses.push((await request(t.server).post("/api/auth/login").send({ userId: "nobody", pin: "1234", deviceId: "rate-device" })).status);

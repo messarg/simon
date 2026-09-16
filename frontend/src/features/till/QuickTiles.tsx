@@ -11,14 +11,18 @@ export function QuickTiles({ onPick, className, limit = 12 }: { onPick: (p: Cach
   const [tiles, setTiles] = useState<CachedProduct[]>([]);
   useEffect(() => { void quickTiles(limit).then(setTiles); }, [version, limit]);
   if (!tiles.length) return <p className={cn("px-2 py-4 text-center text-sm text-muted-foreground", className)}>{t("till.tilesEmpty")}</p>;
+  // Columns follow the space the tiles are given, not the screen: the same tiles sit full-width on a
+  // phone and in the till's side panel on a wide screen, where three columns would cut every name.
   return (
-    <div className={cn("grid grid-cols-2 gap-2 sm:grid-cols-3", className)}>
-      {tiles.map((p) => (
-        <button key={p.id} onClick={() => onPick(p)} className="flex min-h-20 flex-col justify-between rounded-lg border border-border bg-card p-3 text-left shadow-xs transition-colors active:bg-muted">
-          <span className="line-clamp-2 text-[0.95rem] font-medium leading-snug">{p.name}</span>
-          <span className="tabular mt-1 text-sm text-muted-foreground">{moneyPlain(p.sellPriceMdram / 1000)} ֏ / {p.stockUom}</span>
-        </button>
-      ))}
+    <div className="@container">
+      <div className={cn("grid grid-cols-2 gap-2 @md:grid-cols-3", className)}>
+        {tiles.map((p) => (
+          <button key={p.id} onClick={() => onPick(p)} className="flex min-h-20 flex-col justify-between rounded-lg border border-border bg-card p-3 text-left shadow-xs transition-colors active:bg-muted">
+            <span className="line-clamp-2 text-[0.95rem] font-medium leading-snug">{p.name}</span>
+            <span className="tabular mt-1 text-sm text-muted-foreground">{moneyPlain(p.sellPriceMdram / 1000)} ֏ / {p.stockUom}</span>
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

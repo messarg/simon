@@ -8,7 +8,7 @@ import { DeviceRateLimiter } from "../domain/pin-policy.ts";
 import { login, recover, reauth } from "../services/auth.service.ts";
 import { createInstallPassphrase } from "../services/backup.service.ts";
 import { readSettings } from "../services/settings.service.ts";
-import { createOwner, listSignInUsers, needsSetup } from "../services/user.service.ts";
+import { createOwner, listAdmins, listSignInUsers, needsSetup } from "../services/user.service.ts";
 
 const pin = z.string().regex(/^\d{4,8}$/);
 
@@ -42,6 +42,11 @@ export function systemRoutes(live: Db) {
   r.get("/auth/users", async (_req, res) => {
     if (await needsSetup(live)) throw problem("setup-required");
     res.json({ items: await listSignInUsers(live) });
+  });
+
+  // The admins an override can be approved by (§16.3): the same names, filtered by who may say yes.
+  r.get("/auth/admins", async (_req, res) => {
+    res.json({ items: await listAdmins(live) });
   });
 
   r.post("/auth/login", async (req, res) => {

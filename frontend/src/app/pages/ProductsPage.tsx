@@ -67,18 +67,26 @@ export function ProductsPage() {
 
   return (
     <div className="mx-auto w-full max-w-5xl p-4 md:p-6">
-      <div className="mb-4 flex flex-wrap items-center gap-3">
-        <h1 className="text-2xl font-semibold">{t("nav.products")}</h1>
-        <span className="flex-1" />
-        {filter === "low-stock" && (list.data?.items.length ?? 0) > 0 && (
-          <Button variant="soft" onClick={() => void orderLow()}><ClipboardList />{t("orders.order")}</Button>
-        )}
-        <Button onClick={() => setEditing({ id: null })}><Plus />{t("products.add")}</Button>
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+        <h1 className="text-2xl font-semibold sm:flex-1">{t("nav.products")}</h1>
+        <div className="flex gap-2">
+          {filter === "low-stock" && (list.data?.items.length ?? 0) > 0 && (
+            <Button variant="soft" className="flex-1 sm:flex-none" onClick={() => void orderLow()}><ClipboardList />{t("orders.order")}</Button>
+          )}
+          <Button className="flex-1 sm:flex-none" onClick={() => setEditing({ id: null })}><Plus />{t("products.add")}</Button>
+        </div>
       </div>
       <div className="mb-3 flex flex-col gap-2 sm:flex-row">
-        <div className="flex overflow-x-auto rounded-lg bg-muted p-1">
+        {/* Wraps rather than scrolls: a filter half off the edge reads as a rendering fault. */}
+        <div className="flex flex-wrap gap-1 rounded-lg bg-muted p-1">
           {tabs.map(([key, label]) => (
-            <button key={key} onClick={() => setFilter(key)} className={cn("h-touch flex-1 whitespace-nowrap rounded-md px-3 text-sm font-medium", filter === key ? "bg-card shadow-xs" : "text-muted-foreground")}>{label}</button>
+            <button
+              key={key}
+              onClick={() => setFilter(key)}
+              className={cn("h-touch flex-auto whitespace-nowrap rounded-md px-3 text-sm font-medium", filter === key ? "bg-card shadow-xs" : "text-muted-foreground")}
+            >
+              {label}
+            </button>
           ))}
         </div>
         <div className="relative flex-1">

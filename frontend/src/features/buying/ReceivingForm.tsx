@@ -11,7 +11,7 @@ import { Link } from "react-router";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { apportionByValue, lineTotal, parseQty, roundHalfUp, uuidv7 } from "@simon/shared";
-import { EmptyState, Keypad, MoneyText } from "@/components/shared";
+import { ActionBar, EmptyState, Keypad, MoneyText } from "@/components/shared";
 import { Button } from "@/components/ui/button.tsx";
 import { Input, Label } from "@/components/ui/input.tsx";
 import { Sheet } from "@/components/ui/sheet.tsx";
@@ -149,7 +149,7 @@ export function ReceivingForm() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-3xl space-y-4 p-4 pb-32">
+    <div className="mx-auto w-full max-w-3xl space-y-4 p-4 md:p-6">
       <h1 className="text-2xl font-semibold">{t("buy.receiveTitle")}</h1>
       <div className="grid gap-3 sm:grid-cols-2">
         <div>
@@ -203,9 +203,9 @@ export function ReceivingForm() {
             })}
           </ul>
         )}
-        <div className="grid grid-cols-2 gap-2 border-t border-border p-3">
+        <div className="grid gap-2 border-t border-border p-3 sm:grid-cols-2">
           <Button variant="soft" size="lg" onClick={() => setSheet("search")}><Search />{t("buy.addItem")}</Button>
-          <Button variant="ghost" size="lg" onClick={() => setCreating({})}><PackagePlus />{t("buy.newProduct")}</Button>
+          <Button variant="secondary" size="lg" onClick={() => setCreating({})}><PackagePlus />{t("buy.newProduct")}</Button>
         </div>
       </div>
 
@@ -221,12 +221,10 @@ export function ReceivingForm() {
         </div>
       </div>
 
-      <div className="safe-bottom fixed inset-x-0 bottom-16 z-20 border-t border-border bg-background/95 p-3 backdrop-blur md:bottom-0 md:left-60">
-        <div className="mx-auto max-w-3xl">
-          {!complete && <p className="mb-2 text-center text-sm text-muted-foreground" role="status">{t("buy.missing", { items: missing.join(", ") })}</p>}
-          <Button size="xl" className="w-full" disabled={!complete || busy} onClick={() => void submit()}>{t("buy.submit")} · {money(invoiceTotal)}</Button>
-        </div>
-      </div>
+      <ActionBar>
+        {!complete && <p className="mb-2 text-center text-sm text-muted-foreground" role="status">{t("buy.missing", { items: missing.join(", ") })}</p>}
+        <Button size="xl" className="w-full" disabled={!complete || busy} onClick={() => void submit()}>{t("buy.submit")} · {money(invoiceTotal)}</Button>
+      </ActionBar>
 
       <SupplierPickerSheet open={sheet === "supplier"} onOpenChange={(o) => setSheet(o ? "supplier" : null)} onPick={(s) => { setSupplier(s); setPo(null); }} />
       <Sheet open={sheet === "search"} onOpenChange={(o) => { setSheet(o ? "search" : null); if (!o) setQuery(""); }} title={t("buy.addItem")}>
@@ -259,13 +257,13 @@ function LineSheet({ line, onChange, onRemove, onClose }: { line: Line; onChange
         ))}
       </div>
       <div className="mb-3 grid grid-cols-2 gap-2">
-        <button onClick={() => setField("qty")} className={cn("rounded-lg border p-3 text-left", field === "qty" ? "border-primary ring-2 ring-primary/30" : "border-border")}>
-          <div className="text-sm text-muted-foreground">{t("buy.qty")}, {line.uom}</div>
+        <button onClick={() => setField("qty")} className={cn("flex min-h-24 flex-col justify-between gap-1 rounded-lg border p-3 text-left", field === "qty" ? "border-primary ring-2 ring-primary/30" : "border-border")}>
+          <div className="text-sm leading-snug text-muted-foreground">{t("buy.qty")}, {line.uom}</div>
           <div className="tabular text-2xl font-semibold">{line.qtyText || "0"}</div>
           {line.factor > 1 && q > 0 && <div className="tabular text-xs text-muted-foreground">{t("buy.becomes", { qty: formatQty(q * line.factor, line.info.decimalPlaces), uom: line.info.stockUom })}</div>}
         </button>
-        <button onClick={() => setField("cost")} className={cn("rounded-lg border p-3 text-left", field === "cost" ? "border-primary ring-2 ring-primary/30" : "border-border")}>
-          <div className="text-sm text-muted-foreground">{t("buy.unitCost", { uom: line.uom })}</div>
+        <button onClick={() => setField("cost")} className={cn("flex min-h-24 flex-col justify-between gap-1 rounded-lg border p-3 text-left", field === "cost" ? "border-primary ring-2 ring-primary/30" : "border-border")}>
+          <div className="text-sm leading-snug text-muted-foreground">{t("buy.unitCost", { uom: line.uom })}</div>
           <div className="tabular text-2xl font-semibold">{line.costText || "0"} ֏</div>
         </button>
       </div>

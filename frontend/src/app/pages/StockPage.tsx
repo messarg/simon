@@ -73,7 +73,7 @@ export function StockPage() {
             <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("stock.searchPlaceholder")} className="pl-10" />
           </div>
         </div>
-        <ul className="min-h-0 flex-1 divide-y divide-border overflow-y-auto">
+        <ul className="min-h-0 divide-y divide-border overflow-y-auto">
           {results.map((p) => (
             <li key={p.id}>
               <button onClick={() => setSelected(p)} className={cn("flex min-h-touch-lg w-full items-center gap-3 px-4 py-2 text-left active:bg-muted", selected?.id === p.id && "bg-primary-soft")}>
@@ -83,8 +83,10 @@ export function StockPage() {
             </li>
           ))}
         </ul>
-        {!query && <EmptyState icon={PackageSearch} title={t("stock.emptyTitle")} hint={t("stock.emptyHint")} />}
+        {!query && <EmptyState icon={PackageSearch} title={t("stock.emptyTitle")} hint={t("stock.emptyHint")} className="md:hidden" />}
       </section>
+
+      {!selected && <EmptyState icon={PackageSearch} title={t("stock.emptyTitle")} hint={t("stock.emptyHint")} className="hidden flex-1 md:flex" />}
 
       {selected && (
         <section className="min-h-0 flex-1 overflow-y-auto p-4">
@@ -106,8 +108,8 @@ export function StockPage() {
           </div>
           {canStock && (
             <div className="mt-4 grid grid-cols-2 gap-2">
-              <Button variant="secondary" size="lg" disabled={connection === "offline"} onClick={() => setOp("writeOff")}><PackageMinus />{t("stockOps.writeOff")}</Button>
-              <Button variant="secondary" size="lg" disabled={connection === "offline"} onClick={() => setOp("adjust")}><Scale />{t("stockOps.adjust")}</Button>
+              <Button variant="secondary" size="lg" className="h-touch-xl flex-col gap-1 px-2 text-base" disabled={connection === "offline"} onClick={() => setOp("writeOff")}><PackageMinus />{t("stockOps.writeOff")}</Button>
+              <Button variant="secondary" size="lg" className="h-touch-xl flex-col gap-1 px-2 text-base" disabled={connection === "offline"} onClick={() => setOp("adjust")}><Scale />{t("stockOps.adjust")}</Button>
               <Button asChild variant="ghost" size="lg" className="col-span-2"><Link to={`/labels?ids=${selected.id}`}><Tags />{t("labels.forProduct")}</Link></Button>
             </div>
           )}

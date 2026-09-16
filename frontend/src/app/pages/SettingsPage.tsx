@@ -10,11 +10,10 @@ import { toast } from "sonner";
 import type { Role } from "@simon/shared";
 import { Button } from "@/components/ui/button.tsx";
 import { Input, Label } from "@/components/ui/input.tsx";
-import { ConfirmSheet } from "@/components/shared";
+import { ConfirmSheet, Toggle } from "@/components/shared";
 import { Sheet } from "@/components/ui/sheet.tsx";
 import { BackupSection } from "@/features/control/BackupSection.tsx";
 import { DiagnosticsSection } from "@/features/control/DiagnosticsSection.tsx";
-import { Toggle } from "@/features/products/ProductEditor.tsx";
 import { problemMessage, t, type StringKey } from "@/i18n/t.ts";
 import { cn } from "@/lib/cn.ts";
 import { dateTime } from "@/lib/format.ts";
@@ -27,8 +26,8 @@ function Section({ title, hint, children, onSave, dirty }: { title: string; hint
   return (
     <section className="rounded-xl bg-card p-4 ring-1 ring-border md:p-5">
       <div className="mb-3 flex items-start gap-3">
-        <div className="flex-1"><h2 className="text-lg font-semibold">{title}</h2>{hint && <p className="text-sm text-muted-foreground">{hint}</p>}</div>
-        {onSave && <Button size="sm" disabled={!dirty} onClick={onSave}>{t("common.save")}</Button>}
+        <div className="min-w-0 flex-1"><h2 className="text-lg font-semibold">{title}</h2>{hint && <p className="text-sm text-muted-foreground">{hint}</p>}</div>
+        {onSave && <Button size="sm" className="shrink-0" disabled={!dirty} onClick={onSave}>{t("common.save")}</Button>}
       </div>
       <div className="space-y-3">{children}</div>
     </section>
@@ -45,10 +44,10 @@ function Choice<T extends string | number>({ value, options, onChange }: { value
   );
 }
 
-function NumberField({ label, value, onChange, scale = 1 }: { label: string; value: number; onChange: (v: number) => void; scale?: number }) {
+function NumberField({ label, value, onChange, scale = 1 }: { label?: string; value: number; onChange: (v: number) => void; scale?: number }) {
   return (
     <div>
-      <Label>{label}</Label>
+      {label && <Label>{label}</Label>}
       <Input inputMode="decimal" className="tabular max-w-48" value={String(value / scale)} onChange={(e) => { const n = Number(e.target.value.replace(",", ".")); if (Number.isFinite(n)) onChange(Math.round(n * scale)); }} />
     </div>
   );
@@ -138,7 +137,7 @@ function SettingsForm({ saved, refetch }: { saved: Settings; refetch: () => Prom
         <div>
           <Label>{t("settings.safetyDays")}</Label>
           <p className="mb-2 text-sm text-muted-foreground">{t("settings.safetyDaysHint")}</p>
-          <NumberField label="" value={s["reorder.safetyDays"] as number} onChange={set("reorder.safetyDays")} />
+          <NumberField value={s["reorder.safetyDays"] as number} onChange={set("reorder.safetyDays")} />
         </div>
         <div>
           <Label>{t("backup.destination")}</Label>
