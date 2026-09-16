@@ -153,6 +153,8 @@ export const GoodsReceiptBody = z.object({
   supplierInvoiceNo: text(60),
   /** When the goods arrived, if not now — a paper invoice entered the next morning (§11 `receivedAt`). */
   receivedAt: iso.optional(),
+  /** The order this delivery answers, when there was one (§13.2). Most deliveries arrive unordered. */
+  poId: id.nullish(),
   landedCostTotal: nonNeg,
   lines: z.array(z.object({
     id,
@@ -201,6 +203,37 @@ export const ImportBody = z.object({
   dryRun: z.boolean().optional(),
 });
 export type ImportBody = z.infer<typeof ImportBody>;
+
+/** A counting session (§6.8): the whole shop, or one category at a time. */
+export const StartStocktakeBody = z.object({ id, categoryId: id.nullish(), note: text(240).optional() });
+export type StartStocktakeBody = z.infer<typeof StartStocktakeBody>;
+
+/** A count for one product. `add` is for counting by scanning, one item at a time. */
+export const StocktakeCountBody = z.object({ countedQty: nonNeg, mode: z.enum(["set", "add"]).default("set") });
+export type StocktakeCountBody = z.infer<typeof StocktakeCountBody>;
+
+/** A purchase order as drafted (§11, §13.3). Quantities and costs are per unit ordered, like an invoice. */
+export const PurchaseOrderBody = z.object({
+  id,
+  supplierId: id,
+  expectedAt: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullish(),
+  note: text(500).optional(),
+  lines: z.array(z.object({
+    id,
+    productId: id,
+    uom: text(16).min(1),
+    factorToStockUom: pos,
+    qty: pos,
+    unitCostMdram: nonNeg,
+  })).min(1).max(500),
+});
+export type PurchaseOrderBody = z.infer<typeof PurchaseOrderBody>;
+
+/** Shelf labels (§18): which products, how many of each. */
+export const LabelPrintBody = z.object({
+  items: z.array(z.object({ productId: id, copies: int.min(1).max(500) })).min(1).max(500),
+});
+export type LabelPrintBody = z.infer<typeof LabelPrintBody>;
 
 export const OpenShiftBody = z.object({ id, openingFloat: nonNeg });
 export const BeginCloseBody = z.object({ unsyncedAtClose: nonNeg.max(100_000) });

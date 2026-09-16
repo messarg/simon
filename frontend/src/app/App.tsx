@@ -10,6 +10,8 @@ import { Bootstrap } from "./Bootstrap.tsx";
 import { AttentionPage } from "./pages/AttentionPage.tsx";
 import { HomePage } from "./pages/HomePage.tsx";
 import { ImportPage } from "./pages/ImportPage.tsx";
+import { LabelsPage } from "./pages/LabelsPage.tsx";
+import { StocktakePage } from "./pages/StocktakePage.tsx";
 import { ReportsPage } from "./pages/ReportsPage.tsx";
 import { DebtsPage } from "./pages/DebtsPage.tsx";
 import { ProductsPage } from "./pages/ProductsPage.tsx";
@@ -55,6 +57,13 @@ function RequireSession() {
   );
 }
 
+/** STOCK and the owner: counting, labels (§16.4). */
+function RequireStock() {
+  const session = useSession();
+  if (session?.user.role === "WORKER") return <Navigate to="/stock" replace />;
+  return <Outlet />;
+}
+
 function RequireAdmin() {
   const session = useSession();
   if (session?.user.role !== "ADMIN") return <Navigate to="/sell" replace />;
@@ -80,6 +89,10 @@ export function App() {
             <Route path="/debts" element={<DebtsPage />} />
             <Route path="/stock" element={<StockPage />} />
             <Route path="/stock/receive" element={<ReceivingPage />} />
+            <Route element={<RequireStock />}>
+              <Route path="/stock/count" element={<StocktakePage />} />
+              <Route path="/labels" element={<LabelsPage />} />
+            </Route>
             <Route path="/shift" element={<ShiftPage />} />
             <Route path="/attention" element={<AttentionPage />} />
             <Route element={<RequireAdmin />}>

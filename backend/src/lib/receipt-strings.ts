@@ -4,6 +4,7 @@
  */
 export const receiptHy = {
   practice: "ՓՈՐՁՆԱԿԱՆ",
+  fiscal: "ՀԴՄ կտրոն",
   sale: "Վաճառք", return: "Վերադարձ", subtotal: "Ենթագումար", discount: "Զեղչ", tax: "ԱԱՀ", taxIncluded: "այդ թվում ԱԱՀ",
   rounding: "Կլորացում", total: "ԸՆԴԱՄԵՆԸ", cash: "Կանխիկ", card: "Քարտ", debt: "Պարտք", tendered: "Ստացված", change: "Մանր",
   cashier: "Գանձապահ", xReport: "X-հաշվետվություն", zReport: "Z-հաշվետվություն", openingFloat: "Սկզբնական գումար",

@@ -5,7 +5,9 @@
  * spread across lines by value and each line shows where its cost landed. A cost far from last time
  * is questioned before it commits. Needs the server; STOCK never sees the resulting average.
  */
-import { CheckCircle2, PackagePlus, Search, Trash2, Truck } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { CheckCircle2, ClipboardList, PackagePlus, Search, Tags, Trash2, Truck } from "lucide-react";
+import { Link } from "react-router";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { apportionByValue, lineTotal, parseQty, roundHalfUp, uuidv7 } from "@simon/shared";
@@ -23,6 +25,7 @@ import { ApiProblem, http } from "@/lib/http.ts";
 import type { CachedProduct } from "@/lib/local-db.ts";
 import { useScanner } from "@/lib/scanner.ts";
 import { NewProductSheet } from "./NewProductSheet.tsx";
+import type { Order, OrderRow } from "./orders.ts";
 import { SupplierPickerSheet, type SupplierRef } from "./SupplierPickerSheet.tsx";
 
 interface ReceivingInfo { productId: string; name: string; stockUom: string; decimalPlaces: number; units: { uom: string; factorToStockUom: number; role: string }[]; lastInvoiceCostPerStockUnitMdram: number | null }
@@ -51,7 +54,31 @@ export function ReceivingForm() {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<CachedProduct[]>([]);
   const [busy, setBusy] = useState(false);
-  const [done, setDone] = useState<{ number: string; warnings: string[] } | null>(null);
+  const [done, setDone] = useState<{ number: string; warnings: string[]; productIds: string[] } | null>(null);
+  // The order this delivery answers, if any (§13.2). Most deliveries have none.
+  const [po, setPo] = useState<{ id: string; number: string } | null>(null);
+  const orders = useQuery({
+    queryKey: ["purchase-orders", "receivable", supplier?.id],
+    enabled: Boolean(supplier) && connection === "online",
+    queryFn: () => http.get<{ items: OrderRow[] }>("/purchase-orders", { query: { supplierId: supplier!.id, status: "OPEN,PARTIAL" } }),
+  });
+
+  /** Fills the lines with what the order still expects; the invoice cost is still typed off the paper. */
+  const fromOrder = async (row: OrderRow) => {
+    try {
+      const order = await http.get<Order>(`/purchase-orders/${row.id}`);
+      const next: Line[] = [];
+      for (const l of order.lines) {
+        const remaining = l.qtyOrdered - l.qtyReceived;
+        if (remaining <= 0) continue;
+        const info = await http.get<ReceivingInfo>(`/products/${l.productId}/receiving`, { timeoutMs: 5000 });
+        const inUnit = remaining / l.factorToStockUom / 1000;
+        next.push({ id: uuidv7(), info, uom: l.uom, factor: l.factorToStockUom, qtyText: String(Number.isInteger(inUnit) ? inUnit : Number(inUnit.toFixed(3))), costText: "", varianceConfirmed: false });
+      }
+      setLines(next);
+      setPo({ id: order.id, number: order.number });
+    } catch (err) { toast.error(problemMessage(err instanceof ApiProblem ? err.type : "network")); }
+  };
 
   useEffect(() => { const id = setTimeout(() => void searchCatalogue(query).then(setResults), 60); return () => clearTimeout(id); }, [query]);
 
@@ -95,11 +122,11 @@ export function ReceivingForm() {
     setBusy(true);
     try {
       const res = await http.post<{ number: string; warnings: { type: string }[] }>("/goods-receipts", {
-        id: uuidv7(), supplierId: supplier.id, supplierInvoiceNo: invoiceNo.trim(), landedCostTotal: freightTotal,
+        id: uuidv7(), supplierId: supplier.id, supplierInvoiceNo: invoiceNo.trim(), landedCostTotal: freightTotal, poId: po?.id ?? null,
         lines: lines.map((l) => ({ id: l.id, productId: l.info.productId, uom: l.uom, factorToStockUom: l.factor, qty: lineQty(l), invoiceUnitCostMdram: lineCost(l) })),
       }, { timeoutMs: 15_000 });
       void syncCatalogue().catch(() => {});
-      setDone({ number: res.number, warnings: res.warnings.map((w) => w.type) });
+      setDone({ number: res.number, warnings: res.warnings.map((w) => w.type), productIds: [...new Set(lines.map((l) => l.info.productId))] });
     } catch (err) {
       toast.error(problemMessage(err instanceof ApiProblem ? err.type : "network"));
     } finally {
@@ -115,7 +142,8 @@ export function ReceivingForm() {
         <CheckCircle2 className="mx-auto mb-3 size-16 text-success" aria-hidden />
         <h1 className="text-2xl font-semibold">{t("buy.done", { number: done.number })}</h1>
         {done.warnings.map((w) => <p key={w} className="mt-3 rounded-lg bg-attention-soft p-3 text-attention-foreground">{warningMessage(w)} — {t("buy.flagged")}</p>)}
-        <Button size="xl" className="mt-6 w-full" onClick={() => { setDone(null); setLines([]); setInvoiceNo(""); setFreight(""); setSupplier(null); }}>{t("buy.another")}</Button>
+        <Button asChild size="lg" variant="soft" className="mt-6 w-full"><Link to={`/labels?ids=${done.productIds.join(",")}`}><Tags />{t("labels.forReceipt")}</Link></Button>
+        <Button size="xl" className="mt-3 w-full" onClick={() => { setDone(null); setLines([]); setInvoiceNo(""); setFreight(""); setSupplier(null); setPo(null); }}>{t("buy.another")}</Button>
       </div>
     );
   }
@@ -133,6 +161,20 @@ export function ReceivingForm() {
           <Input id="inv-no" value={invoiceNo} onChange={(e) => setInvoiceNo(e.target.value)} className="h-touch-lg tabular" maxLength={60} />
         </div>
       </div>
+
+      {supplier && (orders.data?.items.length ?? 0) > 0 && (
+        <div className="space-y-2 rounded-xl bg-card p-3 ring-1 ring-border">
+          <p className="text-sm text-muted-foreground">{t("orders.fromOrderHint")}</p>
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" variant={po ? "ghost" : "soft"} onClick={() => setPo(null)}>{t("orders.noOrder")}</Button>
+            {orders.data!.items.map((o) => (
+              <Button key={o.id} size="sm" variant={po?.id === o.id ? "soft" : "secondary"} onClick={() => void fromOrder(o)}>
+                <ClipboardList />{o.number}
+              </Button>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="rounded-xl bg-card ring-1 ring-border">
         {lines.length === 0 ? (
@@ -186,7 +228,7 @@ export function ReceivingForm() {
         </div>
       </div>
 
-      <SupplierPickerSheet open={sheet === "supplier"} onOpenChange={(o) => setSheet(o ? "supplier" : null)} onPick={setSupplier} />
+      <SupplierPickerSheet open={sheet === "supplier"} onOpenChange={(o) => setSheet(o ? "supplier" : null)} onPick={(s) => { setSupplier(s); setPo(null); }} />
       <Sheet open={sheet === "search"} onOpenChange={(o) => { setSheet(o ? "search" : null); if (!o) setQuery(""); }} title={t("buy.addItem")}>
         <Input autoFocus value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("till.searchPlaceholder")} className="mb-2" />
         <ul className="max-h-[50dvh] divide-y divide-border overflow-y-auto">

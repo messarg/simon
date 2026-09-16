@@ -14,6 +14,7 @@ import { runProductStats } from "./jobs/product-stats.ts";
 import { runStockDriftCheck } from "./jobs/stock-drift.ts";
 import { applyPendingRestore, backupTick } from "./services/backup.service.ts";
 import { openPractice } from "./services/practice.service.ts";
+import { fiscalSince, retryPendingFiscal } from "./services/fiscal.service.ts";
 import { checkpoint } from "./lib/wal.ts";
 
 // A restore staged by the owner is swapped in here, before anything opens the database (§19.2).
@@ -52,6 +53,11 @@ runProductStats(live).catch((err) => logger.error({ err }, "product stats failed
 const backupTimer = config.backup.automatic
   ? setInterval(() => { backupTick(live).catch((err) => logger.error({ err }, "backup failed")); }, 5 * 60_000)
   : null;
+// Fiscal receipts start from the first start with a device, never retroactively (§17), and a
+// receipt a device failed to issue is retried rather than forgotten.
+await fiscalSince(live);
+const fiscalTimer = setInterval(() => { retryPendingFiscal(live).catch((err) => logger.error({ err }, "fiscal retry failed")); }, 60_000);
+
 const walTimer = setInterval(() => { checkpoint(live).catch((err) => logger.error({ err }, "checkpoint failed")); }, 5 * 60_000);
 
 async function shutdown(signal: string) {
@@ -59,6 +65,7 @@ async function shutdown(signal: string) {
   clearInterval(driftTimer);
   clearInterval(statsTimer);
   clearInterval(walTimer);
+  clearInterval(fiscalTimer);
   if (backupTimer) clearInterval(backupTimer);
   server.close();
   await closeAll();

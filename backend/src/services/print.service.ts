@@ -64,6 +64,7 @@ export async function renderSaleReceipt(db: Db, saleId: string) {
       lines.push(row(`  ${R.change}`, money(p.changeGiven)));
     }
   }
+  if (sale.fiscalReceiptId) lines.push(rule, row(R.fiscal, sale.fiscalReceiptId));
   return lines;
 }
 

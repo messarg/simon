@@ -16,6 +16,7 @@ import type { Actor } from "./sale.service.ts";
 import { readSettings } from "./settings.service.ts";
 import { postMovement } from "./stock-ledger.service.ts";
 import { applyStandingCredits } from "./supplier.service.ts";
+import { receiveAgainstOrder } from "./purchase-order.service.ts";
 
 /** Last invoice cost for a product per stock unit — the figure the variance check compares against. STOCK may see it: it is an invoice cost (§16.5). */
 export async function lastInvoiceCostPerStockUnit(db: Db, productId: string) {
@@ -44,7 +45,7 @@ export async function receiveGoods(db: Db, actor: Actor, body: GoodsReceiptBody)
     const count = await tx.goodsReceipt.count();
     const number = `R-${String(count + 1).padStart(6, "0")}`;
     const total = values.reduce((a, v) => a + v, 0);
-    await tx.goodsReceipt.create({ data: { id: body.id, number, supplierId: supplier.id, poId: null, receivedAt, userId: actor.userId, supplierInvoiceNo: body.supplierInvoiceNo.normalize("NFC"), landedCostTotal: body.landedCostTotal, total } });
+    await tx.goodsReceipt.create({ data: { id: body.id, number, supplierId: supplier.id, poId: body.poId ?? null, receivedAt, userId: actor.userId, supplierInvoiceNo: body.supplierInvoiceNo.normalize("NFC"), landedCostTotal: body.landedCostTotal, total } });
 
     for (const [i, l] of body.lines.entries()) {
       // The line's share of the delivery charge per unit received, rounded once where it is stored (§10.1).
@@ -64,6 +65,10 @@ export async function receiveGoods(db: Db, actor: Actor, body: GoodsReceiptBody)
         productId: l.productId, type: "PURCHASE_RECEIPT", qtyDelta: l.qty * l.factorToStockUom,
         unitCostMdram: roundHalfUp(landedUnitCostMdram, l.factorToStockUom), source: { type: "GoodsReceipt", id: body.id }, userId: actor.userId,
       });
+    }
+    // The delivery answers an order: fill its lines and let its status follow (§13.2).
+    if (body.poId) {
+      await receiveAgainstOrder(tx, body.poId, supplier.id, body.lines.map((l) => ({ productId: l.productId, qty: l.qty * l.factorToStockUom })));
     }
     await applyStandingCredits(tx, supplier.id, actor.userId);
     await writeAudit(tx, { userId: actor.userId, action: "goodsReceipt.create", entityType: "GoodsReceipt", entityId: body.id, after: { number, supplierId: supplier.id, total } });

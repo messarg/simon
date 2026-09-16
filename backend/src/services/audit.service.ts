@@ -16,6 +16,8 @@ export const AUDITED_ACTIONS = [
   "customer.update", "customer.merge", "customer.erase", "debt.payment",
   "supplier.update", "supplier.payment", "supplier.paymentReversal", "stock.writeOff", "cost.correction", "goodsReceipt.create", "purchaseReturn.create",
   "backup.passphraseReveal", "backup.passphraseRotate", "backup.restore", "import.run",
+  "stocktake.start", "stocktake.review", "stocktake.abandon", "stocktake.approve",
+  "purchaseOrder.create", "purchaseOrder.update", "purchaseOrder.open", "purchaseOrder.cancel",
 ] as const;
 export type AuditAction = (typeof AUDITED_ACTIONS)[number];
 

@@ -176,3 +176,19 @@ sale → lines → payments → stock movements → debt charge → audit log.
   created; nothing is edited. `applyStandingCredits` runs after every receipt.
 - **Customer debt stays a projection** (`debt.service.ts`): an overpayment's excess is the payment's
   unallocated remainder, not a separate ADJUSTMENT row.
+
+
+---
+
+## Simon additions (Phase 6)
+
+- **A stocktake compares each line with the ledger at the moment it was counted**, not with the
+  snapshot alone: expected = snapshot + movements with `snapshotSeq < seq ≤ countedSeq`, stocktake
+  postings excluded (`domain/stocktake.ts`, ADR 0006). Counting happens while the shop trades; a sale
+  between snapshot and count is not shrinkage.
+- Approval is the only stocktake transition that posts movements — one `STOCKTAKE` per differing
+  line at the average at approval, which never moves the average (§10.4). Uncounted lines are not
+  adjusted. Approval resolves the product's open `INSUFFICIENT_STOCK` flags.
+- **Purchase-order status is derived, never set**: `PARTIAL`/`RECEIVED` come from receipt lines via
+  `receiveAgainstOrder`, inside the receiving transaction. Quantities are compared in stock units, so
+  an order in spools is filled by metres. Stock on sent orders counts as stock when suggesting more.

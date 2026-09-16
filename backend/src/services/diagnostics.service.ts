@@ -12,12 +12,14 @@ import type { Db } from "../lib/db.ts";
 import { clock } from "../lib/time.ts";
 import { lastCheckpointAt } from "../lib/wal.ts";
 import { passphraseIsSet } from "./backup.service.ts";
+import { pendingFiscal } from "./fiscal.service.ts";
 import { readSettings } from "./settings.service.ts";
 
 export type Alert =
   | { type: "backup-stale"; lastAt: string | null }
   | { type: "ledger-drift"; count: number }
-  | { type: "sale-waiting"; count: number; oldestAt: string; deviceLabel: string };
+  | { type: "sale-waiting"; count: number; oldestAt: string; deviceLabel: string }
+  | { type: "fiscal-pending"; count: number; oldestAt: string };
 
 /** The three things that reach the owner in-app, because nothing else can reach him (§19.5). */
 export async function systemAlerts(db: Db): Promise<Alert[]> {
@@ -33,6 +35,10 @@ export async function systemAlerts(db: Db): Promise<Alert[]> {
   // Parked baskets are excluded: one may sit there all afternoon by design (§14.4).
   const stale = devices.filter((d) => now - Date.parse(d.outboxOldestAt!) > 3_600_000);
   for (const d of stale) alerts.push({ type: "sale-waiting", count: d.outboxDepth, oldestAt: d.outboxOldestAt!, deviceLabel: `${d.prefix} ${d.label}` });
+  // A fiscal device that stopped answering is noticed, not silently skipped (§17).
+  const pending = await pendingFiscal(db);
+  const oldest = pending[0]?.completedAt;
+  if (oldest && now - Date.parse(oldest) > 10 * 60_000) alerts.push({ type: "fiscal-pending", count: pending.length, oldestAt: oldest });
   return alerts;
 }
 
@@ -78,6 +84,8 @@ export async function diagnostics(db: Db) {
     },
     ledgerDriftFlags: drift,
     installation: { taxRegime: settings["tax.regime"], priceBasis: settings["tax.priceBasis"], timezone: settings["shop.timezone"] },
+    fiscal: { device: config.fiscal, since: settings["fiscal.since"] || null, pending: (await pendingFiscal(db)).length },
+    labelPrinter: config.labelPrinter,
     alerts,
   };
 }

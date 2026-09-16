@@ -18,6 +18,8 @@ interface Diagnostics {
   queues: { salesWaiting: number; parked: number; oldestAt: string | null; devices: Array<{ prefix: string; label: string; salesWaiting: number; parked: number; lastSeenAt: string | null }> };
   ledgerDriftFlags: number;
   installation: { taxRegime: string | null; priceBasis: string; timezone: string };
+  fiscal: { device: string; since: string | null; pending: number };
+  labelPrinter: "console" | "zpl-tcp";
 }
 
 const mb = (bytes: number | null) => (bytes === null ? "—" : `${(bytes / 1_048_576).toFixed(1)} MB`);
@@ -49,6 +51,7 @@ export function DiagnosticsSection({ Section }: { Section: (p: { title: string; 
     `${t("diagnostics.lastFailure")}: ${d.backup.lastFailureAt ? `${dateTime(d.backup.lastFailureAt)} ${d.backup.lastFailureError ?? ""}` : t("diagnostics.none")}`,
     `${t("diagnostics.queues")}: ${d.queues.salesWaiting} · ${t("diagnostics.parked")}: ${d.queues.parked}`,
     `${t("diagnostics.driftFlags")}: ${d.ledgerDriftFlags}`,
+    `${t("diagnostics.fiscal")}: ${d.fiscal.device} · ${d.fiscal.pending}`,
     `${t("diagnostics.regime")}: ${d.installation.taxRegime ?? t("settings.notSet")} · ${t("diagnostics.basis")}: ${d.installation.priceBasis} · ${t("diagnostics.timezone")}: ${d.installation.timezone}`,
     ...d.queues.devices.map((x) => `${x.prefix} ${x.label}: ${x.salesWaiting}/${x.parked} · ${x.lastSeenAt ? dateTime(x.lastSeenAt) : "—"}`),
   ].join("\n");
@@ -67,6 +70,8 @@ export function DiagnosticsSection({ Section }: { Section: (p: { title: string; 
         <Row label={t("diagnostics.regime")} value={d.installation.taxRegime ? t(`settings.regimes.${d.installation.taxRegime}` as StringKey) : t("settings.notSet")} />
         <Row label={t("diagnostics.basis")} value={t(`settings.bases.${d.installation.priceBasis}` as StringKey)} />
         <Row label={t("diagnostics.timezone")} value={d.installation.timezone} />
+        <Row label={t("diagnostics.fiscal")} value={d.fiscal.device === "none" ? t("diagnostics.fiscalNone") : `${d.fiscal.device} · ${t("diagnostics.fiscalPending", { n: d.fiscal.pending })}`} />
+        <Row label={t("diagnostics.labelPrinter")} value={t(`diagnostics.labelPrinters.${d.labelPrinter}` as StringKey)} />
       </dl>
       <div className="flex flex-wrap gap-2">
         <Button variant="secondary" onClick={() => { void navigator.clipboard?.writeText(asText); toast.success(t("diagnostics.copied")); }}><ClipboardCopy />{t("diagnostics.copy")}</Button>

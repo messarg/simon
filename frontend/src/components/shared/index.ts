@@ -6,3 +6,4 @@ export { ReauthSheet, type ReauthAction, type ReauthSheetProps } from "./ReauthS
 export { QuantitySheet, type QuantitySheetProps } from "./QuantitySheet.tsx";
 export { ScreenHelp } from "./ScreenHelp.tsx";
 export { ConfirmSheet } from "./ConfirmSheet.tsx";
+export { Barcode } from "./Barcode.tsx";

@@ -1,6 +1,6 @@
 /** Պահեստ — "do we have it, and how many?" (§6.16). The shelf, written down; last-known when offline. */
 import { useQuery } from "@tanstack/react-query";
-import { ClipboardList, PackageMinus, PackageSearch, Scale, Search, ShieldAlert, Truck } from "lucide-react";
+import { ClipboardCheck, ClipboardList, PackageMinus, PackageSearch, Scale, Search, ShieldAlert, Tags, Truck } from "lucide-react";
 import { Link } from "react-router";
 import { Button } from "@/components/ui/button.tsx";
 import { ReceiptListSheet } from "@/features/buying/ReceiptSheet.tsx";
@@ -56,6 +56,7 @@ export function StockPage() {
           <div className="grid grid-cols-2 gap-2 px-3 pt-3">
             <Button asChild size="lg" disabled={connection === "offline"}><Link to="/stock/receive"><Truck />{t("stockOps.receive")}</Link></Button>
             <Button variant="secondary" size="lg" disabled={connection === "offline"} onClick={() => setOp("receipts")}><ClipboardList />{t("stockOps.receipts")}</Button>
+            <Button asChild variant="secondary" size="lg" className="col-span-2"><Link to="/stock/count"><ClipboardCheck />{t("stocktake.open")}</Link></Button>
           </div>
         )}
         {/* The recount list is stock's job, so it is reachable from here and not only from the owner's home (FR-STK-05). */}
@@ -107,6 +108,7 @@ export function StockPage() {
             <div className="mt-4 grid grid-cols-2 gap-2">
               <Button variant="secondary" size="lg" disabled={connection === "offline"} onClick={() => setOp("writeOff")}><PackageMinus />{t("stockOps.writeOff")}</Button>
               <Button variant="secondary" size="lg" disabled={connection === "offline"} onClick={() => setOp("adjust")}><Scale />{t("stockOps.adjust")}</Button>
+              <Button asChild variant="ghost" size="lg" className="col-span-2"><Link to={`/labels?ids=${selected.id}`}><Tags />{t("labels.forProduct")}</Link></Button>
             </div>
           )}
           <h2 className="mt-6 mb-2 text-lg font-semibold">{t("stock.history")}</h2>

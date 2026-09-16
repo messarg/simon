@@ -52,7 +52,9 @@ test("a worker opens a shift, sells, keeps selling offline, syncs exactly once a
   await page.unroute("**/api/**");
   await expect(page.getByText(/վաճառք դեռ չի ուղարկվել/)).toHaveCount(0, { timeout: 30_000 });
   const token = await page.evaluate(() => JSON.parse(sessionStorage.getItem("simon.session") ?? "{}").token as string);
-  const sales = await page.request.get("/api/sales?status=COMPLETED&limit=50", { headers: { Authorization: `Bearer ${token}` } });
+  // This shift's sales only: other journeys share the throwaway shop.
+  const current = await (await page.request.get("/api/shifts/current", { headers: { Authorization: `Bearer ${token}` } })).json();
+  const sales = await page.request.get(`/api/sales?status=COMPLETED&limit=50&shiftId=${current.shift.id}`, { headers: { Authorization: `Bearer ${token}` } });
   const items = (await sales.json()).items as Array<{ total: number; number: string }>;
   expect(items.map((s) => s.total).sort((a, b) => a - b)).toEqual([100, 3200]);
   expect(new Set(items.map((s) => s.number)).size).toBe(2);

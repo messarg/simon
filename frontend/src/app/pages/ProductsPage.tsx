@@ -1,8 +1,8 @@
 /** Ապրանքներ — opens on what is unfinished, not the whole catalogue (§6.12). Cost appears for ADMIN only. */
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, CheckCircle2, PackageSearch, PackagePlus, Plus, Search } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ClipboardList, PackageSearch, PackagePlus, Plus, Search } from "lucide-react";
 import { useState } from "react";
-import { useSearchParams } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import { toast } from "sonner";
 import { EmptyState, MoneyText } from "@/components/shared";
 import { Button } from "@/components/ui/button.tsx";
@@ -37,6 +37,19 @@ export function ProductsPage() {
     queryFn: () => http.get<{ items: ProductRow[] }>("/products", { query: { filter, q: q.trim() || undefined, limit: 200 } }),
   });
 
+  const navigate = useNavigate();
+  const orderLow = async () => {
+    try {
+      const res = await http.post<{ created: Array<{ id: string }>; withoutSupplier: unknown[] }>("/purchase-orders/from-suggestions", {});
+      if (res.withoutSupplier.length) toast.warning(t("orders.withoutSupplier", { n: res.withoutSupplier.length }));
+      if (res.created.length === 0) { toast(t("orders.nothingToOrder")); return; }
+      toast.success(t("orders.suggested", { n: res.created.length }));
+      navigate(`/suppliers?tab=orders&order=${res.created[0].id}`);
+    } catch (err) {
+      toast.error(problemMessage(err instanceof ApiProblem ? err.type : "network"));
+    }
+  };
+
   const acceptSuggestion = async (p: ProductRow) => {
     try {
       await http.patch(`/products/${p.id}`, { reorderPoint: p.stockStatus?.suggested });
@@ -57,6 +70,9 @@ export function ProductsPage() {
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <h1 className="text-2xl font-semibold">{t("nav.products")}</h1>
         <span className="flex-1" />
+        {filter === "low-stock" && (list.data?.items.length ?? 0) > 0 && (
+          <Button variant="soft" onClick={() => void orderLow()}><ClipboardList />{t("orders.order")}</Button>
+        )}
         <Button onClick={() => setEditing({ id: null })}><Plus />{t("products.add")}</Button>
       </div>
       <div className="mb-3 flex flex-col gap-2 sm:flex-row">

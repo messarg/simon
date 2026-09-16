@@ -115,3 +115,15 @@
 @utility tabular { font-family: var(--font-numeric); font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1, "cv11" 1; }
 @utility safe-bottom { padding-bottom: max(env(safe-area-inset-bottom), 0px); }
 @utility safe-top { padding-top: max(env(safe-area-inset-top), 0px); }
+
+/*
+ * Printing from the screen: only the element marked .print-area goes on paper — no shell, no
+ * status strip, no navigation. Label sheets and purchase orders use it (§18).
+ */
+@media print {
+  @page { margin: 10mm; }
+  body * { visibility: hidden !important; }
+  .print-area, .print-area * { visibility: visible !important; }
+  .print-area { position: absolute; inset: 0 auto auto 0; width: 100%; background: #fff; color: #000; }
+  .print-hidden { display: none !important; }
+}

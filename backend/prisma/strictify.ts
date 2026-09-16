@@ -67,6 +67,10 @@ export const EXTRA_CHECKS: Record<string, readonly string[]> = {
   SupplierAdjustment: ["amount > 0"],
   SupplierAllocation: ["amount > 0"],
   CostCorrection: ["correctUnitCostMdram <> wrongUnitCostMdram", "affectedFrom <= affectedTo"],
+  PurchaseOrder: ["total >= 0"],
+  PurchaseOrderLine: ["qtyOrdered > 0", "qtyReceived >= 0", "unitCostMdram >= 0", "factorToStockUom > 0"],
+  Stocktake: ["snapshotSeq >= 0"],
+  StocktakeLine: ["countedQty IS NULL OR countedQty >= 0", "(countedQty IS NULL) = (countedSeq IS NULL)"],
   Device: ["length(prefix) = 2", "lastSequence >= 0", "outboxDepth >= 0", "parkedDepth >= 0", "isActive IN (0, 1)"],
   User: ["isActive IN (0, 1)", "failedAttempts >= 0"],
 };

@@ -41,6 +41,7 @@ export const SETTING_SCHEMAS: { [K in SettingKey]: z.ZodType } = {
   "setup.sellsByMeasure": z.boolean(),
   "setup.catalogue": z.enum(["", "import", "as-you-sell"]),
   "setup.completedAt": z.string().max(40),
+  "fiscal.since": z.string().max(40),
 };
 
 export async function readSettings(db: Db | Tx): Promise<SettingValues & { updatedAt: string | null }> {

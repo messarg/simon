@@ -61,6 +61,8 @@ export const SETTING_DEFAULTS = {
   "setup.sellsByMeasure": false,
   "setup.catalogue": "" as "" | "import" | "as-you-sell",
   "setup.completedAt": "",
+  // When fiscal receipts started. Sales before it are history, not a backlog to fiscalise (§17).
+  "fiscal.since": "",
 } as const;
 
 export type SettingKey = keyof typeof SETTING_DEFAULTS;

@@ -243,25 +243,33 @@ model Supplier {
 }
 
 model PurchaseOrder {
-  id         String              @id
-  number     String              @unique
-  supplierId String
-  status     String
-  expectedAt String?
-  total      Int
-  createdAt  String
+  id          String              @id
+  number      String              @unique
+  supplierId  String
+  status      String
+  expectedAt  String?
+  total       Int
+  createdAt   String
+  /// Who drafted it, and when it was sent and (if ever) cancelled — the PO lifecycle, §11.
+  createdBy   String              @default("")
+  openedAt    String?
+  cancelledAt String?
+  note        String              @default("")
   supplier   Supplier            @relation(fields: [supplierId], references: [id], onDelete: Restrict)
   lines      PurchaseOrderLine[]
   receipts   GoodsReceipt[]
 }
 
 model PurchaseOrderLine {
-  id            String        @id
-  poId          String
-  productId     String
-  qtyOrdered    Int
-  qtyReceived   Int           @default(0)
-  unitCostMdram Int
+  id               String        @id
+  poId             String
+  productId        String
+  /// Both quantities are in the product's stock unit (milli-units); `uom` and the factor say how it was ordered.
+  qtyOrdered       Int
+  qtyReceived      Int           @default(0)
+  unitCostMdram    Int
+  uom              String        @default("")
+  factorToStockUom Int           @default(1)
   po            PurchaseOrder @relation(fields: [poId], references: [id], onDelete: Restrict)
 
   @@index([poId])
@@ -622,13 +630,20 @@ model AuditLog {
 }
 
 model Stocktake {
-  id         String          @id
-  status     String
-  startedAt  String
-  startedBy  String
-  approvedAt String?
-  approvedBy String?
-  note       String          @default("")
+  id            String          @id
+  status        String
+  startedAt     String
+  startedBy     String
+  approvedAt    String?
+  approvedBy    String?
+  note          String          @default("")
+  /// The ledger position the expected quantities were read at. Counting happens while the shop
+  /// trades, so each line's expectation is this snapshot plus what moved before it was counted.
+  snapshotSeq   Int             @default(0)
+  /// A count by category (§6.8: "count by category or aisle"); null counts everything.
+  categoryId    String?
+  abandonedAt   String?
+  varianceTotal Int             @default(0)
   lines      StocktakeLine[]
 }
 
@@ -639,8 +654,15 @@ model StocktakeLine {
   expectedQty   Int
   countedQty    Int?
   varianceValue Int       @default(0)
+  /// Where the ledger stood when this line was counted, so sales in between are not shrinkage.
+  countedSeq    Int?
+  countedAt     String?
+  countedBy     String?
+  /// The adjustment approval posted, in stock milli-units.
+  varianceQty   Int       @default(0)
   stocktake     Stocktake @relation(fields: [stocktakeId], references: [id], onDelete: Restrict)
 
+  @@unique([stocktakeId, productId])
   @@index([stocktakeId])
 }
 

@@ -17,7 +17,7 @@ let port = 47_800
 let appURL = URL(string: "http://127.0.0.1:\(port)/")!
 let healthURL = URL(string: "http://127.0.0.1:\(port)/api/health")!
 
-final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, WKUIDelegate, WKDownloadDelegate {
+final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, WKUIDelegate, WKDownloadDelegate, WKScriptMessageHandler {
     private var window: NSWindow!
     private var webView: WKWebView!
     private var status: NSTextField!
@@ -125,6 +125,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
         let config = WKWebViewConfiguration()
         config.websiteDataStore = .default() // persistent: the offline cache and the queue survive a restart
         config.preferences.setValue(true, forKey: "developerExtrasEnabled")
+        // WKWebView does not implement window.print(); label sheets and orders ask through this.
+        config.userContentController.add(self, name: "simonPrint")
         webView = WKWebView(frame: .zero, configuration: config)
         webView.navigationDelegate = self
         webView.uiDelegate = self
@@ -272,6 +274,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
         alert.beginSheetModal(for: window) { _ in completionHandler() }
     }
 
+    // MARK: - Printing
+
+    func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+        guard message.name == "simonPrint" else { return }
+        printPage(nil)
+    }
+
+    @objc private func printPage(_ sender: Any?) {
+        let info = NSPrintInfo.shared.copy() as! NSPrintInfo
+        info.horizontalPagination = .fit
+        info.verticalPagination = .automatic
+        info.topMargin = 28; info.bottomMargin = 28; info.leftMargin = 28; info.rightMargin = 28
+        let operation = webView.printOperation(with: info)
+        operation.view?.frame = webView.bounds
+        operation.runModal(for: window, delegate: nil, didRun: nil, contextInfo: nil)
+    }
+
     // MARK: - Menu
 
     @objc private func reload(_ sender: Any?) { webView.reload() }
@@ -289,6 +308,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
         appMenu.addItem(.separator())
         appMenu.addItem(withTitle: "Show Data Folder", action: #selector(showData(_:)), keyEquivalent: "")
         appMenu.addItem(withTitle: "Show Logs", action: #selector(showLogs(_:)), keyEquivalent: "")
+        appMenu.addItem(.separator())
+        appMenu.addItem(withTitle: "Print…", action: #selector(printPage(_:)), keyEquivalent: "p")
         appMenu.addItem(.separator())
         appMenu.addItem(withTitle: "Hide Simon", action: #selector(NSApplication.hide(_:)), keyEquivalent: "h")
         appMenu.addItem(withTitle: "Quit Simon", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")

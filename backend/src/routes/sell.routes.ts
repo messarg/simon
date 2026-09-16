@@ -8,6 +8,7 @@ import { problem } from "../lib/problem.ts";
 import { isAdmin, shapeFlag, shapeSale } from "../lib/shape.ts";
 import { clock } from "../lib/time.ts";
 import { takeBackup } from "../services/backup.service.ts";
+import { issueFiscalReceipt } from "../services/fiscal.service.ts";
 import { openDrawer } from "../services/drawer.service.ts";
 import { printRepaymentReceipt, printReturnReceipt, printSaleReceipt, printShiftReport } from "../services/print.service.ts";
 import { loadSaleReturn, returnableLines, submitSaleReturn } from "../services/sale-return.service.ts";
@@ -24,6 +25,8 @@ export function sellRoutes() {
     const a = auth(req);
     const { sale, warnings } = await submitSale(a.db, actor(req), SaleBody.parse(req.body));
     res.status(200).json({ ...shapeSale(sale, a.role), warnings });
+    // After the response: the till's busiest request does not wait on a fiscal device (§17).
+    if (sale.status === "COMPLETED" && a.mode === "LIVE") void issueFiscalReceipt(a.db, sale.id);
   });
 
   r.get("/sales", async (req, res) => {
@@ -147,6 +150,8 @@ export function sellRoutes() {
     const body = z.object({ saleId: z.string().uuid().optional(), saleReturnId: z.string().uuid().optional(), debtPaymentId: z.string().uuid().optional() })
       .refine((b) => [b.saleId, b.saleReturnId, b.debtPaymentId].filter(Boolean).length === 1).parse(req.body);
     const practice = a.mode === "PRACTICE";
+    // The paper carries the fiscal number, so a receipt waits for it; issuing is idempotent.
+    if (body.saleId && !practice) await issueFiscalReceipt(a.db, body.saleId);
     const out = body.saleId ? await printSaleReceipt(a.db, body.saleId, { practice })
       : body.saleReturnId ? await printReturnReceipt(a.db, body.saleReturnId, { practice })
       : await printRepaymentReceipt(a.db, body.debtPaymentId!);

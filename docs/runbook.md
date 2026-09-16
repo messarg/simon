@@ -119,6 +119,27 @@ database untouched** — it never half-restores.
 is for the same machine: it stages the decrypted database and the swap happens when Simon is next
 started, keeping the replaced file beside it.
 
+## 3.1 Printers, labels and the fiscal device
+
+Set in the API's environment (`docker-compose.yml`):
+
+| Variable | Values | Meaning |
+|:--|:--|:--|
+| `SIMON_PRINTER` | `console` · `escpos-tcp` | Receipts to files, or to a network thermal printer (`SIMON_PRINTER_HOST`) |
+| `SIMON_LABEL_PRINTER` | `console` · `zpl-tcp` | Labels as ZPL files, or to a network label printer (`SIMON_LABEL_PRINTER_HOST`). Without one, labels print as an A4 sheet (3 × 8, 70 × 37 mm) from Պահեստ → Պիտակ — choose "actual size" in the print dialog |
+| `SIMON_FISCAL` | `none` · `file` | No fiscal receipts (default), or development documents. **No certified ՀԴՄ driver exists yet** — see ADR 0007 |
+
+Armenian on a thermal or label printer needs a printer with an Armenian code page or a Unicode font;
+check it with a test label before a shop relies on it.
+
+## 3.2 Counting stock
+
+Պահեստ → Հաշվառում. Start a count of the whole shop or one category; the shop keeps selling. Counters
+scan or search each item and type what is on the shelf — they are not shown what the books say.
+"Ավարտել հաշվումը" sends it for review; the owner sees only the lines that differ, the costliest
+first, can have a line recounted, and approves. Approval corrects stock and cannot be undone except
+by another adjustment. Items nobody counted are left as they were.
+
 ## 4. Logs
 
 `var/logs/simon.log` on the host (`SIMON_LOG_DIR`), one line per request: 10 MB per file, 10 files,

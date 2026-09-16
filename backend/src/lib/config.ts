@@ -12,6 +12,12 @@ export const config = {
   printer: (process.env.SIMON_PRINTER ?? "console") as "console" | "escpos-tcp",
   printerHost: process.env.SIMON_PRINTER_HOST ?? "",
   printerPort: Number(process.env.SIMON_PRINTER_PORT ?? 9100),
+  /** Shelf labels (§18): `console` writes ZPL to the print directory; `zpl-tcp` sends it to a label printer. */
+  labelPrinter: (process.env.SIMON_LABEL_PRINTER ?? "console") as "console" | "zpl-tcp",
+  labelPrinterHost: process.env.SIMON_LABEL_PRINTER_HOST ?? "",
+  labelPrinterPort: Number(process.env.SIMON_LABEL_PRINTER_PORT ?? 9100),
+  /** Fiscal receipts (§17): `none` until a certified device and the legal answers exist; `file` for development. */
+  fiscal: (process.env.SIMON_FISCAL ?? "none") as "none" | "file",
   logLevel: process.env.LOG_LEVEL ?? "info",
   /** Rotating log files (§19.5). Empty disables the file; tests never write one. */
   logDir: process.env.SIMON_LOG_DIR ?? (isTest ? "" : path.join(root, "var/logs")),
