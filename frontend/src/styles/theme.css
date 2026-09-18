@@ -143,7 +143,9 @@
 
   --sidebar: oklch(0.264 0.038 181);
   --sidebar-foreground: oklch(1 0 0);
-  --sidebar-muted: oklch(0.782 0.023 179);
+  /* Neutral grey #8D9492 for what is not selected, so the white one stands out; 4.88:1 on the
+     rail, and an item turns white under the pointer. */
+  --sidebar-muted: oklch(0.66 0.008 180);
   --sidebar-hover: oklch(0.319 0.045 179.3);
   --sidebar-active: oklch(0.374 0.053 178.4);
   --sidebar-active-foreground: oklch(1 0 0);
