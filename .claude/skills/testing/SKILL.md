@@ -79,13 +79,13 @@ own temporary directories to `backupPaths` in `backup.service.ts`.
 
 Must cover:
 - **Idempotency:** POST the same sale id twice → exactly one sale and one set of movements.
-- **Field-level authorization:** enumerate endpoints; a `WORKER` token gets cost from none.
+- **Field-level authorization:** enumerate endpoints; an employee's token and a manager's get cost from none (`cost-sweep.test.ts` runs both). Test users are **personas** — `OWNER`, `MANAGER`, `STOCK`, `WORKER` — where the last two are employees carrying the two presets.
 - Transaction integrity: a failure mid-sale leaves no partial movements.
 - RFC 7807 shapes and status mapping.
 - Business rules: insufficient stock, credit limit, shift already closed, double return.
 - **Reports against a hand-worked day**, not against themselves: build the sales, the return, the
   write-off and the receipt, then assert each report's rows and totals (`control.routes.test.ts`).
-- The audit trail and diagnostics are gated **as routes** — assert the `403` for `WORKER` and `STOCK`.
+- The audit trail and diagnostics are the owner's, gated **as routes** — assert the `403` for a manager and an employee (`access.routes.test.ts`).
 
 Assert **ledger effects**, not just the response body. A sale that returns `201` but posts
 the wrong stock movement is the bug that matters.

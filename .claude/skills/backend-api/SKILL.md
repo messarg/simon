@@ -22,7 +22,7 @@ backend/src/
 
 **Reports return one shape.** `GET /reports/:name` answers `{ name, from, to, columns, rows, totals?, notes? }`
 with codes rather than Armenian, so one screen renders and exports every one of §20.2's reports and
-the words stay in `hy.ts`. Every report is `ADMIN`; the audit trail and `GET /diagnostics` are gated as
+the words stay in `hy.ts`. Reports are owner-or-manager, with `margin`, `valuation` and `audit` the owner's (`OWNER_REPORTS`) and cost swept from the rest; the audit trail and `GET /diagnostics` are the owner's, gated as
 routes rather than stripped field by field, because they carry whole-record JSON and the shop's business.
 
 **Backups are the live database only** (`a.live`, never a practice session's), taken with `VACUUM INTO`
@@ -37,7 +37,7 @@ server and no database? If not, it is in the wrong layer.
 Routes are thin enough to read in one screen:
 
 ```ts
-router.post("/sales", requireRole("WORKER"), async (req, res, next) => {
+router.post("/sales", requirePermission("sell"), async (req, res, next) => {
   const body = createSaleSchema.parse(req.body);
   const sale = await saleService.create(body, req.user);
   res.status(201).json(sale);
@@ -90,15 +90,15 @@ is the one place adopting `STRICT` constrains the schema language rather than ju
 Two layers, both mandatory.
 
 **1. Route-level**, default deny. Every route declares its required role
-(`WORKER` / `STOCK` / `ADMIN`).
+(`OWNER` / `MANAGER` / `EMPLOYEE` + permissions — see the `auth` skill).
 
 **2. Field-level — the one that is easy to get wrong.**
 
 ```ts
-// Cost, margin, and supplier terms are stripped SERVER-SIDE for non-admins.
+// Cost, margin, and supplier terms are stripped SERVER-SIDE for everyone but the owner.
 function projectProduct(p: Product, role: Role) {
   const base = { id: p.id, name: p.name, sellPriceMdram: p.sellPriceMdram, stockQty: p.stockQty };
-  return role === "ADMIN" ? { ...base, avgCostMdram: p.avgCostMdram } : base;
+  return seesCost(role) ? { ...base, avgCostMdram: p.avgCostMdram } : base;
 }
 ```
 
@@ -189,7 +189,7 @@ customer are personal data (PRD §16.5).
 
 ## Settings: two routes, and the difference is the point
 
-`GET /settings` is `ADMIN`-only and returns everything. **`GET /settings/client` answers any
+`GET /settings` is the owner's and returns everything. **`GET /settings/client` answers any
 authenticated session** and returns an explicit shape carrying the keys a till must **enforce or
 render** (PRD §15.4, §14.4):
 
@@ -201,7 +201,7 @@ render** (PRD §15.4, §14.4):
 *Enforce or render* is the definition, not a flourish: writing only *enforce* is what left the
 debt-book toggle out and would have drawn a tab for a feature the shop does not have.
 
-A `WORKER`'s till has to enforce those numbers and cannot enforce a number it was never sent. The
+An employee's till has to enforce those numbers and cannot enforce a number it was never sent. The
 control is the **shape**, not the route: a setting added later is invisible to the client until
 someone adds it to that shape, which is the opposite failure mode from a filter that has to
 remember to exclude things. Contrast `AuditLog`, which is gated as a whole route precisely because
@@ -242,7 +242,7 @@ order, or a shop with one PC.
 - [ ] One transaction per document; no external calls inside it
 - [ ] `foreign_keys=ON`, WAL, `busy_timeout` set
 - [ ] Route-level role check, default deny
-- [ ] Field-level projection strips cost for non-admins
+- [ ] Field-level projection strips cost for everyone but the owner
 - [ ] Zod validation at every boundary
 - [ ] RFC 7807 mapped centrally
 - [ ] No `Float`/`Decimal` money in the schema

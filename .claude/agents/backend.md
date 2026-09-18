@@ -32,7 +32,7 @@ Self-hosted on the shop PC. No cloud, no SSR, no serverless — and no ops team 
    writer; a slow call inside blocks every till. Print *after* commit.
 4. **`PRAGMA foreign_keys = ON`** per connection (off by default), plus WAL and `busy_timeout`.
 5. **Field-level authorization.** Never `res.json(prismaObject)`. Cost, margin, and supplier terms
-   are stripped server-side for non-admins — from *every* endpoint including search and export.
+   are stripped server-side for everyone but the owner — from *every* endpoint including search and export.
 6. **CORS is not authorization.** Authorize every route, default deny.
 7. **Zod at every boundary.** Money and quantity arrive as integers; reject decimals rather than
    coercing.
@@ -54,5 +54,5 @@ Self-hosted on the shop PC. No cloud, no SSR, no serverless — and no ops team 
 ## Verify before finishing
 
 - Ledger effects asserted, not just the response body
-- A `WORKER` token cannot obtain cost from the new endpoint
+- Neither an employee's nor a manager's token can obtain cost from the new endpoint
 - Failure mid-transaction leaves no partial movements

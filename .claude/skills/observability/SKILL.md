@@ -17,7 +17,7 @@ A white screen at the counter loses a sale and, worse, loses trust in the produc
 ## What the owner actually reads
 
 - **`GET /health`** is liveness only — status and version, no session — because every till polls it.
-  Everything else lives behind **`GET /diagnostics`** (`ADMIN`): version, uptime, database and WAL size,
+  Everything else lives behind **`GET /diagnostics`** (the owner's): version, uptime, database and WAL size,
   the age of the last WAL checkpoint, the last successful backup with its size, **whether** a backup
   passphrase exists (never the passphrase), queue depths per device, open drift flags, and the three
   settings installation sets. Settings renders it with a copy button and a file to save.
@@ -95,7 +95,7 @@ The realistic support scenario. Provide:
 
 - **Two endpoints, not one** (PRD §19.5). `GET /health` is the **liveness probe** the client
   polls to decide online/offline — unauthenticated, status and version only, nothing more.
-  `GET /diagnostics` is everything else and is **`ADMIN`-only**: version, DB size, WAL age, last
+  `GET /diagnostics` is everything else and is **the owner's alone**: version, DB size, WAL age, last
   backup time/result/size, whether a backup passphrase is set (never the passphrase), pending
   queue depth with parked baskets counted separately, ledger-vs-cache drift, disk free, and the
   three installation settings (tax regime, price basis, `shop.timezone`).

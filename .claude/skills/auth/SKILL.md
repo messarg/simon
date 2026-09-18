@@ -1,6 +1,6 @@
 ---
 name: auth
-description: Simon's authentication and roles — PIN login verified server-side, session tokens, WORKER/STOCK/ADMIN roles, field-level authorization, shift-bound sessions, LAN threat model and network hardening. Use for login, session handling, route protection, role checks, or anything touching who may see or do what.
+description: Simon's authentication and roles — sign-in by name + PIN verified server-side, session tokens, OWNER/MANAGER/EMPLOYEE tiers with per-employee permissions, field-level authorization, shift-bound sessions, LAN threat model and network hardening. Use for login, session handling, route protection, role checks, or anything touching who may see or do what.
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 ---
 
@@ -48,30 +48,46 @@ Because the keyspace is tiny (4–6 digits), compensate:
 - **Sessions end at shift close.** A till left logged in overnight is the most common real
   breach in retail.
 - Short idle timeout on the till, longer on the owner's dashboard.
-- Re-authentication (admin PIN) required for privileged in-flow actions: discount above the
-  threshold, void, price change, stock adjustment, opening the drawer without a sale.
+- Re-authentication required for privileged in-flow actions: discount above the threshold,
+  void, price change, stock adjustment, opening the drawer without a sale. The approver types
+  **their name and PIN**; an owner or a manager qualifies, the owner alone for the backup actions.
 
-## Roles
+## Sign-in (PRD §16.2)
 
-| Role | May |
+**Nobody is listed before sign-in** — no `GET /auth/users`, no `GET /auth/admins`. A person types
+their name, then their PIN; `POST /auth/login {name, pin}`. Names match by `nameKey`
+(`backend/src/domain/person-name.ts`: NFC, spaces collapsed, Armenian case-fold) and two active
+people may not share one (`duplicate-name`). **An unknown name must fail exactly as a wrong PIN**
+— same `pin-incorrect`, same time (a decoy argon2 verify) — or the screen is the staff list again,
+one guess at a time. Recovery is `{recoveryCode}` alone: only the owner holds one.
+
+## Tiers and permissions (PRD §16.4)
+
+| Tier | May |
 |---|---|
-| `WORKER` | Sell, take repayments, open/close own shift |
-| `STOCK` | Worker, plus goods receipt, stocktake, write-offs |
-| `ADMIN` | Everything, including cost, margin, prices, users, settings |
+| `OWNER` | Everything. The only one who sees cost/margin/profit, supplier terms, backups, settings, sessions, the audit trail, and their own record. Exactly one; nobody can demote or deactivate them |
+| `MANAGER` | Runs the shop — passes every permission gate — and manages **employees**. Never the owner's data; cannot even see the owner (`404`) |
+| `EMPLOYEE` | Exactly the jobs granted: `sell`, `returns`, `debt`, `receive`, `stocktake`, `writeoff`, `labels` |
 
-Checks are **server-side and default-deny**. A client-side role check is a UX affordance
-only — it hides a button, it does not protect anything.
+Everything lives in `@simon/shared`: `access.ts` (`Permission`, `can`, `isOwner`, `isManager`,
+the `cashier`/`stock` presets, `OWNER_REPORTS`) and `staff-policy.ts` (`canManage`,
+`assignableRoles`, `listsPerson` — who may manage whom). Routes gate with `requireOwner()`,
+`requireManager()`, `requirePermission(p)` or `requireAnyPermission(...)` — **not a ladder**, so
+"receives but does not sell" is expressible. A `403` carries `required`.
+
+Checks are **server-side and default-deny**. A client-side check is a UX affordance only — it
+leaves a destination out, it does not protect anything.
 
 ### Field-level authorization
 
 The gap that is easiest to leave open and the one that matters most commercially.
 
 ```ts
-// Cost, margin, and supplier terms stripped server-side for non-admins.
-return role === "ADMIN" ? { ...base, avgCostMdram } : base;
+// Cost, margin, and supplier terms are the owner's alone — a manager does not see them either.
+return seesCost(role) ? { ...base, avgCostMdram } : base;
 ```
 
-A `WORKER` token must not be able to obtain cost from **any** endpoint — list, search,
+Neither an employee's token nor a manager's may obtain cost from **any** endpoint — list, search,
 detail, report, export, or an error message that echoes the record. PRD §25.9 is an explicit
 acceptance test for this. Never `res.json(prismaObject)`.
 
@@ -120,7 +136,7 @@ PINs are forbidden.
 - [ ] Per-user PINs, never shared
 - [ ] Session ends at shift close; idle timeout set
 - [ ] Route checks default-deny, server-side
-- [ ] Field-level projection strips cost for non-admins
+- [ ] Field-level projection strips cost for everyone but the owner (`seesCost`, `stripCost`)
 - [ ] Re-auth for void / large discount / price change
 - [ ] Network mitigation chosen and documented
 - [ ] Audit row for every privileged action

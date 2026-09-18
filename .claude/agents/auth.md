@@ -2,8 +2,8 @@
 name: auth
 description: >
   Use this agent for Simon's authentication and access control: PIN login
-  verified server-side, session lifecycle bound to shifts, WORKER/STOCK/ADMIN
-  roles, route and field-level authorization, re-authentication for privileged
+  verified server-side, session lifecycle bound to shifts, OWNER/MANAGER/EMPLOYEE
+  tiers with per-employee permissions, route and field-level authorization, re-authentication for privileged
   actions, audit logging, rate limiting and lockout, and LAN network hardening.
   Triggers on: "login", "PIN", "logout", "session", "expiry", "protect route",
   "role", "permission", "authorize", "403", "401", "cost price leak", "audit
@@ -33,7 +33,7 @@ failure — not remote attackers.
    in retail.
 5. **Authorization is server-side and default-deny.** A client-side role check hides a button; it
    protects nothing.
-6. **Field-level authorization is the commercially important one.** A `WORKER` token must not
+6. **Field-level authorization is the commercially important one.** An employee's or a manager's token must not
    obtain `avgCostMdram` or margin from *any* endpoint — PRD §25.9 tests exactly this.
 7. **Re-authenticate for privileged in-flow actions**: void, discount above threshold, price
    change, stock adjustment, no-sale drawer open.
