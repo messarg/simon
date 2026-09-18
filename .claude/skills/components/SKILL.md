@@ -49,7 +49,9 @@ Shared hooks that more than one feature needs (current shift, client settings) l
 Tokens in `src/styles/theme.css` (`@theme inline`). Use names, never values:
 
 - surfaces `bg-background`, `bg-card`, `bg-muted`, `border-border`
-- action `bg-primary` (deep teal-green #14544A), `bg-primary-soft` (leaf #DCEDC8), `text-accent-foreground`
+- action buttons `bg-action text-action-foreground` (#699870) — the `Button` default variant; don't paint one by hand
+- brand `bg-primary` / `text-primary` (deep teal-green #14544A) for links, focus and the active destination, `bg-primary-soft` (leaf #DCEDC8), `text-accent-foreground`
+- **`--action` is a recorded contrast exception** (white on it is 3.32:1, chosen by the owner) — don't "fix" it without asking
 - attention `bg-attention` (amber #F0A43C), `bg-attention-soft`, `text-attention-foreground` — offline, stale, recount
 - `bg-destructive` (brick #6E1610) only for irreversible actions; **variance uses `text-money-neutral`**,
   never red or green (§6.6) — colour marks state (in stock, overdue), never the sign of a number

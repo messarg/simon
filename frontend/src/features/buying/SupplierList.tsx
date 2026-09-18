@@ -34,7 +34,7 @@ export function SupplierList({ selectedId, onSelect }: { selectedId: string | nu
           <Search className="pointer-events-none absolute left-3 top-1/2 size-5 -translate-y-1/2 text-muted-foreground" aria-hidden />
           <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("buy.supplierName")} className="pl-10" />
         </div>
-        <Button variant="soft" size="icon" disabled={!query.trim()} onClick={() => void create()} aria-label={t("buy.newSupplier")}><Plus /></Button>
+        <Button size="icon" disabled={!query.trim()} onClick={() => void create()} aria-label={t("buy.newSupplier")}><Plus /></Button>
       </div>
       {list.data && items.length === 0 && !query ? <EmptyState icon={Truck} title={t("suppliers.empty")} hint={t("suppliers.emptyHint")} /> : (
         <ul className="min-h-0 flex-1 divide-y divide-border overflow-y-auto">

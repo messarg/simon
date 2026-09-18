@@ -204,7 +204,7 @@ export function ReceivingForm() {
           </ul>
         )}
         <div className="grid gap-2 border-t border-border p-3 sm:grid-cols-2">
-          <Button variant="soft" size="lg" onClick={() => setSheet("search")}><Search />{t("buy.addItem")}</Button>
+          <Button size="lg" onClick={() => setSheet("search")}><Search />{t("buy.addItem")}</Button>
           <Button variant="secondary" size="lg" onClick={() => setCreating({})}><PackagePlus />{t("buy.newProduct")}</Button>
         </div>
       </div>

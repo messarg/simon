@@ -8,7 +8,8 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        primary: "bg-primary text-primary-foreground hover:bg-primary/92 shadow-sm",
+        // The action colour (theme.css `--action`) — add, save, confirm, pay.
+        primary: "bg-action text-action-foreground hover:bg-action/90 shadow-sm",
         secondary: "bg-card text-foreground border border-border hover:bg-muted",
         soft: "bg-primary-soft text-accent-foreground hover:bg-accent",
         ghost: "text-foreground hover:bg-muted",

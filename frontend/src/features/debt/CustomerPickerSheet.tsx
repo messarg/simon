@@ -28,7 +28,7 @@ export function CustomerPickerSheet({ open, onOpenChange, onPick }: { open: bool
           {results.map((c) => <li key={c.id}><CustomerRow c={c} onClick={() => pick(c)} /></li>)}
         </ul>
         {query && results.length === 0 && <p className="py-4 text-center text-muted-foreground">{t("debt.noResults")}</p>}
-        <Button variant="soft" className="mt-3 w-full" onClick={() => setCreating(true)}><UserPlus />{t("debt.create")}</Button>
+        <Button className="mt-3 w-full" onClick={() => setCreating(true)}><UserPlus />{t("debt.create")}</Button>
       </Sheet>
       <CreateCustomerSheet key={creating ? `create-${query}` : "closed"} open={creating} onOpenChange={setCreating} initialName={query} onCreated={pick} />
     </>

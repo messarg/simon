@@ -56,7 +56,7 @@ export function StaffPage() {
           <h1 className="text-2xl font-semibold">{t("nav.staff")}</h1>
           <p className="text-sm text-muted-foreground">{t("staff.listHint")}</p>
         </div>
-        <Button variant="soft" className="shrink-0" onClick={() => setEditing("new")}><Plus />{t("settings.addUser")}</Button>
+        <Button className="shrink-0" onClick={() => setEditing("new")}><Plus />{t("settings.addUser")}</Button>
       </header>
 
       <ul className="space-y-2">

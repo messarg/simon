@@ -290,7 +290,7 @@ function Staff({ onDone, busy }: { onDone: () => void; busy: boolean }) {
           </div>
         </div>
         {error && <p className="text-sm text-destructive" role="alert">{error}</p>}
-        <Button variant="soft" className="w-full" disabled={!name.trim() || pin.length < 4} onClick={() => void add()}><UserPlus />{t("wizard.q2Add")}</Button>
+        <Button className="w-full" disabled={!name.trim() || pin.length < 4} onClick={() => void add()}><UserPlus />{t("wizard.q2Add")}</Button>
         <Button size="lg" className="w-full" disabled={busy} onClick={onDone}>{t("wizard.next")}</Button>
       </div>
     </Card>

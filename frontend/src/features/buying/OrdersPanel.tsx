@@ -42,7 +42,7 @@ export function OrdersPanel({ selectedId, onSelect, onNew }: { selectedId: strin
       <div className="space-y-2 p-3">
         <div className="flex gap-2">
           <Button className="flex-1" disabled={busy} onClick={() => void suggest()}><Sparkles />{t("orders.suggest")}</Button>
-          <Button variant="soft" size="icon" onClick={onNew} aria-label={t("orders.new")}><Plus /></Button>
+          <Button size="icon" onClick={onNew} aria-label={t("orders.new")}><Plus /></Button>
         </div>
         <p className="text-xs text-muted-foreground">{t("orders.suggestHint")}</p>
         <div className="flex rounded-lg bg-muted p-1">

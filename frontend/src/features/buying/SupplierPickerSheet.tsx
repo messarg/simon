@@ -36,7 +36,7 @@ export function SupplierPickerSheet({ open, onOpenChange, onPick }: { open: bool
         ))}
       </ul>
       {query.trim() && !items.some((s) => s.name.toLowerCase() === query.trim().toLowerCase()) && (
-        <Button variant="soft" className="mt-3 w-full" onClick={() => void create()}><Plus />{t("buy.newSupplier")}: {query.trim()}</Button>
+        <Button className="mt-3 w-full" onClick={() => void create()}><Plus />{t("buy.newSupplier")}: {query.trim()}</Button>
       )}
     </Sheet>
   );

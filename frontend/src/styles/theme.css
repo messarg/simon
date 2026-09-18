@@ -62,6 +62,17 @@
   /* Deep teal-green #14544A — 8.8:1 on white, so the primary button carries white text. */
   --primary: oklch(0.404 0.065 180.1);
   --primary-foreground: oklch(1 0 0);
+  /*
+   * Action #699870 — the fill of the buttons that do something: add, save, confirm, pay. Its own
+   * token so links, the focus ring and the active destination keep `--primary`.
+   *
+   * **A deliberate exception to this file's contrast rule, chosen by the owner:** white text on it
+   * is 3.32:1, under WCAG 2.2 AA's 4.5:1 for button-size text (the rest of the palette meets it).
+   * Dark text would read at 5.0:1 and #53815B is the nearest shade that passes with white. Do not
+   * "fix" it in an audit without asking.
+   */
+  --action: oklch(0.635 0.078 148.5);
+  --action-foreground: oklch(1 0 0);
   /* Leaf #DCEDC8 — the pill behind the active destination, and the selected row. */
   --primary-soft: oklch(0.924 0.052 127.5);
   --accent: oklch(0.947 0.033 125.5);
@@ -155,6 +166,8 @@
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
   --color-primary-soft: var(--primary-soft);
+  --color-action: var(--action);
+  --color-action-foreground: var(--action-foreground);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-attention: var(--attention);

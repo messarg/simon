@@ -38,7 +38,7 @@ export function CustomerList({ admin, selectedId, onSelect }: { admin: boolean; 
           <Search className="pointer-events-none absolute left-3 top-1/2 size-5 -translate-y-1/2 text-muted-foreground" aria-hidden />
           <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("debt.searchPlaceholder")} className="pl-10" />
         </div>
-        <Button variant="soft" size="icon" onClick={() => setCreating(true)} aria-label={t("debt.create")}><UserPlus /></Button>
+        <Button size="icon" onClick={() => setCreating(true)} aria-label={t("debt.create")}><UserPlus /></Button>
       </div>
       {items.length === 0 && !query ? (
         <EmptyState icon={BookUser} title={t("debt.emptyTitle")} hint={t("debt.emptyHint")} />

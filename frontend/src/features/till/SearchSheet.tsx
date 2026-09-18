@@ -45,7 +45,7 @@ export function SearchSheet({ open, onOpenChange, onPick, onAddNew }: { open: bo
       <div className="max-h-[50dvh] overflow-y-auto">
         <SearchResults query={query} onPick={(p) => { onPick(p); onOpenChange(false); setQuery(""); }} />
       </div>
-      <Button variant="soft" className="mt-3 w-full" onClick={() => { onAddNew(query); onOpenChange(false); setQuery(""); }}>
+      <Button className="mt-3 w-full" onClick={() => { onAddNew(query); onOpenChange(false); setQuery(""); }}>
         <PackagePlus /> {t("till.addNew")}
       </Button>
     </Sheet>
