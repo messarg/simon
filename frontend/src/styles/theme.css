@@ -70,7 +70,8 @@
    * is 3.32:1, under WCAG 2.2 AA's 4.5:1 for button-size text (the rest of the palette meets it).
    * Dark text would read at 5.0:1 and #53815B is the nearest shade that passes with white. Do not
    * "fix" it in an audit without asking. An employee's palette swaps it for a blue of the same
-   * lightness (#668DC1, 3.42:1), under the same exception.
+   * lightness (#668DC1, 3.42:1) and a manager's for a lavender (#937EB9, 3.54:1), under the same
+   * exception; the green is the owner's, and the default when nobody is signed in.
    */
   --action: oklch(0.635 0.078 148.5);
   --action-foreground: oklch(1 0 0);
@@ -190,6 +191,42 @@
    * the two carry the same weight. White on it is 3.42:1: the owner's recorded exception above.
    */
   --action: oklch(0.635 0.09 256);
+}
+
+/*
+ * A manager's palette (§16.4) — lavender pastel, a soft violet rail on a pale lilac page. It sets
+ * the manager's session apart from the owner's dark rail and an employee's blue, so whose session
+ * is open reads across the counter. Tokens only, every pairing checked against WCAG 2.2 AA except
+ * `--action`, under the same recorded exception as the green and the blue.
+ */
+:root[data-tier="manager"] {
+  --background: oklch(0.963 0.012 301.3);
+  --foreground: oklch(0.245 0.046 300.3);
+  --muted: oklch(0.937 0.015 298.6);
+  --muted-foreground: oklch(0.49 0.045 299.4);
+  --border: oklch(0.906 0.022 300.2);
+  --input: oklch(0.625 0.044 300.9);
+  --ring: oklch(0.531 0.119 300);
+
+  /* Grape #664893 for links and the focus ring; lilac #E9E1FB behind what is selected. */
+  --primary: oklch(0.469 0.12 300.3);
+  --primary-soft: oklch(0.924 0.036 299.7);
+  --accent: oklch(0.953 0.019 299.1);
+  --accent-foreground: oklch(0.39 0.11 300.3);
+  --success-soft: oklch(0.941 0.032 136.6);
+  --money-neutral: oklch(0.386 0.05 299.9);
+
+  --sidebar: oklch(0.926 0.028 299.5);
+  --sidebar-foreground: oklch(0.245 0.046 300.3);
+  --sidebar-muted: oklch(0.439 0.05 301.2);
+  --sidebar-hover: oklch(0.893 0.036 299.7);
+  --sidebar-active: oklch(0.857 0.052 300.1);
+  --sidebar-active-foreground: oklch(0.245 0.046 300.3);
+  --sidebar-border: oklch(0.871 0.041 299.7);
+  --sidebar-mark: oklch(0.68 0.11 300.3);
+
+  /* Lavender #937EB9 for action buttons, at the green's lightness; white on it is 3.54:1. */
+  --action: oklch(0.635 0.09 300.2);
 }
 
 :root[data-text-size="large"] { --text-scale: 1.125; }

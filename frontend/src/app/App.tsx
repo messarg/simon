@@ -86,14 +86,13 @@ export function App() {
   const [queryClient] = useState(createQueryClient);
 
   useEffect(() => connection.start(), []);
-  // The owner's session is dark and an employee's pastel blue (theme.css), so whose session is
-  // open is recognisable across the counter; a manager's is the default green. Set on the root so
-  // sheets and portals pick it up too; cleared on sign-out.
+  // Each tier wears its own palette (theme.css) — the owner dark, a manager lavender, an employee
+  // pastel blue — so whose session is open is recognisable across the counter. Set on the root so
+  // sheets and portals pick it up too; cleared on sign-out, back to the default green.
   const role = useSession()?.user.role;
   useEffect(() => {
     const root = document.documentElement;
-    if (role === "OWNER") root.dataset.tier = "owner";
-    else if (role === "EMPLOYEE") root.dataset.tier = "employee";
+    if (role) root.dataset.tier = role.toLowerCase();
     else delete root.dataset.tier;
   }, [role]);
   // A 401 on an ordinary request returns to the PIN pad; the basket lives in IndexedDB and survives (§16.3).
