@@ -12,12 +12,14 @@ export async function dismissCoach(page: Page) {
   }
 }
 
-export async function signIn(page: Page, name: string, pin: string) {
+/** Nobody is listed on the sign-in screen (§16.2): a person types their name, then their PIN. */
+export async function signIn(page: Page, name: string, pin: string, landsOn: RegExp = /\/sell/) {
   await page.goto("/sign-in");
-  await page.getByRole("button", { name }).click();
+  await page.getByLabel("Անուն").fill(name);
+  await page.keyboard.press("Enter");
   // A PIN shorter than the maximum is submitted deliberately, by Enter or the ✓ key.
   await page.keyboard.type(pin);
   await page.keyboard.press("Enter");
-  await expect(page).toHaveURL(/\/sell/);
+  await expect(page).toHaveURL(landsOn);
   await dismissCoach(page);
 }

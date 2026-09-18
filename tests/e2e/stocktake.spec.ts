@@ -53,7 +53,7 @@ test("stock is counted while the shop keeps selling", async ({ browser }) => {
 
   await counter.getByRole("button", { name: "Ավարտել հաշվումը" }).first().click();
   await counter.getByRole("dialog").getByRole("button", { name: "Ավարտել հաշվումը" }).click();
-  await expect(counter.getByText("Սպասում է ադմինի հաստատմանը")).toBeVisible();
+  await expect(counter.getByText("Սպասում է մենեջերի հաստատմանը")).toBeVisible();
 
   // The owner reviews: only the screws differ — the two sold sacks are not shrinkage.
   const owner = await (await browser.newContext({ viewport: { width: 1280, height: 900 } })).newPage();

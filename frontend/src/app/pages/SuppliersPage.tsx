@@ -3,6 +3,8 @@
  * Orders live beside suppliers rather than in a destination of their own: §5.1's navigation stays
  * as it is, and an order is always to somebody.
  */
+import { isOwner } from "@simon/shared";
+import { useSession } from "@/lib/session-store.ts";
 import { ClipboardList, Truck } from "lucide-react";
 import { useSearchParams } from "react-router";
 import { EmptyState } from "@/components/shared";
@@ -17,14 +19,16 @@ import { useCurrentShift } from "../shift.ts";
 export function SuppliersPage() {
   const shift = useCurrentShift().data;
   const [params, setParams] = useSearchParams();
-  const tab = params.get("tab") === "orders" ? "orders" : "suppliers";
+  const owner = isOwner(useSession()?.user.role ?? "EMPLOYEE");
+  const tab = owner ? params.get("tab") === "orders" ? "orders" : "suppliers" : "suppliers";
   const selected = params.get(tab === "orders" ? "order" : "supplier");
   const select = (id: string | null) => setParams({ ...(tab === "orders" ? { tab } : {}), ...(id ? { [tab === "orders" ? "order" : "supplier"]: id } : {}) });
 
   return (
     <div className="flex min-h-0 flex-1 flex-col md:flex-row">
       <section className={cn("flex min-h-0 flex-col border-border md:w-[26rem] md:border-r", selected && "hidden md:flex")}>
-        <div className="flex gap-1 px-3 pt-3">
+        {/* Drafting and sending orders is the owner's: an order's lines are prices (§16.4). */}
+        {owner && <div className="flex gap-1 px-3 pt-3">
           {(["suppliers", "orders"] as const).map((k) => (
             <button
               key={k}
@@ -34,7 +38,7 @@ export function SuppliersPage() {
               {k === "orders" ? t("orders.tabOrders") : t("orders.tabSuppliers")}
             </button>
           ))}
-        </div>
+        </div>}
         {tab === "orders"
           ? <OrdersPanel selectedId={selected} onSelect={select} onNew={() => select("new")} />
           : <SupplierList selectedId={selected} onSelect={select} />}

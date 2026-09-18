@@ -17,6 +17,8 @@
  * only here and in the editor, and never on the sign-in tiles: that list is drawn before anyone
  * has signed in (§15.4, §26.2) and carries a name and a face and nothing else.
  */
+import { isOwner } from "@simon/shared";
+import { useSession } from "@/lib/session-store.ts";
 import { useQuery } from "@tanstack/react-query";
 import { businessDate, periodRange } from "@simon/shared";
 import { ArrowLeft, CalendarDays, Clock, KeyRound, Pencil, Phone, ReceiptText, StickyNote, Warehouse, type LucideIcon } from "lucide-react";
@@ -44,25 +46,29 @@ interface Facet {
   reports: readonly ReportName[];
   /** The live session list (§15.4) belongs to one facet only. */
   sessions?: boolean;
+  /** Reads the audit trail and the session list, which are the owner's alone (§16.4). */
+  ownerOnly?: boolean;
 }
 
 /** §6.11.1's table, in its order. Every entry names a report that §20.2 already lists. */
-const FACETS: readonly Facet[] = [
+const ALL_FACETS: readonly Facet[] = [
   { key: "sales", icon: ReceiptText, reports: ["sales", "discounts", "voids-returns"] },
   { key: "stock", icon: Warehouse, reports: ["movements-by-person", "write-offs"] },
   { key: "shift", icon: Clock, reports: ["z-reports", "cash-out-by-person"] },
-  { key: "access", icon: KeyRound, reports: ["audit"], sessions: true },
+  { key: "access", icon: KeyRound, reports: ["audit"], sessions: true, ownerOnly: true },
 ];
 
 export function PersonPage() {
   const { id = "" } = useParams();
+  const session = useSession();
+  const facets = ALL_FACETS.filter((f) => !f.ownerOnly || (!!session && isOwner(session.user.role)));
   const settings = useClientSettings().data;
   const today = businessDate(new Date(), settings?.timezone ?? "Asia/Yerevan");
   const [params, setParams] = useSearchParams();
 
   const thisMonth = periodRange("month", today);
   const period = { from: params.get("from") ?? thisMonth.from, to: params.get("to") ?? thisMonth.to };
-  const facet = FACETS.find((f) => f.key === params.get("facet")) ?? FACETS[0];
+  const facet = facets.find((f) => f.key === params.get("facet")) ?? facets[0];
 
   const set = (patch: Record<string, string | undefined>) => {
     const next = new URLSearchParams(params);
@@ -79,11 +85,11 @@ export function PersonPage() {
 
   const tabs = useRef<HTMLButtonElement[]>([]);
   const move = (e: ReactKeyboardEvent<HTMLButtonElement>, index: number) => {
-    const step = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : e.key === "Home" ? -index : e.key === "End" ? FACETS.length - 1 - index : 0;
+    const step = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : e.key === "Home" ? -index : e.key === "End" ? facets.length - 1 - index : 0;
     if (step === 0) return;
     e.preventDefault();
-    const next = (index + step + FACETS.length) % FACETS.length;
-    set({ facet: FACETS[next].key });
+    const next = (index + step + facets.length) % facets.length;
+    set({ facet: facets[next].key });
     tabs.current[next]?.focus();
   };
 
@@ -130,7 +136,7 @@ export function PersonPage() {
 
       {/* Real tabs: one stop in the tab order, arrows between them, and the chosen one in the URL. */}
       <div role="tablist" aria-label={t("staff.facets")} className="flex flex-wrap gap-2">
-        {FACETS.map((f, i) => {
+        {facets.map((f, i) => {
           const Icon = f.icon;
           const selected = f.key === facet.key;
           return (

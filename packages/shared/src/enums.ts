@@ -1,7 +1,11 @@
 /** Every enumerated field in PRD §11, as Zod enums so server and client validate alike. */
 import { z } from "zod";
 
-export const Role = z.enum(["WORKER", "STOCK", "ADMIN"]);
+/**
+ * Three tiers (PRD §16.4). `OWNER` is the one person the shop belongs to; `MANAGER` runs it and
+ * never sees what is the owner's alone; `EMPLOYEE` can do exactly what they were granted.
+ */
+export const Role = z.enum(["OWNER", "MANAGER", "EMPLOYEE"]);
 export const SaleStatus = z.enum(["DRAFT", "HELD", "COMPLETED", "VOIDED"]);
 export const PriceBasis = z.enum(["INCLUSIVE", "EXCLUSIVE"]);
 export const PaymentMethod = z.enum(["CASH", "CARD", "DEBT", "TRANSFER"]);

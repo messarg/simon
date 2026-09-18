@@ -3,7 +3,8 @@
  * Money and quantity are integers on the wire — a decimal is a 400, never coerced (§15.1).
  */
 import { z } from "zod";
-import { CashReasonCode, ImportKind, PriceBasis, Role, WriteOffReason } from "./enums.ts";
+import { CashReasonCode, ImportKind, PriceBasis, WriteOffReason } from "./enums.ts";
+import { Permission } from "./access.ts";
 
 const id = z.string().uuid();
 const int = z.number().int();
@@ -298,12 +299,20 @@ export const PersonalDetails = {
   note: text(500).nullish(),
 };
 
-export const UserBody = z.object({ name: text(60).min(1), pin: z.string(), role: Role, ...PersonalDetails });
+/** `OWNER` is never assignable: there is exactly one, created at setup (§7.1). */
+export const AssignableRole = z.enum(["MANAGER", "EMPLOYEE"]);
+
+export const UserBody = z.object({
+  name: text(60).min(1), pin: z.string(), role: AssignableRole,
+  permissions: z.array(Permission).max(Permission.options.length).default([]),
+  ...PersonalDetails,
+});
 
 export const UserPatchBody = z.object({
   name: text(60).min(1).optional(),
   pin: z.string().optional(),
-  role: Role.optional(),
+  role: AssignableRole.optional(),
+  permissions: z.array(Permission).max(Permission.options.length).optional(),
   isActive: z.boolean().optional(),
   ...PersonalDetails,
 });

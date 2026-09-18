@@ -7,10 +7,10 @@ import { bearer, createTestApp, PINS, type TestApp } from "../test/app.ts";
 import { backdatedCharge, get, makeCustomer, makeProduct, openShift, post, repayment, saleBody, type FixtureProduct } from "../test/fixtures.ts";
 
 async function reauth(t: TestApp, action: string) {
-  return (await post(t, "/auth/reauth", { adminUserId: t.users.ADMIN.id, pin: PINS.ADMIN, action })).body.grant as string;
+  return (await post(t, "/auth/reauth", { name: t.users.OWNER.name, pin: PINS.OWNER, action })).body.grant as string;
 }
-const ledger = async (t: TestApp, id: string, role: "WORKER" | "ADMIN" = "WORKER") => (await get(t, `/customers/${id}/ledger`, role)).body;
-const patch = (t: TestApp, path: string, body: object) => request(t.server).patch(`/api${path}`).set(bearer(t.tokens.ADMIN)).send(body);
+const ledger = async (t: TestApp, id: string, role: "WORKER" | "OWNER" = "WORKER") => (await get(t, `/customers/${id}/ledger`, role)).body;
+const patch = (t: TestApp, path: string, body: object) => request(t.server).patch(`/api${path}`).set(bearer(t.tokens.OWNER)).send(body);
 
 describe("debt sale — §27.12, §12.2, §14.6", () => {
   let t: TestApp;
@@ -105,11 +105,11 @@ describe("repayments — §27.32, §27.7 (card), §10.6", () => {
   it("a card repayment writes no cash movement; expected cash is unchanged", async () => {
     const c = await makeCustomer(t, "Կարինե");
     await backdatedCharge(t, c.id, 30_000, 3);
-    const shiftId = await openShift(t, "ADMIN", 20_000);
-    const res = await post(t, "/debt-payments", repayment(c.id, 30_000, "CARD", shiftId), "ADMIN");
+    const shiftId = await openShift(t, "OWNER", 20_000);
+    const res = await post(t, "/debt-payments", repayment(c.id, 30_000, "CARD", shiftId), "OWNER");
     expect(res.body.outstanding).toBe(0);
     expect(await t.db.cashMovement.count({ where: { shiftId } })).toBe(0);
-    expect((await get(t, `/shifts/${shiftId}/x-report`, "ADMIN")).body.figures.expected).toBe(20_000);
+    expect((await get(t, `/shifts/${shiftId}/x-report`, "OWNER")).body.figures.expected).toBe(20_000);
   });
 
   it("a repayment on the wrong customer, reversed and re-entered: the first customer's aging is as it was, and the drawer counts the money once", async () => {
@@ -188,7 +188,7 @@ describe("merge, erasure, returns onto debt, and the drawer's sources", () => {
     const lb = await ledger(t, b.id);
     expect(lb.outstanding).toBe(-3_000);
     expect((await post(t, `/customers/${b.id}/merge`, { intoId: a.id }, "WORKER")).status).toBe(403);
-    expect((await post(t, `/customers/${b.id}/merge`, { intoId: a.id }, "ADMIN")).status).toBe(200);
+    expect((await post(t, `/customers/${b.id}/merge`, { intoId: a.id }, "OWNER")).status).toBe(200);
     const merged = await ledger(t, a.id);
     expect(merged.outstanding).toBe(la.outstanding + lb.outstanding);
     expect(merged.outstanding).toBe(7_000);
@@ -203,13 +203,13 @@ describe("merge, erasure, returns onto debt, and the drawer's sources", () => {
     await post(t, "/debt-payments", repayment(c.id, 3_000, "CARD", null));
     await post(t, "/debt-payments", repayment(c.id, 1_000, "CARD", null));
     const entriesBefore = await t.db.debtEntry.findMany({ where: { customerId: c.id }, orderBy: { id: "asc" }, select: { id: true, amount: true, createdAt: true } });
-    const agingBefore = (await get(t, "/customers/aging", "ADMIN")).body.totals;
+    const agingBefore = (await get(t, "/customers/aging", "OWNER")).body.totals;
     const lines: string[] = [];
     const original = logger.info.bind(logger);
     (logger as { info: unknown }).info = (...args: unknown[]) => { lines.push(JSON.stringify(args)); return original(...(args as [string])); };
     try {
-      expect((await post(t, `/customers/${c.id}/erase`, {}, "ADMIN")).status).toBe(200);
-      await get(t, `/customers/${c.id}/ledger`, "ADMIN");
+      expect((await post(t, `/customers/${c.id}/erase`, {}, "OWNER")).status).toBe(200);
+      await get(t, `/customers/${c.id}/ledger`, "OWNER");
     } finally {
       (logger as { info: unknown }).info = original;
     }
@@ -217,7 +217,7 @@ describe("merge, erasure, returns onto debt, and the drawer's sources", () => {
     expect(row).toMatchObject({ fullName: null, phone: null });
     expect(row.anonymisedAt).not.toBeNull();
     expect(await t.db.debtEntry.findMany({ where: { customerId: c.id }, orderBy: { id: "asc" }, select: { id: true, amount: true, createdAt: true } })).toEqual(entriesBefore);
-    expect((await get(t, "/customers/aging", "ADMIN")).body.totals).toEqual(agingBefore);
+    expect((await get(t, "/customers/aging", "OWNER")).body.totals).toEqual(agingBefore);
     const audit = await t.db.auditLog.findMany({ where: { entityId: c.id } });
     for (const text of [...lines, ...audit.map((x) => JSON.stringify(x))]) {
       expect(text).not.toContain("Մարիամ");

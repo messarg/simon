@@ -1,4 +1,5 @@
 /** Պահեստ — "do we have it, and how many?" (§6.16). The shelf, written down; last-known when offline. */
+import { can, isOwner, type Permission } from "@simon/shared";
 import { useQuery } from "@tanstack/react-query";
 import { ClipboardCheck, ClipboardList, PackageMinus, PackageSearch, Scale, Search, ShieldAlert, Tags, Truck } from "lucide-react";
 import { Link } from "react-router";
@@ -27,7 +28,10 @@ export function StockPage() {
   const [results, setResults] = useState<CachedProduct[]>([]);
   const [selected, setSelected] = useState<CachedProduct | null>(null);
   const session = useSession();
-  const canStock = session?.user.role === "STOCK" || session?.user.role === "ADMIN";
+  // Each stockroom job appears to whoever holds it, inside the screen they already use (§5.1, §16.4).
+  const actor = session?.user;
+  const may = (p: Permission) => !!actor && can(actor, p);
+  const receives = may("receive");
   const [op, setOp] = useState<null | "writeOff" | "adjust" | "receipts">(null);
 
   useEffect(() => { const id = setTimeout(() => void searchCatalogue(query, 50).then(setResults), 60); return () => clearTimeout(id); }, [query, version]);
@@ -52,11 +56,11 @@ export function StockPage() {
   return (
     <div className="flex min-h-0 flex-1 flex-col md:flex-row">
       <section className={cn("flex min-h-0 flex-col border-border md:w-96 md:border-r", selected && "hidden md:flex")}>
-        {canStock && (
+        {(receives || may("stocktake")) && (
           <div className="grid grid-cols-2 gap-2 px-3 pt-3">
-            <Button asChild size="lg" disabled={connection === "offline"}><Link to="/stock/receive"><Truck />{t("stockOps.receive")}</Link></Button>
-            <Button variant="secondary" size="lg" disabled={connection === "offline"} onClick={() => setOp("receipts")}><ClipboardList />{t("stockOps.receipts")}</Button>
-            <Button asChild variant="secondary" size="lg" className="col-span-2"><Link to="/stock/count"><ClipboardCheck />{t("stocktake.open")}</Link></Button>
+            {receives && <Button asChild size="lg" disabled={connection === "offline"}><Link to="/stock/receive"><Truck />{t("stockOps.receive")}</Link></Button>}
+            {receives && <Button variant="secondary" size="lg" disabled={connection === "offline"} onClick={() => setOp("receipts")}><ClipboardList />{t("stockOps.receipts")}</Button>}
+            {may("stocktake") && <Button asChild variant="secondary" size="lg" className="col-span-2"><Link to="/stock/count"><ClipboardCheck />{t("stocktake.open")}</Link></Button>}
           </div>
         )}
         {/* The recount list is stock's job, so it is reachable from here and not only from the owner's home (FR-STK-05). */}
@@ -106,11 +110,11 @@ export function StockPage() {
               <MoneyText amount={selected.sellPriceMdram / 1000} className="text-3xl font-bold" />
             </div>
           </div>
-          {canStock && (
+          {(may("writeoff") || may("labels")) && (
             <div className="mt-4 grid grid-cols-2 gap-2">
-              <Button variant="secondary" size="lg" className="h-touch-xl flex-col gap-1 px-2 text-base" disabled={connection === "offline"} onClick={() => setOp("writeOff")}><PackageMinus />{t("stockOps.writeOff")}</Button>
-              <Button variant="secondary" size="lg" className="h-touch-xl flex-col gap-1 px-2 text-base" disabled={connection === "offline"} onClick={() => setOp("adjust")}><Scale />{t("stockOps.adjust")}</Button>
-              <Button asChild variant="ghost" size="lg" className="col-span-2"><Link to={`/labels?ids=${selected.id}`}><Tags />{t("labels.forProduct")}</Link></Button>
+              {may("writeoff") && <Button variant="secondary" size="lg" className="h-touch-xl flex-col gap-1 px-2 text-base" disabled={connection === "offline"} onClick={() => setOp("writeOff")}><PackageMinus />{t("stockOps.writeOff")}</Button>}
+              {may("writeoff") && <Button variant="secondary" size="lg" className="h-touch-xl flex-col gap-1 px-2 text-base" disabled={connection === "offline"} onClick={() => setOp("adjust")}><Scale />{t("stockOps.adjust")}</Button>}
+              {may("labels") && <Button asChild variant="ghost" size="lg" className="col-span-2"><Link to={`/labels?ids=${selected.id}`}><Tags />{t("labels.forProduct")}</Link></Button>}
             </div>
           )}
           <h2 className="mt-6 mb-2 text-lg font-semibold">{t("stock.history")}</h2>
@@ -134,7 +138,7 @@ export function StockPage() {
           <AdjustSheet key={op === "adjust" ? "adj-open" : "adj-closed"} product={selected} open={op === "adjust"} onOpenChange={(o) => setOp(o ? "adjust" : null)} onDone={() => void history.refetch()} />
         </section>
       )}
-      {canStock && <ReceiptListSheet open={op === "receipts"} onOpenChange={(o) => setOp(o ? "receipts" : null)} admin={session?.user.role === "ADMIN"} />}
+      {receives && <ReceiptListSheet open={op === "receipts"} onOpenChange={(o) => setOp(o ? "receipts" : null)} admin={!!actor && isOwner(actor.role)} />}
     </div>
   );
 }

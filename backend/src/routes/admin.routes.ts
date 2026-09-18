@@ -1,8 +1,8 @@
-/** Session-bound account routes, and the ADMIN block of §15.4. */
+/** Session-bound account routes, and the owner-and-manager block of §15.4. */
 import { Router } from "express";
 import { z } from "zod";
 import { UserBody, UserPatchBody } from "@simon/shared";
-import { auth, requireRole } from "../middleware/auth.ts";
+import { auth, requireManager, requireOwner } from "../middleware/auth.ts";
 import { problem } from "../lib/problem.ts";
 import { AVATAR_MAX_DATA_URL, decodeAvatar } from "../domain/avatar.ts";
 import { shapeDevice, shapeSession, shapeUser } from "../lib/shape.ts";
@@ -10,7 +10,7 @@ import { clock } from "../lib/time.ts";
 import { enterPractice, exitPractice } from "../services/practice.service.ts";
 import { deactivateDevice, logout, revokeSession, unlockUser } from "../services/auth.service.ts";
 import { clientSettings, readSettings, writeSettings } from "../services/settings.service.ts";
-import { createUser, getUser, listUsers, updateUser } from "../services/user.service.ts";
+import { assertCanManage, createUser, getUser, listUsers, updateUser } from "../services/user.service.ts";
 
 const safeList = (json: string): string[] => {
   try {
@@ -31,7 +31,7 @@ export function accountRoutes() {
       a.live.user.findUniqueOrThrow({ where: { id: a.userId }, select: { coachMarksSeen: true } }),
     ]);
     res.json({
-      user: { id: a.userId, name: a.userName, role: a.role, coachMarksSeen: safeList(user.coachMarksSeen) },
+      user: { id: a.userId, name: a.userName, role: a.role, permissions: a.permissions, coachMarksSeen: safeList(user.coachMarksSeen) },
       session: { id: a.sessionId, mode: a.mode, shiftId: a.shiftId }, device: shapeDevice(device),
     });
   });
@@ -83,44 +83,50 @@ export function accountRoutes() {
 
 export function adminRoutes() {
   const r = Router();
-  r.use(requireRole("ADMIN"));
+  const owner = requireOwner();
+  const manager = requireManager();
+  const actor = (req: Express.Request) => ({ id: auth(req).userId, role: auth(req).role });
 
-  r.get("/settings", async (req, res) => { res.json(await readSettings(auth(req).db)); });
-  r.patch("/settings", async (req, res) => {
+  // How the shop is configured is the owner's: tax, caps, printers, the shop's name (§6.11).
+  r.get("/settings", owner, async (req, res) => { res.json(await readSettings(auth(req).db)); });
+  r.patch("/settings", owner, async (req, res) => {
     const a = auth(req);
     const patch = z.record(z.string(), z.unknown()).parse(req.body);
     res.json(await a.db.$transaction((tx) => writeSettings(tx, patch, a.userId)));
   });
 
   /**
-   * The staff list and one person's page (§6.11, §15.4). Both carry the personal details, and both
-   * are behind this router's `ADMIN` gate — §19.6: *"the phone, the start date and the note are
-   * `ADMIN`-only and reach two routes."* These are the two.
+   * The staff list and one person's page (§6.17, §15.4) — the only two routes carrying personal
+   * details (§19.6). The owner and managers both reach them; who they may see and change is
+   * `@simon/shared`'s `staff-policy.ts`, and `shapeUser` drops the details of anyone the viewer does not
+   * manage.
    */
-  r.get("/users", async (req, res) => { res.json({ items: (await listUsers(auth(req).live)).map(shapeUser) }); });
-  r.get("/users/:id", async (req, res) => { res.json(shapeUser(await getUser(auth(req).live, req.params.id))); });
-  r.post("/users", async (req, res) => {
-    res.status(201).json(shapeUser(await createUser(auth(req).live, auth(req).userId, UserBody.parse(req.body))));
+  r.get("/users", manager, async (req, res) => {
+    const a = auth(req);
+    res.json({ items: (await listUsers(a.live, a.role)).map((u) => shapeUser(u, actor(req))) });
   });
-  r.patch("/users/:id", async (req, res) => {
-    res.json(shapeUser(await updateUser(auth(req).live, auth(req).userId, req.params.id, UserPatchBody.parse(req.body))));
+  r.get("/users/:id", manager, async (req, res) => { res.json(shapeUser(await getUser(auth(req).live, actor(req), String(req.params.id)), actor(req))); });
+  r.post("/users", manager, async (req, res) => {
+    res.status(201).json(shapeUser(await createUser(auth(req).live, actor(req), UserBody.parse(req.body)), actor(req)));
+  });
+  r.patch("/users/:id", manager, async (req, res) => {
+    res.json(shapeUser(await updateUser(auth(req).live, actor(req), String(req.params.id), UserPatchBody.parse(req.body)), actor(req)));
   });
 
   /**
-   * The photograph is written and removed under the role that manages the person (§15.4). It is
+   * The photograph is written and removed by whoever manages the person (§15.4, §6.17). It is
    * re-checked here rather than trusted: the device downscales, but the bound on a column served
    * before authentication has to hold where the caller cannot reach it (§11, §26.2).
    *
    * No `AuditLog` row: §10.7 enumerates what is audited, and a photograph is neither a financial
    * event nor a permission change.
    */
-  r.put("/users/:id/avatar", async (req, res) => {
+  r.put("/users/:id/avatar", manager, async (req, res) => {
     const a = auth(req);
     const { image } = z.object({ image: z.string().min(1).max(AVATAR_MAX_DATA_URL) }).parse(req.body);
     const decoded = decodeAvatar(image);
     if (!decoded.ok) throw problem("malformed-request", { errors: { image: [decoded.reason] } });
-    const user = await a.live.user.findUnique({ where: { id: req.params.id }, select: { id: true } });
-    if (!user) throw problem("not-found");
+    const user = await assertCanManage(a.live, actor(req), String(req.params.id), "edit");
     const avatarUpdatedAt = clock.iso();
     await a.live.user.update({
       where: { id: user.id },
@@ -129,42 +135,45 @@ export function adminRoutes() {
     res.json({ avatarUpdatedAt });
   });
 
-  r.delete("/users/:id/avatar", async (req, res) => {
+  r.delete("/users/:id/avatar", manager, async (req, res) => {
     const a = auth(req);
-    const user = await a.live.user.findUnique({ where: { id: req.params.id }, select: { id: true } });
-    if (!user) throw problem("not-found");
+    const user = await assertCanManage(a.live, actor(req), String(req.params.id), "edit");
     await a.live.user.update({ where: { id: user.id }, data: { avatar: null, avatarType: null, avatarUpdatedAt: null } });
     res.json({ avatarUpdatedAt: null });
   });
 
-  r.post("/auth/unlock", async (req, res) => {
+  // §16.2's first way out: the owner clears anyone's lock, a manager an employee's.
+  r.post("/auth/unlock", manager, async (req, res) => {
     const { userId } = z.object({ userId: z.string().min(1) }).parse(req.body);
+    await assertCanManage(auth(req).live, actor(req), userId, "edit");
     await unlockUser(auth(req).live, auth(req).userId, userId);
     res.status(204).end();
   });
 
-  r.get("/sessions", async (req, res) => {
+  // Who is signed in where, and every device the shop has — the owner's, since the list includes
+  // the owner's own sessions and a manager revoking those would lock the owner out (§16.3).
+  r.get("/sessions", owner, async (req, res) => {
     // Only the name is shaped out of the user row, and only the name is read: `user: true` would
     // fetch the photograph's bytes and the personal details on every session in the list (§11).
     const rows = await auth(req).live.session.findMany({ where: { revokedAt: null, expiresAt: { gt: clock.iso() } }, include: { user: { select: { name: true } }, device: true }, orderBy: { createdAt: "desc" } });
     res.json({ items: rows.map(shapeSession) });
   });
-  r.post("/sessions/:id/revoke", async (req, res) => {
-    await revokeSession(auth(req).live, auth(req).userId, req.params.id);
+  r.post("/sessions/:id/revoke", owner, async (req, res) => {
+    await revokeSession(auth(req).live, auth(req).userId, String(req.params.id));
     res.status(204).end();
   });
 
-  r.get("/devices", async (req, res) => { res.json({ items: (await auth(req).live.device.findMany({ orderBy: { registeredAt: "asc" } })).map(shapeDevice) }); });
-  r.patch("/devices/:id", async (req, res) => {
+  r.get("/devices", owner, async (req, res) => { res.json({ items: (await auth(req).live.device.findMany({ orderBy: { registeredAt: "asc" } })).map(shapeDevice) }); });
+  r.patch("/devices/:id", owner, async (req, res) => {
     const body = z.object({ label: z.string().trim().min(1).max(40).optional(), isActive: z.literal(false).optional() }).parse(req.body);
     const a = auth(req);
-    if (body.isActive === false) await deactivateDevice(a.live, a.userId, req.params.id);
+    if (body.isActive === false) await deactivateDevice(a.live, a.userId, String(req.params.id));
     if (body.label) {
-      const d = await a.live.device.findUnique({ where: { id: req.params.id } });
+      const d = await a.live.device.findUnique({ where: { id: String(req.params.id) } });
       if (!d) throw problem("not-found");
       await a.live.device.update({ where: { id: d.id }, data: { label: body.label } });
     }
-    res.json(shapeDevice(await a.live.device.findUniqueOrThrow({ where: { id: req.params.id } })));
+    res.json(shapeDevice(await a.live.device.findUniqueOrThrow({ where: { id: String(req.params.id) } })));
   });
 
   return r;

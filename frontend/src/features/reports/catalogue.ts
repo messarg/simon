@@ -3,6 +3,7 @@
  * report here is what puts it on the screen, with its own one-line explanation of what it answers.
  */
 import { BookUser, Coins, FileClock, HandCoins, LineChart, PackageSearch, Percent, ReceiptText, Scale, ShieldCheck, Trash2, Truck, Undo2, UserRoundCog, Warehouse, type LucideIcon } from "lucide-react";
+import { isOwner, OWNER_REPORTS, type Role } from "@simon/shared";
 import type { ReportName } from "./types.ts";
 
 export interface ReportEntry {
@@ -35,3 +36,6 @@ export const REPORTS: readonly ReportEntry[] = [
 ];
 
 export const reportEntry = (name: string) => REPORTS.find((r) => r.name === name);
+
+/** The catalogue this person may open: a manager's leaves out the owner's reports (§16.4). */
+export const reportsFor = (role: Role) => REPORTS.filter((r) => isOwner(role) || !(OWNER_REPORTS as readonly string[]).includes(r.name));

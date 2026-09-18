@@ -15,12 +15,14 @@ import { useClientSettings } from "../settings.ts";
 
 interface Home {
   businessDate: string;
-  today: { takings: number; salesCount: number; averageSale: number; returns: number; profit: number | null; revenueWithoutCost: number };
+  /** `profit` and `revenueWithoutCost` are the owner's; a manager's home has neither (§16.4). */
+  today: { takings: number; salesCount: number; averageSale: number; returns: number; profit?: number | null; revenueWithoutCost?: number };
   receivables: { outstanding: number; customers: number; over90: number; overdue: number };
   payables: { outstanding: number; overdue: number };
   stock: { low: number; dead: number };
   attention: { openFlags: number };
-  alerts: Array<{ type: string; count?: number; lastAt?: string | null; deviceLabel?: string }>;
+  /** The system's own alerts point at Settings, which is the owner's — absent for a manager. */
+  alerts?: Array<{ type: string; count?: number; lastAt?: string | null; deviceLabel?: string }>;
 }
 
 /** A figure is a link: tapping it opens the events that produced it. */
@@ -46,7 +48,7 @@ export function HomePage() {
     <div className="mx-auto w-full max-w-3xl space-y-4 p-4 md:p-6">
       <h1 className="text-2xl font-semibold">{t("nav.home")}</h1>
 
-      {d.alerts.map((a) => (
+      {(d.alerts ?? []).map((a) => (
         <div key={`${a.type}-${a.deviceLabel ?? ""}`} className="flex items-start gap-3 rounded-xl bg-attention-soft p-4 text-attention-foreground ring-1 ring-attention">
           <AlertTriangle className="mt-0.5 size-5 shrink-0" aria-hidden />
           <div className="min-w-0 flex-1">
@@ -67,12 +69,16 @@ export function HomePage() {
         ) : (
           <div className="grid gap-3 sm:grid-cols-2">
             <Figure label={t("home.takings")} amount={d.today.takings} to={`/reports?r=sales&by=sale&${period}`} sub={t("home.salesCount", { n: d.today.salesCount })} />
-            <Figure
-              label={t("home.profit")}
-              amount={d.today.profit ?? 0}
-              to={`/reports?r=margin&${period}`}
-              sub={d.today.revenueWithoutCost > 0 ? t("home.noCostBasis", { amount: money(d.today.revenueWithoutCost) }) : `${t("home.average")} ${money(d.today.averageSale)}`}
-            />
+            {d.today.profit !== undefined ? (
+              <Figure
+                label={t("home.profit")}
+                amount={d.today.profit ?? 0}
+                to={`/reports?r=margin&${period}`}
+                sub={(d.today.revenueWithoutCost ?? 0) > 0 ? t("home.noCostBasis", { amount: money(d.today.revenueWithoutCost ?? 0) }) : `${t("home.average")} ${money(d.today.averageSale)}`}
+              />
+            ) : (
+              <Figure label={t("home.average")} amount={d.today.averageSale} to={`/reports?r=sales&by=sale&${period}`} />
+            )}
             {d.today.returns > 0 && <Figure label={t("home.returns")} amount={d.today.returns} to={`/reports?r=voids-returns&${period}`} />}
           </div>
         )}

@@ -2,6 +2,7 @@
  * Ուշադրություն պահանջող — one list carrying every flag: negative stock, sync conflicts, cache
  * drift (FR-STK-05). Reading it is any session; clearing one is gated by the flag's type (§15.4).
  */
+import { can, isManager, isOwner } from "@simon/shared";
 import { useQuery } from "@tanstack/react-query";
 import { CheckCircle2, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
@@ -26,7 +27,14 @@ interface Flag {
 export function AttentionPage() {
   const session = useSession();
   const flags = useQuery({ queryKey: ["review-flags"], queryFn: () => http.get<{ items: Flag[] }>("/review-flags", { query: { resolved: "false", limit: 200 } }) });
-  const canResolve = (type: string) => session?.user.role === "ADMIN" || (session?.user.role === "STOCK" && type === "INSUFFICIENT_STOCK");
+  // Mirrors the server (§15.4): a recount flag is whoever counts stock's, a cost variance the
+  // owner's, and every other type the owner's or a manager's.
+  const canResolve = (type: string) => {
+    if (!session) return false;
+    if (type === "COST_VARIANCE") return isOwner(session.user.role);
+    if (type === "INSUFFICIENT_STOCK") return can(session.user, "stocktake");
+    return isManager(session.user.role);
+  };
 
   const resolve = async (id: string) => {
     try {

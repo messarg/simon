@@ -8,9 +8,11 @@ import { DeviceRateLimiter } from "../domain/pin-policy.ts";
 import { login, recover, reauth } from "../services/auth.service.ts";
 import { createInstallPassphrase } from "../services/backup.service.ts";
 import { readSettings } from "../services/settings.service.ts";
-import { createOwner, listAdmins, listSignInUsers, needsSetup } from "../services/user.service.ts";
+import { createOwner, needsSetup } from "../services/user.service.ts";
 
 const pin = z.string().regex(/^\d{4,8}$/);
+/** A typed name, as the person spells it; `nameKey` decides what it matches (§16.2). */
+const typedName = z.string().trim().min(1).max(60);
 
 /** `If-None-Match` is a list, and a proxy may have made ours weak on the way out. */
 function matchesEtag(header: string | string[] | undefined, etag: string) {
@@ -46,16 +48,15 @@ export function systemRoutes(live: Db) {
     res.status(201).json({ ...owner, backupPassphrase: createInstallPassphrase() });
   });
 
-  r.get("/auth/users", async (_req, res) => {
-    if (await needsSetup(live)) throw problem("setup-required");
-    res.json({ items: await listSignInUsers(live) });
-  });
+  // There is no list of who works here (§16.2, §26.2): nobody is shown before they sign in, so
+  // the screen cannot be used to learn names, faces or who holds which role.
 
   /**
-   * The photograph itself, one request per face and the only personal field served without a
-   * session (§6.11.1, §16.5, §26.2). It draws the sign-in tiles, so it cannot require the session
-   * you do not have yet. `ETag` is the write stamp: the browser asks once per face and is told
-   * `304` every time afterwards, while `no-cache` keeps a replaced photograph from surviving.
+   * The photograph itself, one request per face (§16.5, §26.2). It stays outside the session
+   * because an `<img>` cannot carry a bearer token — but with the sign-in list gone, a person's id
+   * is only ever handed to someone who has already signed in, so nothing before sign-in can name a
+   * face to ask for. `ETag` is the write stamp: the browser asks once per face and is told `304`
+   * every time afterwards, while `no-cache` keeps a replaced photograph from surviving.
    */
   r.get("/users/:id/avatar", async (req, res) => {
     const u = await live.user.findUnique({
@@ -74,26 +75,21 @@ export function systemRoutes(live: Db) {
     res.send(Buffer.from(u.avatar));
   });
 
-  // The admins an override can be approved by (§16.3): the same names, filtered by who may say yes.
-  r.get("/auth/admins", async (_req, res) => {
-    res.json({ items: await listAdmins(live) });
-  });
-
   r.post("/auth/login", async (req, res) => {
-    const body = z.object({ userId: z.string().min(1), pin: z.string(), deviceId: z.string().nullish(), deviceLabel: z.string().max(40).optional() }).parse(req.body);
+    const body = z.object({ name: typedName, pin: z.string(), deviceId: z.string().nullish(), deviceLabel: z.string().max(40).optional() }).parse(req.body);
     res.json(await login(live, limiter, { ...body, rateKey: req.ip ?? "unknown" }));
   });
 
   r.post("/auth/reauth", async (req, res) => {
     const body = z.object({
-      adminUserId: z.string().min(1), pin: z.string(),
+      name: typedName, pin: z.string(),
       action: z.enum(["discount", "priceOverride", "priceChange", "stockAdjustment", "blindReturn", "repaymentReversal", "noSaleDrawer", "creditLimitOverride", "unlock", "backupPassphrase", "backupRestore"]),
     }).parse(req.body);
     res.json(await reauth(live, limiter, { ...body, rateKey: req.ip ?? "unknown" }));
   });
 
   r.post("/auth/recover", async (req, res) => {
-    const body = z.object({ userId: z.string().min(1), recoveryCode: z.string().min(4) }).parse(req.body);
+    const body = z.object({ recoveryCode: z.string().min(4).max(40) }).parse(req.body);
     res.json(await recover(live, body));
   });
 

@@ -28,7 +28,7 @@ describe("the setup wizard", () => {
       expect(setup.body.recoveryCode).toMatch(/^[A-Z2-9]{4}(-[A-Z2-9]{4}){3}$/);
       expect(setup.body.backupPassphrase).toMatch(/^[A-HJ-NP-Z2-9]{4}(-[A-HJ-NP-Z2-9]{4}){5}$/);
 
-      const token = (await request(server).post("/api/auth/login").send({ userId: setup.body.user.id, pin: "4321", deviceLabel: "setup" })).body.token;
+      const token = (await request(server).post("/api/auth/login").send({ name: setup.body.user.name, pin: "4321", deviceLabel: "setup" })).body.token;
       const patch = (body: object) => request(server).patch("/api/settings").set(bearer(token)).send(body);
 
       // Q3 — sold by weight or length? Answered, then the laptop closes.

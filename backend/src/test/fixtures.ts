@@ -1,26 +1,26 @@
 /** Builders for selling tests: products with stock, open shifts, and sale bodies whose totals are right. */
 import request from "supertest";
-import { computeSale, uuidv7, type PriceBasis, type Role, type SaleBody } from "@simon/shared";
+import { computeSale, uuidv7, type PriceBasis, type SaleBody } from "@simon/shared";
 import { createProduct } from "../services/product.service.ts";
 import { postMovement } from "../services/stock-ledger.service.ts";
-import { bearer, type TestApp } from "./app.ts";
+import { bearer, type Persona, type TestApp } from "./app.ts";
 
 export interface FixtureProduct { id: string; name: string; sellPriceMdram: number; stockUom: string; decimalPlaces: number }
 
 export async function makeProduct(t: TestApp, opts: { name: string; priceDram: number; decimalPlaces?: number; uom?: string; stock?: number; costMdram?: number | null; barcode?: string }): Promise<FixtureProduct> {
-  const p = await createProduct(t.db, t.users.ADMIN.id, {
+  const p = await createProduct(t.db, t.users.OWNER.id, {
     id: uuidv7(), name: opts.name, sellPriceMdram: opts.priceDram * 1000, stockUom: opts.uom ?? "հատ", decimalPlaces: opts.decimalPlaces ?? 0, barcode: opts.barcode ?? null,
   });
   if (opts.stock) {
     await t.db.$transaction((tx) => postMovement(tx, {
       productId: p.id, type: opts.costMdram == null ? "OPENING_BALANCE" : "PURCHASE_RECEIPT", qtyDelta: opts.stock!, unitCostMdram: opts.costMdram ?? null,
-      source: { type: "Test", id: p.id }, userId: t.users.ADMIN.id,
+      source: { type: "Test", id: p.id }, userId: t.users.OWNER.id,
     }));
   }
   return p;
 }
 
-export async function openShift(t: TestApp, role: Role, openingFloat = 20_000, token = t.tokens[role]) {
+export async function openShift(t: TestApp, role: Persona, openingFloat = 20_000, token = t.tokens[role]) {
   const id = uuidv7();
   const res = await request(t.server).post("/api/shifts").set(bearer(token)).send({ id, openingFloat });
   if (res.status !== 201) throw new Error(`open shift failed ${res.status} ${JSON.stringify(res.body)}`);
@@ -71,11 +71,11 @@ export function saleBody(opts: {
   };
 }
 
-export const post = (t: TestApp, path: string, body: unknown, role: Role = "WORKER", token?: string) =>
+export const post = (t: TestApp, path: string, body: unknown, role: Persona = "WORKER", token?: string) =>
   request(t.server).post(`/api${path}`).set(bearer(token ?? t.tokens[role])).send(body as object);
-export const get = (t: TestApp, path: string, role: Role = "WORKER") => request(t.server).get(`/api${path}`).set(bearer(t.tokens[role]));
+export const get = (t: TestApp, path: string, role: Persona = "WORKER") => request(t.server).get(`/api${path}`).set(bearer(t.tokens[role]));
 
-export async function makeCustomer(t: TestApp, fullName: string, phone: string | null = null, role: Role = "WORKER") {
+export async function makeCustomer(t: TestApp, fullName: string, phone: string | null = null, role: Persona = "WORKER") {
   const res = await request(t.server).post("/api/customers").set(bearer(t.tokens[role])).send({ id: uuidv7(), fullName, phone });
   if (res.status !== 201) throw new Error(`customer failed ${res.status} ${JSON.stringify(res.body)}`);
   return res.body as { id: string; fullName: string };
@@ -86,7 +86,7 @@ const daysAgo = (n: number) => new Date(Date.now() - n * 86_400_000).toISOString
 /** A charge with its original date, as an opening-debt import writes one (§19.1). */
 export async function backdatedCharge(t: TestApp, customerId: string, amount: number, days: number) {
   const id = uuidv7();
-  await t.db.debtEntry.create({ data: { id, customerId, type: "CHARGE", amount, createdAt: daysAgo(days), userId: t.users.ADMIN.id } });
+  await t.db.debtEntry.create({ data: { id, customerId, type: "CHARGE", amount, createdAt: daysAgo(days), userId: t.users.OWNER.id } });
   return id;
 }
 

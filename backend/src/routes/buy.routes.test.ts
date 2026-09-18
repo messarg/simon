@@ -9,12 +9,12 @@ import { get, makeProduct, openShift, post, saleBody, type FixtureProduct } from
 const today = () => businessDate(new Date(), "Asia/Yerevan");
 
 async function reauth(t: TestApp, action: string) {
-  return (await post(t, "/auth/reauth", { adminUserId: t.users.ADMIN.id, pin: PINS.ADMIN, action })).body.grant as string;
+  return (await post(t, "/auth/reauth", { name: t.users.OWNER.name, pin: PINS.OWNER, action })).body.grant as string;
 }
 async function supplier(t: TestApp, name: string, paymentTerms = 0) {
-  const res = await post(t, "/suppliers", { id: uuidv7(), name, paymentTerms }, "ADMIN");
+  const res = await post(t, "/suppliers", { id: uuidv7(), name, paymentTerms }, "OWNER");
   if (res.status !== 201) throw new Error(JSON.stringify(res.body));
-  if (paymentTerms) await request(t.server).patch(`/api/suppliers/${res.body.id}`).set(bearer(t.tokens.ADMIN)).send({ paymentTerms });
+  if (paymentTerms) await request(t.server).patch(`/api/suppliers/${res.body.id}`).set(bearer(t.tokens.OWNER)).send({ paymentTerms });
   return res.body.id as string;
 }
 function receipt(supplierId: string, lines: Array<{ product: FixtureProduct; qty: number; costDram: number; uom?: string; factor?: number }>, landedCostTotal = 0, receivedAt?: string) {
@@ -32,7 +32,7 @@ describe("receiving — §27.3, §27.31, §27.29", () => {
 
   it("3 spools of 50 m add 150 m and move the average including the delivery charge; the receipt still reads 3 spools", async () => {
     const cable = await makeProduct(t, { name: "Մալուխ", priceDram: 1200, decimalPlaces: 2, uom: "մ" });
-    expect((await post(t, `/products/${cable.id}/units`, { uom: "կոճ", factorToStockUom: 50, role: "PURCHASE" }, "ADMIN")).status).toBe(201);
+    expect((await post(t, `/products/${cable.id}/units`, { uom: "կոճ", factorToStockUom: 50, role: "PURCHASE" }, "OWNER")).status).toBe(201);
     const s = await supplier(t, "Էլեկտրոտեխնիկա");
     const body = receipt(s, [{ product: cable, qty: 3000, costDram: 25_000, uom: "կոճ", factor: 50 }], 1_500);
     const res = await post(t, "/goods-receipts", body, "STOCK");
@@ -42,8 +42,8 @@ describe("receiving — §27.3, §27.31, §27.29", () => {
     expect(res.body.lines[0]).toMatchObject({ qty: 3000, uom: "կոճ", factorToStockUom: 50, invoiceUnitCostMdram: 25_000_000 });
     expect(res.body.lines[0]).not.toHaveProperty("landedUnitCostMdram"); // STOCK sees only the invoice cost it typed (§16.5)
     // There is no route that edits a factor: a new packaging is a new unit (§27.31).
-    expect((await request(t.server).patch(`/api/products/${cable.id}/units/x`).set(bearer(t.tokens.ADMIN)).send({ factorToStockUom: 100 })).status).toBe(404);
-    const again = await get(t, `/goods-receipts/${body.id}`, "ADMIN");
+    expect((await request(t.server).patch(`/api/products/${cable.id}/units/x`).set(bearer(t.tokens.OWNER)).send({ factorToStockUom: 100 })).status).toBe(404);
+    const again = await get(t, `/goods-receipts/${body.id}`, "OWNER");
     expect(again.body.lines[0]).toMatchObject({ qty: 3000, uom: "կոճ", landedUnitCostMdram: 25_500_000 });
   });
 
@@ -51,7 +51,7 @@ describe("receiving — §27.3, §27.31, §27.29", () => {
     const sand = await makeProduct(t, { name: "Ավազ", priceDram: 100 });
     const shiftId = await openShift(t, "WORKER");
     expect((await post(t, "/sales", saleBody({ shiftId, lines: [{ product: sand, qty: 3000, taxRateBp: 0 }] }))).status).toBe(200);
-    const report = (await get(t, `/reports/margin?from=${today()}&to=${today()}`, "ADMIN")).body;
+    const report = (await get(t, `/reports/margin?from=${today()}&to=${today()}`, "OWNER")).body;
     const row = report.rows.find((i: { productId: string }) => i.productId === sand.id);
     expect(row).toMatchObject({ revenueWithoutCost: 300, netRevenue: 0, marginBooked: null });
     await post(t, "/goods-receipts", receipt(await supplier(t, "Քար"), [{ product: sand, qty: 10_000, costDram: 60 }]), "STOCK");
@@ -80,7 +80,7 @@ describe("margin — §27.4 and §27.33", () => {
     await post(t, "/sales", saleBody({ shiftId, lines: [{ product: pipe, qty: 5_000, taxRateBp: 0 }] }));
     await post(t, "/goods-receipts", receipt(s, [{ product: pipe, qty: 10_000, costDram: 15 }]), "STOCK");
     await post(t, "/sales", saleBody({ shiftId, lines: [{ product: pipe, qty: 5_000, taxRateBp: 0 }] }));
-    const row = (await get(t, `/reports/margin?from=${today()}&to=${today()}`, "ADMIN")).body.rows.find((i: { productId: string }) => i.productId === pipe.id);
+    const row = (await get(t, `/reports/margin?from=${today()}&to=${today()}`, "OWNER")).body.rows.find((i: { productId: string }) => i.productId === pipe.id);
     // By hand: revenue 2 × 5 × 20 = 200; cost 5 × 12 + 5 × 14 (the average after the second delivery) = 130.
     expect(row).toMatchObject({ netRevenue: 200, cogsBooked: 130, marginBooked: 70 });
   });
@@ -94,10 +94,10 @@ describe("margin — §27.4 and §27.33", () => {
     const sale = saleBody({ shiftId, lines: [{ product: tile, qty: 2_000, taxRateBp: 0 }] });
     await post(t, "/sales", sale);
     const linesBefore = await t.db.saleLine.findMany({ where: { saleId: sale.id } });
-    const res = await post(t, "/cost-corrections", { id: uuidv7(), goodsReceiptLineId: bad.lines[0].id, correctUnitCostMdram: 1_400_000, reason: "տասնորդական կետ" }, "ADMIN");
+    const res = await post(t, "/cost-corrections", { id: uuidv7(), goodsReceiptLineId: bad.lines[0].id, correctUnitCostMdram: 1_400_000, reason: "տասնորդական կետ" }, "OWNER");
     expect(res.status).toBe(201);
     expect(await t.db.saleLine.findMany({ where: { saleId: sale.id } })).toEqual(linesBefore);
-    const row = (await get(t, `/reports/margin?from=${today()}&to=${today()}`, "ADMIN")).body.rows.find((i: { productId: string }) => i.productId === tile.id);
+    const row = (await get(t, `/reports/margin?from=${today()}&to=${today()}`, "OWNER")).body.rows.find((i: { productId: string }) => i.productId === tile.id);
     expect(row).toMatchObject({ netRevenue: 4_000, cogsBooked: 28_000, marginBooked: -24_000, cogsRestated: 2_800, marginRestated: 1_200 });
     expect(row.corrections).toEqual([expect.objectContaining({ reason: "տասնորդական կետ", wrongUnitCostMdram: 14_000_000, correctUnitCostMdram: 1_400_000 })]);
     expect((await get(t, `/reports/margin?from=${today()}&to=${today()}`, "STOCK")).status).toBe(403);
@@ -162,24 +162,24 @@ describe("payables — §27.46", () => {
   it("overpayment becomes a credit the next receipt draws on; cash writes one PAY_OUT, card none", async () => {
     const p = await makeProduct(t, { name: "Ներկ", priceDram: 6_000 });
     const s = await supplier(t, "Ներկեր ՍՊԸ");
-    const shiftId = await openShift(t, "ADMIN", 100_000);
+    const shiftId = await openShift(t, "OWNER", 100_000);
     const r1 = receipt(s, [{ product: p, qty: 10_000, costDram: 3_000 }]);
     await post(t, "/goods-receipts", r1, "STOCK");
-    const pay = await post(t, "/supplier-payments", { id: uuidv7(), supplierId: s, amount: 50_000, method: "CASH", shiftId }, "ADMIN");
+    const pay = await post(t, "/supplier-payments", { id: uuidv7(), supplierId: s, amount: 50_000, method: "CASH", shiftId }, "OWNER");
     expect(pay.body.settled).toEqual([{ goodsReceiptId: r1.id, amount: 30_000 }]);
     expect(pay.body.outstanding).toBe(-20_000);
     expect(await t.db.cashMovement.count({ where: { shiftId, type: "PAY_OUT", reasonCode: "SUPPLIER_PAYMENT", sourceId: pay.body.payment.id } })).toBe(1);
-    expect((await get(t, `/shifts/${shiftId}/x-report`, "ADMIN")).body.figures.expected).toBe(50_000);
+    expect((await get(t, `/shifts/${shiftId}/x-report`, "OWNER")).body.figures.expected).toBe(50_000);
 
     const r2 = receipt(s, [{ product: p, qty: 5_000, costDram: 5_000 }]);
     await post(t, "/goods-receipts", r2, "STOCK");
-    const ledger = (await get(t, `/suppliers/${s}/ledger`, "ADMIN")).body;
+    const ledger = (await get(t, `/suppliers/${s}/ledger`, "OWNER")).body;
     expect(ledger.receipts.find((x: { id: string }) => x.id === r2.id).unpaid).toBe(5_000);
     expect(ledger.outstanding).toBe(5_000);
 
-    const card = await post(t, "/supplier-payments", { id: uuidv7(), supplierId: s, amount: 5_000, method: "CARD" }, "ADMIN");
+    const card = await post(t, "/supplier-payments", { id: uuidv7(), supplierId: s, amount: 5_000, method: "CARD" }, "OWNER");
     expect(card.body.outstanding).toBe(0);
-    expect((await get(t, `/shifts/${shiftId}/x-report`, "ADMIN")).body.figures.expected).toBe(50_000);
+    expect((await get(t, `/shifts/${shiftId}/x-report`, "OWNER")).body.figures.expected).toBe(50_000);
     expect((await post(t, "/supplier-payments", { id: uuidv7(), supplierId: s, amount: 1, method: "CARD" }, "STOCK")).status).toBe(403);
   });
 
@@ -191,7 +191,7 @@ describe("payables — §27.46", () => {
     const ret = await post(t, "/purchase-returns", { id: uuidv7(), receiptId: r.id, reason: "ավել", lines: [{ id: uuidv7(), receiptLineId: r.lines[0].id, qty: 4_000 }] }, "STOCK");
     const alloc = await t.db.supplierAllocation.findMany({ where: { goodsReceiptId: r.id } });
     expect(alloc).toEqual([expect.objectContaining({ creditType: "PURCHASE_RETURN", creditId: ret.body.id, amount: 2_000 })]);
-    expect((await get(t, `/suppliers/${s}/ledger`, "ADMIN")).body.outstanding).toBe(8_000);
+    expect((await get(t, `/suppliers/${s}/ledger`, "OWNER")).body.outstanding).toBe(8_000);
   });
 
   it("a payment to the wrong supplier is reversed by a linked payment and re-entered; the drawer is untouched", async () => {
@@ -202,15 +202,15 @@ describe("payables — §27.46", () => {
     const rr = receipt(right, [{ product: p, qty: 10_000, costDram: 1_000 }]);
     await post(t, "/goods-receipts", rw, "STOCK");
     await post(t, "/goods-receipts", rr, "STOCK");
-    const shiftId = (await t.db.shift.findFirstOrThrow({ where: { userId: t.users.ADMIN.id, status: "OPEN" } })).id;
-    const pay = await post(t, "/supplier-payments", { id: uuidv7(), supplierId: wrong, amount: 10_000, method: "CASH", shiftId }, "ADMIN");
-    const expected = (await get(t, `/shifts/${shiftId}/x-report`, "ADMIN")).body.figures.expected;
-    const rev = await post(t, `/supplier-payments/${pay.body.payment.id}/reverse`, { reason: "սխալ մատակարար", reenterSupplierId: right }, "ADMIN");
+    const shiftId = (await t.db.shift.findFirstOrThrow({ where: { userId: t.users.OWNER.id, status: "OPEN" } })).id;
+    const pay = await post(t, "/supplier-payments", { id: uuidv7(), supplierId: wrong, amount: 10_000, method: "CASH", shiftId }, "OWNER");
+    const expected = (await get(t, `/shifts/${shiftId}/x-report`, "OWNER")).body.figures.expected;
+    const rev = await post(t, `/supplier-payments/${pay.body.payment.id}/reverse`, { reason: "սխալ մատակարար", reenterSupplierId: right }, "OWNER");
     expect(rev.status).toBe(200);
     expect((await t.db.supplierPayment.findUniqueOrThrow({ where: { id: pay.body.payment.id } })).supplierId).toBe(wrong); // the original row is unchanged
-    expect((await get(t, `/suppliers/${wrong}/ledger`, "ADMIN")).body.outstanding).toBe(10_000);
-    expect((await get(t, `/suppliers/${right}/ledger`, "ADMIN")).body.outstanding).toBe(0);
-    expect((await get(t, `/shifts/${shiftId}/x-report`, "ADMIN")).body.figures.expected).toBe(expected);
+    expect((await get(t, `/suppliers/${wrong}/ledger`, "OWNER")).body.outstanding).toBe(10_000);
+    expect((await get(t, `/suppliers/${right}/ledger`, "OWNER")).body.outstanding).toBe(0);
+    expect((await get(t, `/shifts/${shiftId}/x-report`, "OWNER")).body.figures.expected).toBe(expected);
   });
 
   it("a receipt past its terms reads overdue — aged against the terms agreed", async () => {
@@ -220,11 +220,11 @@ describe("payables — §27.46", () => {
     const recent = receipt(s, [{ product: p, qty: 1_000, costDram: 3_000 }], 0, new Date(Date.now() - 3 * 86_400_000).toISOString());
     await post(t, "/goods-receipts", old, "STOCK");
     await post(t, "/goods-receipts", recent, "STOCK");
-    const ledger = (await get(t, `/suppliers/${s}/ledger`, "ADMIN")).body;
+    const ledger = (await get(t, `/suppliers/${s}/ledger`, "OWNER")).body;
     expect(ledger.receipts.find((x: { id: string }) => x.id === old.id)).toMatchObject({ overdue: true, daysPastDue: 3 });
     expect(ledger.receipts.find((x: { id: string }) => x.id === recent.id).overdue).toBe(false);
     expect(ledger.overdue).toBe(5_000);
-    const list = (await get(t, "/suppliers", "ADMIN")).body.items.find((x: { id: string }) => x.id === s);
+    const list = (await get(t, "/suppliers", "OWNER")).body.items.find((x: { id: string }) => x.id === s);
     expect(list).toMatchObject({ outstanding: 8_000, overdue: 5_000 });
     expect((await get(t, "/suppliers", "STOCK")).body.items[0]).not.toHaveProperty("paymentTerms");
   });

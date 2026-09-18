@@ -13,7 +13,8 @@ import { readSettings } from "./settings.service.ts";
 import { productStatuses } from "./stock-status.service.ts";
 import { supplierBooks } from "./supplier.service.ts";
 
-export async function ownerHome(db: Db) {
+/** A manager's home is the owner's without profit and without the system's own alerts (§16.4). */
+export async function ownerHome(db: Db, viewer: { owner: boolean } = { owner: true }) {
   const settings = await readSettings(db);
   const today = businessDate(clock.now(), settings["shop.timezone"]);
 
@@ -45,8 +46,7 @@ export async function ownerHome(db: Db) {
       salesCount: sales._count,
       averageSale: sales._count ? Math.round(takings / sales._count) : 0,
       returns: returns._sum.total ?? 0,
-      profit: margin.totals.marginBooked,
-      revenueWithoutCost: margin.totals.revenueWithoutCost,
+      ...(viewer.owner ? { profit: margin.totals.marginBooked, revenueWithoutCost: margin.totals.revenueWithoutCost } : {}),
     },
     receivables: {
       outstanding: debtors.reduce((a, p) => a + p.outstanding, 0),
@@ -57,6 +57,7 @@ export async function ownerHome(db: Db) {
     payables: { outstanding: payable, overdue },
     stock: { low: stock.filter((s) => s.low).length, dead: stock.filter((s) => s.dead).length },
     attention: { openFlags },
-    alerts: await systemAlerts(db),
+    // Backups, drift and the disk are the owner's to act on, and each alert links there (§19.5).
+    ...(viewer.owner ? { alerts: await systemAlerts(db) } : {}),
   };
 }

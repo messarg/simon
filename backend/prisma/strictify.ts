@@ -30,7 +30,7 @@ export const ENUM_CHECKS: Record<string, Record<string, readonly string[]>> = {
   DebtEntry: { type: ["CHARGE", "PAYMENT", "ADJUSTMENT"] },
   Shift: { status: ["OPEN", "CLOSING", "CLOSED"] },
   CashMovement: { type: ["PAY_IN", "PAY_OUT", "DROP", "NO_SALE", "REPAYMENT", "REFUND"] },
-  User: { role: ["WORKER", "STOCK", "ADMIN"] },
+  User: { role: ["OWNER", "MANAGER", "EMPLOYEE"] },
   Session: { mode: ["LIVE", "PRACTICE"] },
   Stocktake: { status: ["COUNTING", "REVIEW", "APPROVED", "ABANDONED"] },
   BackupRun: { destination: ["LOCAL", "USB"], outcome: ["OK", "FAILED"] },

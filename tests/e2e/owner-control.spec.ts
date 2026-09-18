@@ -15,11 +15,12 @@ test("the owner reads the day, creates the backup passphrase, and takes the firs
   await expect(page.getByRole("heading", { name: "Գլխավոր" })).toBeVisible();
   await expect(page.getByText("Պահուստային պատճեն դեռ չի արվել")).toBeVisible();
 
-  // Settings → Պահուստավորում: create the passphrase, which needs an admin PIN.
+  // Settings → Պահուստավորում: create the passphrase, which needs the owner's own name and PIN.
   await page.goto("/settings");
   await dismissCoach(page);
   await page.getByRole("button", { name: "Ստեղծել գաղտնաբառ" }).click();
-  await page.getByRole("dialog").getByRole("button", { name: "Արամ" }).click();
+  await page.getByRole("dialog").getByLabel("Հաստատողի անունը").fill("Արամ");
+  await page.keyboard.press("Enter");
   await page.keyboard.type("1111");
   await page.keyboard.press("Enter");
   const passphrase = page.getByRole("dialog").getByText(/^[A-HJ-NP-Z2-9]{4}(-[A-HJ-NP-Z2-9]{4}){5}$/);

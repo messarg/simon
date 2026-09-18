@@ -5,6 +5,8 @@
  * the three ways in, and ՎՃԱՐԵԼ. Wide screen: the basket on the left, tiles and payment on the
  * right. The HID scanner works whatever has focus, except a text field.
  */
+import { can, type Permission } from "@simon/shared";
+import { useSession } from "@/lib/session-store.ts";
 import { Camera, CircleSlash, Clock, Grid3x3, PauseCircle, Percent, ScanLine, Search, Trash2, Undo2, type LucideIcon } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router";
@@ -63,6 +65,11 @@ export function TillPage() {
   const outboxItems = useOutboxItems();
   const parkedHere = outboxItems.filter((i) => i.isParkedBasket && i.state !== "parked").length;
 
+  // A job not granted is absent from the till, not greyed out (§5.1, §16.4). The server refuses anyway.
+  const session = useSession();
+  const may = (p: Permission) => !!session && can(session.user, p);
+  const takesReturns = may("returns");
+
   const [highlight, setHighlight] = useState<string | null>(null);
   const [qtyLine, setQtyLine] = useState<BasketLine | null>(null);
   const [priceLine, setPriceLine] = useState<BasketLine | null>(null);
@@ -87,11 +94,11 @@ export function TillPage() {
   }, [settings]);
 
   const onScan = useCallback(async (code: string) => {
-    if (RECEIPT_NUMBER.test(code)) { setReturnNumber(code); setSheet("returns"); return; }
+    if (RECEIPT_NUMBER.test(code) && takesReturns) { setReturnNumber(code); setSheet("returns"); return; }
     const p = await findByBarcode(code);
     if (p && p.isActive) add(p);
     else { beep("error"); setQuickAdd({ barcode: code }); }
-  }, [add]);
+  }, [add, takesReturns]);
 
   useScanner(onScan, sheet === null && !qtyLine && !priceLine && !quickAdd);
 
@@ -149,7 +156,7 @@ export function TillPage() {
       <section className="flex min-h-0 min-w-0 flex-1 flex-col">
         <div className="flex items-stretch gap-1 border-b border-border bg-card px-2 py-1.5">
           <TillAction icon={PauseCircle} label={`${t("till.held")}${parkedHere > 0 ? ` · ${parkedHere}` : ""}`} onClick={() => setSheet("held")} />
-          <TillAction icon={Undo2} label={t("till.returns")} onClick={() => { setReturnNumber(null); setSheet("returns"); }} />
+          {takesReturns && <TillAction icon={Undo2} label={t("till.returns")} onClick={() => { setReturnNumber(null); setSheet("returns"); }} />}
           <TillAction icon={Percent} label={t("till.discount")} disabled={!hasLines} onClick={() => setSheet("discount")} />
           <TillAction icon={Clock} label={t("till.hold")} disabled={!hasLines || !shiftOpen} onClick={() => void hold()} />
           <TillAction
@@ -265,7 +272,7 @@ export function TillPage() {
         onOpenChange={(o) => setSheet(o ? "pay" : null)}
         total={totals.total}
         onComplete={(payments, debt) => completeSale(basketStore.get(), settings, shift!.id, payments, debt)}
-        renderDebt={settings.debtBookEnabled ? ({ debtAmount, onBack, onChosen }) => <DebtPanel debtAmount={debtAmount} settings={settings} onBack={onBack} onComplete={onChosen} /> : undefined}
+        renderDebt={settings.debtBookEnabled && may("debt") ? ({ debtAmount, onBack, onChosen }) => <DebtPanel debtAmount={debtAmount} settings={settings} onBack={onBack} onComplete={onChosen} /> : undefined}
       />
     </div>
   );

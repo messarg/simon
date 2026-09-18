@@ -15,7 +15,7 @@ const daysAgo = (n: number) => {
 };
 
 const importFile = (t: TestApp, kind: string, content: string, opts: { dryRun?: boolean; id?: string } = {}) =>
-  post(t, "/imports", { id: opts.id ?? uuidv7(), kind, fileName: `${kind}.csv`, content, dryRun: opts.dryRun }, "ADMIN");
+  post(t, "/imports", { id: opts.id ?? uuidv7(), kind, fileName: `${kind}.csv`, content, dryRun: opts.dryRun }, "OWNER");
 
 describe("import", () => {
   let t: TestApp;
@@ -87,7 +87,7 @@ describe("import", () => {
     expect(res.body).toMatchObject({ appliedCount: 3, failedCount: 0 });
 
     const david = await t.db.customer.findFirstOrThrow({ where: { phone: "+37491123456" } });
-    const ledger = (await get(t, `/customers/${david.id}/ledger`, "ADMIN")).body;
+    const ledger = (await get(t, `/customers/${david.id}/ledger`, "OWNER")).body;
     expect(ledger.outstanding).toBe(20_000);
     expect(ledger.aging).toMatchObject({ d31_60: 12_000, d90plus: 8_000, d0_30: 0 });
     expect(ledger.aging.oldestChargeDays).toBe(100);
@@ -96,7 +96,7 @@ describe("import", () => {
     const rerun = await importFile(t, "OPENING_DEBTS", debts);
     expect(rerun.body).toMatchObject({ appliedCount: 0, skippedCount: 3 });
     expect(rerun.body.duplicateOfBatchId).not.toBeNull(); // the same spreadsheet, recognised by its hash
-    expect((await get(t, `/customers/${david.id}/ledger`, "ADMIN")).body.outstanding).toBe(20_000);
+    expect((await get(t, `/customers/${david.id}/ledger`, "OWNER")).body.outstanding).toBe(20_000);
   });
 
   it("opening stock seeds the cost of a product that had none, and refuses a quantity finer than the product", async () => {
@@ -128,8 +128,8 @@ describe("import", () => {
     expect((await post(t, "/imports", { id: uuidv7(), kind: "PRODUCTS", fileName: "x.csv", content: "a,b" }, "STOCK")).status).toBe(403);
     expect((await post(t, "/imports", { id: uuidv7(), kind: "PRODUCTS", fileName: "x.csv", content: "a,b" }, "WORKER")).status).toBe(403);
     expect(await t.db.auditLog.count({ where: { action: "import.run" } })).toBeGreaterThan(0);
-    const list = (await get(t, "/imports", "ADMIN")).body.items;
+    const list = (await get(t, "/imports", "OWNER")).body.items;
     expect(list.length).toBeGreaterThan(0);
-    expect((await get(t, `/imports/${list[0].id}`, "ADMIN")).body.rows.length).toBeGreaterThan(0);
+    expect((await get(t, `/imports/${list[0].id}`, "OWNER")).body.rows.length).toBeGreaterThan(0);
   });
 });

@@ -79,5 +79,5 @@ test("a worker opens a shift, sells, keeps selling offline, syncs exactly once a
   await expect(page.getByRole("heading", { name: "Z-հաշվետվություն" })).toBeVisible();
   await expect(page.getByText("Z-հաշվետվությունը տպվեց")).toBeVisible();
   await page.getByRole("button", { name: "Ավարտել և դուրս գալ" }).click();
-  await expect(page.getByRole("heading", { name: "Ո՞վ է աշխատում" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Մուտք" })).toBeVisible();
 });

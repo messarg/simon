@@ -11,7 +11,7 @@ import { useQuery } from "@tanstack/react-query";
 import { KeyRound, ShieldCheck, Store, UserPlus } from "lucide-react";
 import { useState } from "react";
 import { Navigate, useNavigate } from "react-router";
-import type { Role } from "@simon/shared";
+import { PERMISSION_PRESETS, type Permission, type Role } from "@simon/shared";
 import { Button } from "@/components/ui/button.tsx";
 import { Input, Label } from "@/components/ui/input.tsx";
 import { problemMessage, t } from "@/i18n/t.ts";
@@ -201,9 +201,9 @@ function Owner({ shopName, onDone }: { shopName: string; onDone: (secrets: Secre
     setError(null);
     try {
       const res = await http.post<{ user: { id: string }; recoveryCode: string; backupPassphrase: string }>("/setup/owner", { shopName, ownerName: ownerName.trim(), pin });
-      // Sign in with the PIN just chosen, so the rest of the wizard has an admin behind it.
-      const session = await http.post<{ token: string; user: { id: string; name: string; role: Role }; session: { id: string; mode: "LIVE" | "PRACTICE"; expiresAt: string; shiftId: string | null }; device: { id: string; prefix: string; label: string; lastSequence: number } }>(
-        "/auth/login", { userId: res.user.id, pin, deviceLabel: t("app.name") },
+      // Sign in with the name and PIN just chosen, so the rest of the wizard has the owner behind it.
+      const session = await http.post<{ token: string; user: { id: string; name: string; role: Role; permissions: Permission[] }; session: { id: string; mode: "LIVE" | "PRACTICE"; expiresAt: string; shiftId: string | null }; device: { id: string; prefix: string; label: string; lastSequence: number } }>(
+        "/auth/login", { name: ownerName.trim(), pin, deviceLabel: t("app.name") },
       );
       sessionStore.set({ token: session.token, user: session.user, session: session.session, device: session.device });
       onDone({ recoveryCode: res.recoveryCode, backupPassphrase: res.backupPassphrase });
@@ -239,17 +239,24 @@ function Owner({ shopName, onDone }: { shopName: string; onDone: (secrets: Secre
   );
 }
 
-/** The rest of Q2: the people who will use it, added now or later. */
+/**
+ * The rest of Q2: the people who will use it, added now or later. Most are one of the two
+ * presets (§16.4) — the owner fine-tunes a person's jobs later on the staff screen — or a manager.
+ */
+const KINDS = ["cashier", "stock", "manager"] as const;
+type Kind = (typeof KINDS)[number];
+const bodyFor = (kind: Kind) => kind === "manager" ? { role: "MANAGER" as const } : { role: "EMPLOYEE" as const, permissions: [...PERMISSION_PRESETS[kind]] };
+
 function Staff({ onDone, busy }: { onDone: () => void; busy: boolean }) {
   const [name, setName] = useState("");
   const [pin, setPin] = useState("");
-  const [role, setRole] = useState<Role>("WORKER");
+  const [kind, setKind] = useState<Kind>("cashier");
   const [added, setAdded] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const add = async () => {
     try {
-      await http.post("/users", { name: name.trim(), pin, role });
+      await http.post("/users", { name: name.trim(), pin, ...bodyFor(kind) });
       setAdded((a) => [...a, name.trim()]);
       setName("");
       setPin("");
@@ -274,8 +281,10 @@ function Staff({ onDone, busy }: { onDone: () => void; busy: boolean }) {
           <div>
             <Label>{t("wizard.q2Role")}</Label>
             <div className="flex gap-1">
-              {(["WORKER", "STOCK"] as const).map((r) => (
-                <button key={r} type="button" onClick={() => setRole(r)} className={cn("h-touch flex-1 rounded-lg border px-2 text-sm font-medium", role === r ? "border-primary bg-primary-soft" : "border-border")}>{t(`settings.roles.${r}`)}</button>
+              {KINDS.map((k) => (
+                <button key={k} type="button" aria-pressed={kind === k} onClick={() => setKind(k)} className={cn("h-touch flex-1 rounded-lg border px-2 text-sm font-medium", kind === k ? "border-primary bg-primary-soft" : "border-border")}>
+                  {k === "manager" ? t("settings.roles.MANAGER") : t(`staff.presets.${k}`)}
+                </button>
               ))}
             </div>
           </div>

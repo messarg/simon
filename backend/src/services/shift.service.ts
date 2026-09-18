@@ -36,7 +36,7 @@ export async function currentShift(db: Db, userId: string) {
 async function assertOwnShift(tx: Tx | Db, actor: Actor, shiftId: string) {
   const shift = await tx.shift.findUnique({ where: { id: shiftId } });
   if (!shift) throw problem("not-found");
-  if (shift.userId !== actor.userId && actor.role !== "ADMIN") throw problem("not-permitted");
+  if (shift.userId !== actor.userId && actor.role === "EMPLOYEE") throw problem("not-permitted");
   return shift;
 }
 
@@ -181,7 +181,7 @@ export async function reverseCashMovement(db: Db, actor: Actor, movementId: stri
     const m = await tx.cashMovement.findUnique({ where: { id: movementId }, include: { shift: true } });
     if (!m) throw problem("not-found");
     if (!["PAY_IN", "PAY_OUT", "DROP"].includes(m.type) || m.reversesId) throw problem("illegal-transition", { type: m.type });
-    if (m.userId !== actor.userId && actor.role !== "ADMIN") throw problem("not-permitted");
+    if (m.userId !== actor.userId && actor.role === "EMPLOYEE") throw problem("not-permitted");
     if (await tx.cashMovement.findFirst({ where: { reversesId: m.id } })) throw problem("illegal-transition", { reason: "already-reversed" });
     if (m.shift.status === "CLOSED") throw problem("shift-not-open");
     const id = uuidv7();

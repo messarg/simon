@@ -14,6 +14,7 @@ export const ERROR_TYPES = [
   "duplicate-barcode", "immutable-after-movements", "pin-incorrect", "account-locked",
   "too-many-attempts", "not-permitted", "session-expired", "not-found", "malformed-request",
   "illegal-transition", "internal-error", "setup-required", "reauth-required", "duplicate-phone",
+  "duplicate-name",
 ] as const;
 export type ErrorType = (typeof ERROR_TYPES)[number];
 

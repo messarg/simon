@@ -11,15 +11,15 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { businessDate, uuidv7 } from "@simon/shared";
 import { AVATAR_MAX_BYTES } from "../domain/avatar.ts";
 import { REPORT_NAMES } from "../services/report.service.ts";
-import { bearer, createTestApp, PINS, type TestApp } from "../test/app.ts";
+import { bearer, createTestApp, PINS, type Persona, type TestApp } from "../test/app.ts";
 import { dataUrl, jpegBytes, pngBytes } from "../test/images.ts";
 import { get, makeProduct, openShift, post, saleBody, type FixtureProduct } from "../test/fixtures.ts";
 
 const today = () => businessDate(new Date(), "Asia/Yerevan");
-const report = async (t: TestApp, name: string, query = "") => (await get(t, `/reports/${name}?from=${today()}&to=${today()}${query}`, "ADMIN")).body;
+const report = async (t: TestApp, name: string, query = "") => (await get(t, `/reports/${name}?from=${today()}&to=${today()}${query}`, "OWNER")).body;
 const rowFor = (body: { rows: Array<Record<string, unknown>> }, key: string) => body.rows.find((r) => r.key === key) as Record<string, number>;
 
-const putAvatar = (t: TestApp, userId: string, image: string, role: "ADMIN" | "STOCK" | "WORKER" = "ADMIN") =>
+const putAvatar = (t: TestApp, userId: string, image: string, role: Persona = "OWNER") =>
   request(t.server).put(`/api/users/${userId}/avatar`).set(bearer(t.tokens[role])).send({ image });
 
 describe("the staff photograph — §6.11.1, §19.6, §26.2", () => {
@@ -27,13 +27,13 @@ describe("the staff photograph — §6.11.1, §19.6, §26.2", () => {
   beforeAll(async () => { t = await createTestApp(); });
   afterAll(async () => { await t.close(); });
 
-  it("is written by the owner and read by anyone — it draws the screen you sign in from", async () => {
+  it("is written by whoever manages the person, and served to an <img> without a token", async () => {
     const png = pngBytes(256, 256);
     const written = await putAvatar(t, t.users.WORKER.id, dataUrl("image/png", png));
     expect(written.status).toBe(200);
     expect(written.body.avatarUpdatedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
 
-    // No session, no token, no header at all: this is the tile on the sign-in screen (§16.5).
+    // No session, no token, no header at all: an <img> cannot send one (§16.5, §26.2).
     const res = await request(t.server).get(`/api/users/${t.users.WORKER.id}/avatar`).responseType("blob");
     expect(res.status).toBe(200);
     expect(res.headers["content-type"]).toBe("image/png");
@@ -49,21 +49,18 @@ describe("the staff photograph — §6.11.1, §19.6, §26.2", () => {
     expect(stale.status).toBe(200);
   });
 
-  it("the sign-in list says whether there is a face and what to cache-bust on, never the bytes", async () => {
-    const list = (await request(t.server).get("/api/auth/users")).body.items as Array<Record<string, unknown>>;
-    const worker = list.find((u) => u.id === t.users.WORKER.id)!;
-    expect(Object.keys(worker).sort()).toEqual(["avatarUpdatedAt", "id", "name"]);
-    expect(worker.avatarUpdatedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
-    expect(list.find((u) => u.id === t.users.STOCK.id)!.avatarUpdatedAt).toBeNull();
-    expect(JSON.stringify(list)).not.toMatch(/iVBOR|"avatar"/);
-
-    const users = (await get(t, "/users", "ADMIN")).body.items as Array<Record<string, unknown>>;
-    expect(users.find((u) => u.id === t.users.WORKER.id)).toMatchObject({ avatarUpdatedAt: worker.avatarUpdatedAt });
-    expect(JSON.stringify(users)).not.toMatch(/"avatar"|pinHash/);
+  it("the staff list says whether there is a face and what to cache-bust on, never the bytes", async () => {
+    const users = (await get(t, "/users", "OWNER")).body.items as Array<Record<string, unknown>>;
+    expect(users.find((u) => u.id === t.users.WORKER.id)!.avatarUpdatedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+    expect(users.find((u) => u.id === t.users.STOCK.id)!.avatarUpdatedAt).toBeNull();
+    expect(JSON.stringify(users)).not.toMatch(/iVBOR|"avatar"|pinHash/);
   });
 
-  it("only the owner may write one — a photograph is part of managing the person", async () => {
+  it("an owner or a manager may write one for someone they manage — never an employee", async () => {
     const image = dataUrl("image/png", pngBytes());
+    expect((await putAvatar(t, t.users.WORKER.id, image, "MANAGER")).status).toBe(200);
+    // The owner's record is not a manager's to see, let alone change (§16.4).
+    expect((await putAvatar(t, t.users.OWNER.id, image, "MANAGER")).status).toBe(404);
     expect((await putAvatar(t, t.users.WORKER.id, image, "WORKER")).status).toBe(403);
     expect((await putAvatar(t, t.users.WORKER.id, image, "STOCK")).status).toBe(403);
     expect((await request(t.server).put(`/api/users/${t.users.WORKER.id}/avatar`).send({ image })).status).toBe(401);
@@ -94,22 +91,22 @@ describe("the staff photograph — §6.11.1, §19.6, §26.2", () => {
     expect(Date.parse(second)).toBeGreaterThanOrEqual(Date.parse(first));
     expect((await request(t.server).get(`/api/users/${t.users.STOCK.id}/avatar`)).headers["content-type"]).toBe("image/jpeg");
 
-    const removed = await request(t.server).delete(`/api/users/${t.users.STOCK.id}/avatar`).set(bearer(t.tokens.ADMIN));
+    const removed = await request(t.server).delete(`/api/users/${t.users.STOCK.id}/avatar`).set(bearer(t.tokens.OWNER));
     expect(removed.status).toBe(200);
     expect(removed.body).toEqual({ avatarUpdatedAt: null });
     expect((await request(t.server).get(`/api/users/${t.users.STOCK.id}/avatar`)).status).toBe(404);
 
     // The name is financial record and stays; the photograph is operational and does not.
-    const leaver = (await post(t, "/users", { name: "Հրաժեշտ", pin: "5678", role: "WORKER" }, "ADMIN")).body;
+    const leaver = (await post(t, "/users", { name: "Հրաժեշտ", pin: "5678", role: "EMPLOYEE", permissions: ["sell"] }, "OWNER")).body;
     await putAvatar(t, leaver.id, dataUrl("image/png", pngBytes()));
     expect((await request(t.server).get(`/api/users/${leaver.id}/avatar`)).status).toBe(200);
-    await request(t.server).patch(`/api/users/${leaver.id}`).set(bearer(t.tokens.ADMIN)).send({ isActive: false });
+    await request(t.server).patch(`/api/users/${leaver.id}`).set(bearer(t.tokens.OWNER)).send({ isActive: false });
     expect((await request(t.server).get(`/api/users/${leaver.id}/avatar`)).status).toBe(404);
-    expect((await get(t, "/users", "ADMIN")).body.items.find((u: { id: string }) => u.id === leaver.id).avatarUpdatedAt).toBeNull();
+    expect((await get(t, "/users", "OWNER")).body.items.find((u: { id: string }) => u.id === leaver.id).avatarUpdatedAt).toBeNull();
   });
 
   it("writing a photograph is not an audited action — §10.7 enumerates what is", async () => {
-    const log = (await get(t, "/audit-log", "ADMIN")).body.items as Array<{ action: string }>;
+    const log = (await get(t, "/audit-log", "OWNER")).body.items as Array<{ action: string }>;
     expect(log.some((x) => /avatar|photo/i.test(x.action))).toBe(false);
   });
 });
@@ -126,7 +123,7 @@ describe("the two ledgers read by person — §20.2, §6.11.1", () => {
     shiftId = await openShift(t, "WORKER", 20_000);
     await post(t, "/sales", saleBody({ shiftId, lines: [{ product: cable, qty: 2_000, taxRateBp: 0 }] }));
     await post(t, "/write-offs", { id: uuidv7(), productId: cable.id, qty: 1_000, reasonCode: "DAMAGE" }, "STOCK");
-    const grant = (await post(t, "/auth/reauth", { adminUserId: t.users.ADMIN.id, pin: PINS.ADMIN, action: "stockAdjustment" })).body.grant;
+    const grant = (await post(t, "/auth/reauth", { name: t.users.OWNER.name, pin: PINS.OWNER, action: "stockAdjustment" })).body.grant;
     await post(t, "/adjustments", { id: uuidv7(), productId: cable.id, qtyDelta: 1_000, reauthGrant: grant, reason: "դարակում գտնվեց" }, "STOCK");
     // Two hands on the drawer, for two stated reasons.
     await post(t, "/cash-movements", { id: uuidv7(), shiftId, type: "PAY_OUT", amount: 12_000, reasonCode: "EXPENSE", reason: "ջրի վարձ", createdAt: new Date().toISOString(), queued: false });
@@ -138,7 +135,7 @@ describe("the two ledgers read by person — §20.2, §6.11.1", () => {
     const byPerson = await report(t, "movements-by-person");
     expect(byPerson.name).toBe("movements-by-person");
     // The owner received ten at 800 ֏.
-    expect(rowFor(byPerson, t.users.ADMIN.id)).toMatchObject({ worker: "Արամ", receipts: 1, receiptsValue: 8_000, movements: 1 });
+    expect(rowFor(byPerson, t.users.OWNER.id)).toMatchObject({ worker: "Արամ", receipts: 1, receiptsValue: 8_000, movements: 1 });
     // The stock keeper wrote one off (−800 ֏) and put one back (+800 ֏).
     expect(rowFor(byPerson, t.users.STOCK.id)).toMatchObject({ worker: "Լուսինե", writeOffs: 1, writeOffsValue: -800, adjustments: 1, adjustmentsValue: 800, movements: 2 });
     // Selling is counted beside them, never mixed into them.
@@ -163,7 +160,7 @@ describe("the two ledgers read by person — §20.2, §6.11.1", () => {
     const byReason = await report(t, "cash-out");
     expect(byReason.totals.amount).toBe(byPerson.totals.amount);
 
-    expect((await report(t, "cash-out-by-person", `&userId=${t.users.ADMIN.id}`)).rows).toEqual([]);
+    expect((await report(t, "cash-out-by-person", `&userId=${t.users.OWNER.id}`)).rows).toEqual([]);
   });
 
   it("both are the owner's alone, and a worker cannot reach either", async () => {
@@ -176,12 +173,12 @@ describe("the two ledgers read by person — §20.2, §6.11.1", () => {
   it("the reports that were already per-worker now narrow to one person", async () => {
     const mine = await report(t, "sales", `&groupBy=worker&userId=${t.users.WORKER.id}`);
     expect(mine.rows.map((r: { key: string }) => r.key)).toEqual([t.users.WORKER.id]);
-    expect((await report(t, "sales", `&groupBy=worker&userId=${t.users.ADMIN.id}`)).rows).toEqual([]);
+    expect((await report(t, "sales", `&groupBy=worker&userId=${t.users.OWNER.id}`)).rows).toEqual([]);
     expect((await report(t, "sales", "&groupBy=day")).totals.gross).toBe(2_400);
-    expect((await report(t, "sales", `&groupBy=day&userId=${t.users.ADMIN.id}`)).totals.gross).toBe(0);
+    expect((await report(t, "sales", `&groupBy=day&userId=${t.users.OWNER.id}`)).totals.gross).toBe(0);
 
-    expect((await report(t, "discounts", `&userId=${t.users.ADMIN.id}`)).rows).toEqual([]);
-    expect((await report(t, "voids-returns", `&userId=${t.users.ADMIN.id}`)).rows).toEqual([]);
+    expect((await report(t, "discounts", `&userId=${t.users.OWNER.id}`)).rows).toEqual([]);
+    expect((await report(t, "voids-returns", `&userId=${t.users.OWNER.id}`)).rows).toEqual([]);
     expect((await report(t, "write-offs", `&userId=${t.users.STOCK.id}`)).rows).toEqual([expect.objectContaining({ reasonCode: "DAMAGE", lines: 1 })]);
     expect((await report(t, "write-offs", `&userId=${t.users.WORKER.id}`)).rows).toEqual([]);
 
@@ -189,23 +186,23 @@ describe("the two ledgers read by person — §20.2, §6.11.1", () => {
     // 20 000 opened, 2 400 taken, 17 000 paid out: the drawer should hold 5 400, and the difference is explained.
     expect((await post(t, `/shifts/${shiftId}/close`, { breakdown: [{ value: 5_000, count: 1 }], note: "մանրը պակասեց", unsyncedAtClose: 0 })).status).toBe(200);
     expect((await report(t, "z-reports", `&userId=${t.users.WORKER.id}`)).rows).toHaveLength(1);
-    expect((await report(t, "z-reports", `&userId=${t.users.ADMIN.id}`)).rows).toEqual([]);
+    expect((await report(t, "z-reports", `&userId=${t.users.OWNER.id}`)).rows).toEqual([]);
   });
 });
 
 /**
  * The personal details §6.11 puts at the top of a person's page — phone, start date, note.
  *
- * §19.6 draws the boundary these tests exist to hold: they are `ADMIN`-only and reach two routes,
- * and *"a staff phone book on the sign-in screen is the failure that boundary exists to prevent."*
- * `GET /auth/users` is necessarily unauthenticated, so most of what follows is about what it and
- * every other surface do **not** carry.
+ * §19.6 draws the boundary these tests exist to hold: they reach two routes, the owner reads
+ * everyone's and a manager an employee's, and *"a staff phone book on the sign-in screen is the
+ * failure that boundary exists to prevent."* There is no sign-in list any more, so most of what
+ * follows is about what every other surface does **not** carry.
  */
 describe("staff personal details — §6.11, §19.6", () => {
   let t: TestApp;
   const PHONE = "+374 77 123456";
   const NOTE = "Երկուշաբթի օրերին չի աշխատում";
-  const patch = (userId: string, body: unknown, role: "ADMIN" | "STOCK" | "WORKER" = "ADMIN") =>
+  const patch = (userId: string, body: unknown, role: Persona = "OWNER") =>
     request(t.server).patch(`/api/users/${userId}`).set(bearer(t.tokens[role])).send(body as object);
 
   beforeAll(async () => { t = await createTestApp(); });
@@ -216,31 +213,31 @@ describe("staff personal details — §6.11, §19.6", () => {
     expect(written.status).toBe(200);
     expect(written.body).toMatchObject({ id: t.users.WORKER.id, phone: PHONE, startedOn: "2024-03-01", note: NOTE });
 
-    const one = await get(t, `/users/${t.users.WORKER.id}`, "ADMIN");
+    const one = await get(t, `/users/${t.users.WORKER.id}`, "OWNER");
     expect(one.status).toBe(200);
     expect(Object.keys(one.body).sort()).toEqual(
-      ["avatarUpdatedAt", "createdAt", "id", "isActive", "lockedUntil", "name", "note", "phone", "role", "startedOn"],
+      ["avatarUpdatedAt", "createdAt", "id", "isActive", "lockedUntil", "name", "note", "permissions", "phone", "role", "startedOn"],
     );
-    expect(one.body).toMatchObject({ name: "Գոռ", role: "WORKER", isActive: true, phone: PHONE, startedOn: "2024-03-01", note: NOTE });
+    expect(one.body).toMatchObject({ name: "Գոռ", role: "EMPLOYEE", permissions: ["sell", "returns", "debt"], isActive: true, phone: PHONE, startedOn: "2024-03-01", note: NOTE });
     // The two hashes and the photograph's bytes are selected by nothing, here least of all.
     expect(JSON.stringify(one.body)).not.toMatch(/pinHash|recoveryCodeHash|"avatar"/);
 
-    const list = (await get(t, "/users", "ADMIN")).body.items as Array<Record<string, unknown>>;
+    const list = (await get(t, "/users", "OWNER")).body.items as Array<Record<string, unknown>>;
     expect(list.find((u) => u.id === t.users.WORKER.id)).toEqual(one.body);
     // Somebody who has none of them reads as null, not absent — a form binds to a key that exists.
     expect(list.find((u) => u.id === t.users.STOCK.id)).toMatchObject({ phone: null, startedOn: null, note: null });
 
-    expect((await get(t, `/users/${uuidv7()}`, "ADMIN")).status).toBe(404);
+    expect((await get(t, `/users/${uuidv7()}`, "OWNER")).status).toBe(404);
   });
 
   it("a cleared field is null, and a patch of something else leaves them where they were", async () => {
     await patch(t.users.STOCK.id, { phone: "  077 000000  ", note: "  պահոց  ", startedOn: "2023-01-15" });
     // Trimmed on the way in, as every other free text on this API is.
-    expect((await get(t, `/users/${t.users.STOCK.id}`, "ADMIN")).body).toMatchObject({ phone: "077 000000", note: "պահոց" });
+    expect((await get(t, `/users/${t.users.STOCK.id}`, "OWNER")).body).toMatchObject({ phone: "077 000000", note: "պահոց" });
 
-    // A role change is not an instruction about a phone number.
-    await patch(t.users.STOCK.id, { role: "STOCK" });
-    expect((await get(t, `/users/${t.users.STOCK.id}`, "ADMIN")).body).toMatchObject({ phone: "077 000000", startedOn: "2023-01-15" });
+    // A change of grants is not an instruction about a phone number.
+    await patch(t.users.STOCK.id, { role: "EMPLOYEE", permissions: ["sell", "receive"] });
+    expect((await get(t, `/users/${t.users.STOCK.id}`, "OWNER")).body).toMatchObject({ phone: "077 000000", startedOn: "2023-01-15" });
 
     // An emptied form field means "not recorded", which is what the nullable column is for.
     const cleared = await patch(t.users.STOCK.id, { phone: "", note: "", startedOn: "" });
@@ -268,7 +265,16 @@ describe("staff personal details — §6.11, §19.6", () => {
     expect((await patch(t.users.WORKER.id, { startedOn: "2024-02-29" })).body.startedOn).toBe("2024-02-29");
   });
 
-  it("nobody but the owner may read or write them", async () => {
+  it("a manager reads an employee's, and nobody else's; an employee reads none", async () => {
+    await patch(t.users.OWNER.id, { phone: "010 111111" });
+    const seen = (await get(t, "/users", "MANAGER")).body.items as Array<Record<string, unknown>>;
+    expect(seen.find((u) => u.id === t.users.WORKER.id)).toMatchObject({ phone: expect.any(String) });
+    // The owner is not in a manager's list at all, and not at their own id either (§16.4).
+    expect(seen.find((u) => u.id === t.users.OWNER.id)).toBeUndefined();
+    expect((await get(t, `/users/${t.users.OWNER.id}`, "MANAGER")).status).toBe(404);
+    expect(JSON.stringify(seen)).not.toContain("010 111111");
+    expect((await patch(t.users.OWNER.id, { phone: "000" }, "MANAGER")).status).toBe(404);
+
     for (const role of ["WORKER", "STOCK"] as const) {
       expect((await patch(t.users.WORKER.id, { phone: "099999999" }, role)).status).toBe(403);
       // Not even their own: a worker has no route to anyone's record, including their own.
@@ -280,21 +286,15 @@ describe("staff personal details — §6.11, §19.6", () => {
     expect((await request(t.server).patch(`/api/users/${t.users.WORKER.id}`).send({ phone: "099999999" })).status).toBe(401);
   });
 
-  it("the sign-in screen carries none of it — it is drawn before anyone has signed in (§16.5, §26.2)", async () => {
-    await patch(t.users.ADMIN.id, { phone: PHONE, startedOn: "2020-01-01", note: NOTE });
-
-    const tiles = await request(t.server).get("/api/auth/users");
-    expect(tiles.status).toBe(200);
-    for (const u of tiles.body.items as Array<Record<string, unknown>>) {
-      expect(Object.keys(u).sort()).toEqual(["avatarUpdatedAt", "id", "name"]);
+  it("nothing before sign-in carries any of it — there is no list to carry it (§16.5, §26.2)", async () => {
+    await patch(t.users.OWNER.id, { phone: PHONE, startedOn: "2020-01-01", note: NOTE });
+    for (const path of ["/api/auth/users", "/api/auth/admins", "/api/setup/status", "/api/health"]) {
+      const body = JSON.stringify((await request(t.server).get(path)).body);
+      expect(body).not.toMatch(/phone|startedOn|"note"|123456|2020-01-01|Արամ|Գոռ/);
     }
-    const admins = await request(t.server).get("/api/auth/admins");
-    for (const u of admins.body.items as Array<Record<string, unknown>>) expect(Object.keys(u).sort()).toEqual(["id", "name"]);
-
-    for (const body of [tiles.body, admins.body]) {
-      expect(JSON.stringify(body)).not.toMatch(/phone|startedOn|"note"|123456|2020-01-01/);
-      expect(JSON.stringify(body)).not.toContain(NOTE);
-    }
+    // Signing in says who you are, and nothing about anyone's details — your own included.
+    const login = await request(t.server).post("/api/auth/login").send({ name: t.users.OWNER.name, pin: PINS.OWNER, deviceId: "details" });
+    expect(JSON.stringify(login.body)).not.toMatch(/phone|startedOn|"note"|2020-01-01/);
   });
 
   it("and no report does either — §20.2's rows are about the shop, not about the person", async () => {
@@ -302,7 +302,7 @@ describe("staff personal details — §6.11, §19.6", () => {
     const product = await makeProduct(t, { name: "Մեխ", priceDram: 50, stock: 1_000, costMdram: 20_000 });
     for (const name of REPORT_NAMES) {
       // Every one of §20.2's thirteen, asked about this person, on the one screen that renders them all.
-      const res = await get(t, `/reports/${name}?from=${day}&to=${day}&userId=${t.users.WORKER.id}&productId=${product.id}`, "ADMIN");
+      const res = await get(t, `/reports/${name}?from=${day}&to=${day}&userId=${t.users.WORKER.id}&productId=${product.id}`, "OWNER");
       expect([name, res.status]).toEqual([name, 200]);
       const body = JSON.stringify(res.body);
       // A customer's phone is a legitimate column on the aging report, so the assertion is about
@@ -310,14 +310,14 @@ describe("staff personal details — §6.11, §19.6", () => {
       expect([name, /"startedOn"|123456|555555/.test(body)]).toEqual([name, false]);
       expect([name, body.includes(NOTE)]).toEqual([name, false]);
     }
-    const audit = JSON.stringify((await get(t, "/audit-log", "ADMIN")).body);
+    const audit = JSON.stringify((await get(t, "/audit-log", "OWNER")).body);
     expect(audit).not.toContain(NOTE);
     expect(audit).not.toContain("123456");
   });
 
   it("a change rides the audited action §10.7 already lists, naming the field and never its value", async () => {
     await patch(t.users.WORKER.id, { phone: "077 555555", note: "նոր" });
-    const rows = (await get(t, "/audit-log", "ADMIN")).body.items as Array<{ action: string; entityId: string; after: string | null }>;
+    const rows = (await get(t, "/audit-log", "OWNER")).body.items as Array<{ action: string; entityId: string; after: string | null }>;
     // The row is created and then patched, so `user.create` is on this entity too — and those two
     // are the whole of what a `User` may write. Newest first: the patch just made is `mine[0]`.
     const mine = rows.filter((x) => x.entityId === t.users.WORKER.id);
@@ -331,11 +331,11 @@ describe("staff personal details — §6.11, §19.6", () => {
   });
 
   it("the phone and the note go when the person does; the start date is employment record (§19.6)", async () => {
-    const leaver = (await post(t, "/users", { name: "Հեռացող", pin: "4321", role: "WORKER" }, "ADMIN")).body;
+    const leaver = (await post(t, "/users", { name: "Հեռացող", pin: "4321", role: "EMPLOYEE" }, "OWNER")).body;
     await patch(leaver.id, { phone: PHONE, startedOn: "2021-06-01", note: NOTE });
     await patch(leaver.id, { isActive: false });
 
-    const row = (await get(t, `/users/${leaver.id}`, "ADMIN")).body;
+    const row = (await get(t, `/users/${leaver.id}`, "OWNER")).body;
     expect(row).toMatchObject({ isActive: false, phone: null, note: null, startedOn: "2021-06-01", avatarUpdatedAt: null });
   });
 });

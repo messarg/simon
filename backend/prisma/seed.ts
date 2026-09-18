@@ -1,16 +1,17 @@
 /**
- * Development seed: one user per role and the installation settings (§7.1). Refuses to run
- * against a database that already has users, so it can never touch a shop's data.
+ * Development seed: the owner, a manager, two employees and the installation settings (§7.1).
+ * Refuses to run against a database that already has users, so it can never touch a shop's data.
  *
  *   npm run db:seed --workspace backend
  *
- * PINs: owner 1111 · stock 2222 · worker 3333.
+ * Sign in by typing the name (§16.2):
+ *   Արամ 1111 — owner · Անի 4444 — manager · Լուսինե 2222 — employee, stock · Գոռ 3333 — employee, till
  */
 import { databaseFile } from "../src/lib/config.ts";
 import { openDatabase } from "../src/lib/db.ts";
 import { applyMigrations } from "../src/lib/migrate.ts";
 import { writeSettings } from "../src/services/settings.service.ts";
-import { uuidv7 } from "@simon/shared";
+import { PERMISSION_PRESETS, uuidv7 } from "@simon/shared";
 import { createProduct } from "../src/services/product.service.ts";
 import { postMovement } from "../src/services/stock-ledger.service.ts";
 import { createOwner, createUser } from "../src/services/user.service.ts";
@@ -25,8 +26,10 @@ if ((await db.user.count()) > 0) {
 }
 
 const owner = await createOwner(db, { shopName: "Շինանյութ «Արարատ»", ownerName: "Արամ", pin: "1111" });
-await createUser(db, owner.user.id, { name: "Լուսինե", pin: "2222", role: "STOCK" });
-await createUser(db, owner.user.id, { name: "Գոռ", pin: "3333", role: "WORKER" });
+const by = { id: owner.user.id, role: "OWNER" as const };
+await createUser(db, by, { name: "Անի", pin: "4444", role: "MANAGER" });
+await createUser(db, by, { name: "Լուսինե", pin: "2222", role: "EMPLOYEE", permissions: [...PERMISSION_PRESETS.stock] });
+await createUser(db, by, { name: "Գոռ", pin: "3333", role: "EMPLOYEE", permissions: [...PERMISSION_PRESETS.cashier] });
 await db.$transaction((tx) => writeSettings(tx, { "tax.regime": "VAT", "tax.priceBasis": "INCLUSIVE", "tax.rateBp": 2000, "shop.address": "Երևան", "setup.step": 5, "setup.completedAt": new Date().toISOString() }, owner.user.id));
 
 // A small hardware-store catalogue: name, price ֏, unit, decimals, stock (display units), cost ֏, barcode, pinned.

@@ -42,13 +42,13 @@ describe("schema", () => {
       `INSERT INTO Product (id, name, nameSearch, stockUom, decimalPlaces, sellPriceMdram, createdAt, updatedAt) VALUES ('p1', 'x', 'x', 'pc', 0, 12.5, '${now}', '${now}')`,
     )).rejects.toThrow();
     await expect(t.db.$executeRawUnsafe(
-      `INSERT INTO User (id, name, pinHash, role, createdAt) VALUES ('u1', 'x', 'h', 'OWNER', '${now}')`,
-    )).rejects.toThrow();
+      `INSERT INTO User (id, name, pinHash, role, createdAt) VALUES ('u1', 'x', 'h', 'ADMIN', '${now}')`,
+    )).rejects.toThrow(); // the retired role is an unknown value now (§16.4)
   });
 
   it("requires a reason code on a write-off and only there", async () => {
     const now = new Date().toISOString();
-    await t.db.$executeRawUnsafe(`INSERT INTO User (id, name, pinHash, role, createdAt) VALUES ('u2', 'x', 'h', 'ADMIN', '${now}')`);
+    await t.db.$executeRawUnsafe(`INSERT INTO User (id, name, pinHash, role, createdAt) VALUES ('u2', 'x', 'h', 'OWNER', '${now}')`);
     await t.db.$executeRawUnsafe(`INSERT INTO Product (id, name, nameSearch, stockUom, decimalPlaces, sellPriceMdram, createdAt, updatedAt) VALUES ('p2', 'x', 'x', 'pc', 0, 1000, '${now}', '${now}')`);
     const insert = (type: string, reason: string | null) => t.db.$executeRawUnsafe(
       `INSERT INTO StockMovement (id, productId, seq, type, qtyDelta, balanceAfter, sourceType, sourceId, userId, reasonCode, createdAt) VALUES ('${crypto.randomUUID()}', 'p2', ${Math.floor(Math.random() * 1e9)}, '${type}', -1000, -1000, 'StockMovement', 'x', 'u2', ${reason ? `'${reason}'` : "NULL"}, '${now}')`,

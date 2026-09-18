@@ -1,12 +1,21 @@
 /**
- * Sign in: pick your name, type your PIN (§16.2, J1 steps 1–2). A shared till shows every
- * active person as a large tile; the PIN is checked only by the server.
+ * Sign in: type your name, then your PIN (§16.2, J1 steps 1–2). The PIN is checked only by the
+ * server.
+ *
+ * **Nobody is listed.** The screen used to show every active person as a tile with a face, which
+ * told anyone on the shop's Wi-Fi who works there and which of them hold the keys (§26.2). Now the
+ * person says who they are, and a name that matches nobody fails exactly as a wrong PIN does, so
+ * the screen cannot be used to find out. The name field does not autocomplete: on a shared till
+ * the browser's memory of past names would be the same list again.
+ *
+ * Two steps rather than one form, because the PIN pad listens to the whole keyboard — a hardware
+ * keyboard types PINs too — and a name typed beside it would land in both.
  *
  * One centred card at every size — a phone, a tablet on the counter, the Mac app's window — so
  * the first thing anyone sees sits in the middle of the screen, not hanging from its top edge.
  */
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, KeyRound } from "lucide-react";
+import { ArrowLeft, ArrowRight, KeyRound } from "lucide-react";
 import type { ReactNode } from "react";
 import { useState } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router";
@@ -14,12 +23,10 @@ import { Avatar, PinPad } from "@/components/shared";
 import { Button } from "@/components/ui/button.tsx";
 import { Input, Label } from "@/components/ui/input.tsx";
 import { Sheet } from "@/components/ui/sheet.tsx";
+import { homePathFor } from "@/config/navigation.ts";
 import { problemMessage, t } from "@/i18n/t.ts";
 import { ApiProblem, http } from "@/lib/http.ts";
 import { sessionStore, useSession, type SessionState } from "@/lib/session-store.ts";
-
-/** `GET /auth/users` draws this screen, so it is unauthenticated — and so is the photograph (§26.2). */
-interface SignInUser { id: string; name: string; avatarUpdatedAt?: string | null; }
 
 function Frame({ children }: { children: ReactNode }) {
   return (
@@ -41,33 +48,38 @@ export function SignInPage() {
   const session = useSession();
   const navigate = useNavigate();
   const location = useLocation();
-  const [selected, setSelected] = useState<SignInUser | null>(null);
+  const [typed, setTyped] = useState("");
+  const [name, setName] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const [recoverOpen, setRecoverOpen] = useState(false);
 
-  const users = useQuery({
-    queryKey: ["auth", "users"],
-    queryFn: () => http.get<{ items: SignInUser[] }>("/auth/users"),
+  // A shop with nobody in it yet goes to the wizard instead (§7.1). Nothing here is anybody's name.
+  const setup = useQuery({
+    queryKey: ["setup", "status"],
+    queryFn: () => http.get<{ needsOwner: boolean }>("/setup/status"),
     retry: false,
   });
 
-  if (session) return <Navigate to={(location.state as { from?: string } | null)?.from ?? "/sell"} replace />;
-  if (users.error instanceof ApiProblem && users.error.type === "setup-required") return <Navigate to="/setup" replace />;
+  if (session) return <Navigate to={(location.state as { from?: string } | null)?.from ?? homePathFor(session.user)} replace />;
+  if (setup.data?.needsOwner) return <Navigate to="/setup" replace />;
 
   const submit = async (pin: string) => {
-    if (!selected || busy) return;
+    if (!name || busy) return;
     setBusy(true);
     setError(null);
     try {
-      const res = await http.post<SessionState>("/auth/login", { userId: selected.id, pin, deviceId: sessionStore.deviceId(), deviceLabel: navigator.platform || "Till" });
+      const res = await http.post<SessionState>("/auth/login", { name, pin, deviceId: sessionStore.deviceId(), deviceLabel: navigator.platform || "Till" });
       sessionStore.set(res);
-      navigate("/sell", { replace: true });
+      navigate((location.state as { from?: string } | null)?.from ?? homePathFor(res.user), { replace: true });
     } catch (err) {
       const p = err instanceof ApiProblem ? err : null;
-      if (p?.type === "pin-incorrect" && typeof p.field("attemptsRemaining") === "number") setError(`${problemMessage(p.type)} · ${t("signIn.attemptsLeft", { n: p.field<number>("attemptsRemaining")! })}`);
-      else if (p?.type === "account-locked") setError(t("signIn.locked", { n: p.field<number>("minutesRemaining") ?? 15 }));
+      // The server does not say whether the name or the PIN was wrong, and neither does this.
+      if (p?.type === "pin-incorrect") {
+        const left = p.field<number>("attemptsRemaining");
+        setError(typeof left === "number" ? `${t("signIn.wrong")} · ${t("signIn.attemptsLeft", { n: left })}` : t("signIn.wrong"));
+      } else if (p?.type === "account-locked") setError(t("signIn.locked", { n: p.field<number>("minutesRemaining") ?? 15 }));
       else if (p?.type === "too-many-attempts") setError(t("signIn.tooMany", { n: p.field<number>("retryAfterSeconds") ?? 60 }));
       else setError(problemMessage(p?.type ?? "network"));
       setAttempt((a) => a + 1);
@@ -76,48 +88,46 @@ export function SignInPage() {
     }
   };
 
+  const toPin = () => { if (typed.trim()) { setName(typed.trim()); setError(null); } };
+
   return (
     <Frame>
-      {!selected ? (
-        <>
+      {name === null ? (
+        <form onSubmit={(e) => { e.preventDefault(); toPin(); }}>
           <h1 className="text-center text-xl font-semibold">{t("signIn.title")}</h1>
           <p className="mt-1 text-center text-sm text-muted-foreground">{t("signIn.pickHint")}</p>
-          {/* Two per row, and an odd one out sits in the middle rather than under the left column. */}
-          <ul className="mt-6 flex flex-wrap justify-center gap-3">
-            {users.isPending && [0, 1].map((i) => (
-              <li key={i} className="h-32 w-[calc(50%-0.375rem)] animate-pulse rounded-xl bg-muted" aria-hidden />
-            ))}
-            {users.data?.items.map((u) => (
-              <li key={u.id} className="w-[calc(50%-0.375rem)]">
-                <button
-                  onClick={() => { setSelected(u); setError(null); }}
-                  className="flex h-32 w-full flex-col items-center justify-center gap-3 rounded-xl border border-border bg-background px-2 text-lg font-medium transition-colors hover:border-primary/40 hover:bg-primary-soft/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:bg-primary-soft"
-                >
-                  <Avatar name={u.name} userId={u.id} avatarUpdatedAt={u.avatarUpdatedAt} className="size-14 text-2xl" />
-                  <span className="max-w-full truncate">{u.name}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
-          {users.isError && !(users.error instanceof ApiProblem && users.error.type === "setup-required") && (
-            <div className="mt-6 text-center">
-              <p className="mb-3 text-muted-foreground">{problemMessage("network")}</p>
-              <Button variant="secondary" onClick={() => users.refetch()}>{t("common.retry")}</Button>
-            </div>
-          )}
-        </>
+          <div className="mt-6">
+            <Label htmlFor="sign-in-name">{t("signIn.name")}</Label>
+            <Input
+              id="sign-in-name"
+              value={typed}
+              onChange={(e) => setTyped(e.target.value)}
+              placeholder={t("signIn.namePlaceholder")}
+              autoFocus
+              autoComplete="off"
+              autoCapitalize="words"
+              spellCheck={false}
+              enterKeyHint="next"
+              className="h-touch-lg text-lg"
+            />
+          </div>
+          <Button type="submit" size="lg" className="mt-4 w-full" disabled={!typed.trim()}>
+            {t("signIn.next")}<ArrowRight />
+          </Button>
+          {setup.isError && <p className="mt-4 text-center text-sm text-muted-foreground" role="alert">{problemMessage("network")}</p>}
+        </form>
       ) : (
         <>
-          {/* Who is signing in, and the way back to the list, on one row above the keypad. */}
+          {/* Who is signing in, as they typed it, and the way back on one row above the keypad. */}
           <div className="flex items-center gap-3 border-b border-border pb-4">
-            <Avatar name={selected.name} userId={selected.id} avatarUpdatedAt={selected.avatarUpdatedAt} className="size-12 text-xl" />
+            <Avatar name={name} className="size-12 text-xl" />
             <div className="min-w-0 flex-1">
-              <h1 className="truncate text-lg font-semibold leading-tight">{selected.name}</h1>
+              <h1 className="truncate text-lg font-semibold leading-tight">{name}</h1>
               <p className="truncate text-sm text-muted-foreground">{t("signIn.enterPin")}</p>
             </div>
             {/* Icon only on a phone, where the words would squeeze the name beside it. */}
             <button
-              onClick={() => setSelected(null)}
+              onClick={() => { setName(null); setError(null); }}
               aria-label={t("signIn.switchUser")}
               title={t("signIn.switchUser")}
               className="inline-flex size-11 shrink-0 items-center justify-center gap-1.5 rounded-md text-sm font-medium text-primary hover:bg-primary-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:w-auto sm:px-3"
@@ -137,20 +147,21 @@ export function SignInPage() {
               <KeyRound className="size-4" aria-hidden /> {t("signIn.forgot")}
             </button>
           </div>
-          <RecoverySheet open={recoverOpen} onOpenChange={setRecoverOpen} user={selected} onRecovered={() => { setError(null); setAttempt((a) => a + 1); }} />
+          <RecoverySheet open={recoverOpen} onOpenChange={setRecoverOpen} onRecovered={() => { setError(null); setAttempt((a) => a + 1); }} />
         </>
       )}
     </Frame>
   );
 }
 
-function RecoverySheet({ open, onOpenChange, user, onRecovered }: { open: boolean; onOpenChange: (o: boolean) => void; user: SignInUser; onRecovered: () => void }) {
+/** The owner's way back in (§16.2): the code on their paper says whose it is, so nobody is picked. */
+function RecoverySheet({ open, onOpenChange, onRecovered }: { open: boolean; onOpenChange: (o: boolean) => void; onRecovered: () => void }) {
   const [code, setCode] = useState("");
   const [newCode, setNewCode] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const submit = async () => {
     try {
-      const res = await http.post<{ recoveryCode: string }>("/auth/recover", { userId: user.id, recoveryCode: code });
+      const res = await http.post<{ recoveryCode: string }>("/auth/recover", { recoveryCode: code });
       setNewCode(res.recoveryCode);
       onRecovered();
     } catch (err) {

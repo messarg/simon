@@ -73,8 +73,10 @@ function RailLink({ d }: { d: Destination }) {
     <NavLink
       to={d.path}
       className={({ isActive }) => cn(
-        "flex h-touch items-center gap-3 rounded-lg px-3 text-[0.95rem] font-medium transition-colors",
-        isActive ? "bg-primary-soft text-accent-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground",
+        "relative flex h-touch items-center gap-3 rounded-lg px-3 text-[0.95rem] font-medium transition-colors",
+        // The mark beside the current destination is transparent unless the palette gives it a colour.
+        "before:absolute before:inset-y-2 before:start-0 before:w-1 before:rounded-full before:content-['']",
+        isActive ? "bg-sidebar-active text-sidebar-active-foreground before:bg-sidebar-mark" : "text-sidebar-muted hover:bg-sidebar-hover hover:text-sidebar-foreground",
       )}
     >
       <Icon className="size-5" aria-hidden />
@@ -92,12 +94,12 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [practiceOpen, setPracticeOpen] = useState(false);
   const practice = usePracticeMode();
   if (!session) return null;
-  const { worker, owner } = destinationsFor(session.user.role, settings.data?.debtBookEnabled ?? true);
+  const { worker, owner } = destinationsFor(session.user, settings.data?.debtBookEnabled ?? true);
   const isOwner = owner.length > 0;
 
   return (
     <div data-shell className="flex min-h-dvh [--rail-w:0px] [--strip-h:0px] [--tabbar-h:0px] lg:[--rail-w:15rem]">
-      <aside className="sticky top-0 hidden h-dvh w-(--rail-w) shrink-0 flex-col border-r border-border bg-card px-3 py-4 lg:flex">
+      <aside className="sticky top-0 hidden h-dvh w-(--rail-w) shrink-0 flex-col border-r border-sidebar-border bg-sidebar px-3 py-4 text-sidebar-foreground lg:flex">
         <div className="mb-5 flex items-center gap-2 px-3">
           <img src="/favicon.svg" alt="" width={28} height={28} className="rounded-md" />
           <span className="text-lg font-semibold">{t("app.name")}</span>
@@ -106,17 +108,17 @@ export function AppShell({ children }: { children: ReactNode }) {
           {isOwner ? (
             <>
               {owner.map((d) => <RailLink key={d.path} d={d} />)}
-              <div className="my-2 border-t border-border" />
+              <div className="my-2 border-t border-sidebar-border" />
               {worker.map((d) => <RailLink key={d.path} d={d} />)}
             </>
           ) : worker.map((d) => <RailLink key={d.path} d={d} />)}
         </nav>
-        <div className="mt-4 border-t border-border pt-2">
-          <button onClick={() => setPracticeOpen(true)} className="flex h-touch w-full items-center gap-3 rounded-lg px-3 text-muted-foreground hover:bg-muted">
+        <div className="mt-4 border-t border-sidebar-border pt-2">
+          <button onClick={() => setPracticeOpen(true)} className="flex h-touch w-full items-center gap-3 rounded-lg px-3 text-sidebar-muted hover:bg-sidebar-hover hover:text-sidebar-foreground">
             <FlaskConical className="size-5" aria-hidden />
             {practice.isPractice ? t("practice.leave") : t("practice.title")}
           </button>
-          <button onClick={signOut} className="flex h-touch w-full items-center gap-3 rounded-lg px-3 text-muted-foreground hover:bg-muted">
+          <button onClick={signOut} className="flex h-touch w-full items-center gap-3 rounded-lg px-3 text-sidebar-muted hover:bg-sidebar-hover hover:text-sidebar-foreground">
             <LogOut className="size-5" aria-hidden />
             {t("common.signOut")}
           </button>

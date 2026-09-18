@@ -14,7 +14,7 @@ import { applyPendingRestore, backupPaths, createInstallPassphrase, listBackups,
 import { diagnostics } from "./diagnostics.service.ts";
 
 const reauth = async (t: TestApp, action: string) =>
-  (await post(t, "/auth/reauth", { adminUserId: t.users.ADMIN.id, pin: PINS.ADMIN, action })).body.grant as string;
+  (await post(t, "/auth/reauth", { name: t.users.OWNER.name, pin: PINS.OWNER, action })).body.grant as string;
 
 describe("backup and restore — §19.2, §27.10", () => {
   let t: TestApp;
@@ -91,7 +91,7 @@ describe("backup and restore — §19.2, §27.10", () => {
       try {
         expect(await restored.sale.count({ where: { status: "COMPLETED" } })).toBe(1);
         expect((await restored.product.findFirstOrThrow()).name).toBe("Մալուխ");
-        expect(await restored.user.count()).toBe(3);
+        expect(await restored.user.count()).toBe(4); // the owner, a manager, two employees
       } finally {
         await restored.$disconnect();
       }
@@ -103,9 +103,9 @@ describe("backup and restore — §19.2, §27.10", () => {
 
   it("a one-click restore is staged and swapped in on the next start, keeping the database it replaced", async () => {
     const name = (await listBackups(t.db)).files[0].name;
-    expect((await post(t, "/backup/restore", { file: name, reauthGrant: "nope" }, "ADMIN")).status).toBe(403);
+    expect((await post(t, "/backup/restore", { file: name, reauthGrant: "nope" }, "OWNER")).status).toBe(403);
     const grant = await reauth(t, "backupRestore");
-    const staged = await post(t, "/backup/restore", { file: name, reauthGrant: grant }, "ADMIN");
+    const staged = await post(t, "/backup/restore", { file: name, reauthGrant: grant }, "OWNER");
     expect(staged.status).toBe(200);
     expect(staged.body).toMatchObject({ staged: true, file: name });
     expect(await t.db.auditLog.count({ where: { action: "backup.restore" } })).toBe(1);
@@ -122,12 +122,12 @@ describe("backup and restore — §19.2, §27.10", () => {
   });
 
   it("the passphrase is revealed and rotated only with an admin PIN, and every use is audited", async () => {
-    expect((await post(t, "/backup/passphrase/reveal", { reauthGrant: "nope" }, "ADMIN")).status).toBe(403);
-    const reveal = await post(t, "/backup/passphrase/reveal", { reauthGrant: await reauth(t, "backupPassphrase") }, "ADMIN");
+    expect((await post(t, "/backup/passphrase/reveal", { reauthGrant: "nope" }, "OWNER")).status).toBe(403);
+    const reveal = await post(t, "/backup/passphrase/reveal", { reauthGrant: await reauth(t, "backupPassphrase") }, "OWNER");
     expect(reveal.body.passphrase).toBe(passphrase);
     expect((await request(t.server).post("/api/backup/passphrase/reveal").set(bearer(t.tokens.STOCK)).send({ reauthGrant: "x" })).status).toBe(403);
 
-    const rotated = await post(t, "/backup/passphrase/rotate", { reauthGrant: await reauth(t, "backupPassphrase") }, "ADMIN");
+    const rotated = await post(t, "/backup/passphrase/rotate", { reauthGrant: await reauth(t, "backupPassphrase") }, "OWNER");
     expect(rotated.body.passphrase).not.toBe(passphrase);
     expect(readPassphrase()).toBe(rotated.body.passphrase);
     passphrase = rotated.body.passphrase;

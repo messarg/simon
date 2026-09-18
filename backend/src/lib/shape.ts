@@ -3,15 +3,18 @@
  * §15.1, §23.1 item 2.
  *
  * Every route returns data through a function in this file, never a raw ORM object. Cost,
- * margin and supplier terms appear only for ADMIN. A route test sweeps every endpoint with
- * a WORKER token and asserts none of COST_KEYS ever appears (§27.9).
+ * margin and supplier terms appear only for the OWNER — a manager runs the shop without them
+ * (§16.4). A route test sweeps every endpoint with an employee token and again with a manager's,
+ * and asserts none of COST_KEYS ever appears (§27.9).
  */
-import type { Role } from "@simon/shared";
+import { isManager, isOwner, parsePermissions, type Role } from "@simon/shared";
 
-/** Keys a non-admin token must never receive, anywhere in a response body. */
+/** Keys only the owner's token may receive, anywhere in a response body. */
 export const COST_KEYS = ["avgCostMdram", "unitCostMdram", "marginDram", "cogs", "paymentTerms", "landedUnitCostMdram", "costDram"] as const;
 
-export const isAdmin = (role: Role) => role === "ADMIN";
+/** Cost is the owner's alone (§16.5). Named for the question, so a call site reads as its rule. */
+export const seesCost = (role: Role) => isOwner(role);
+export { isManager, isOwner };
 
 export const bool = (v: number) => v === 1;
 
@@ -19,16 +22,21 @@ export const bool = (v: number) => v === 1;
  * `avatarUpdatedAt` says whether there is a photograph and what to cache-bust on; the bytes never
  * travel in JSON (§15.4).
  *
- * `phone`, `startedOn` and `note` are personal details (§6.11, §19.6) and this shape is reached
- * only from the `ADMIN` block of §15.4. The sign-in tiles do **not** come through here: they are
- * their own three-key projection in `listSignInUsers`, because that route answers before anyone
- * has signed in (§16.5, §26.2), and a shared shaper would have carried a hire date to it the day
- * someone added the column.
+ * `phone`, `startedOn` and `note` are personal details (§6.17, §19.6), reached only from the
+ * owner-and-manager block of §15.4. **A manager sees an employee's, their own, and nobody
+ * else's**: the owner's record is the owner's, and a manager's is not another manager's business.
+ * So the viewer is part of the shape, and a row outside what they may read keeps its name, role
+ * and state and loses the rest.
  */
-export function shapeUser(u: { id: string; name: string; role: string; isActive: number; failedAttempts: number; lockedUntil: string | null; createdAt: string; avatarUpdatedAt?: string | null; phone?: string | null; startedOn?: string | null; note?: string | null }) {
+export function shapeUser(
+  u: { id: string; name: string; role: string; permissions?: string; isActive: number; failedAttempts: number; lockedUntil: string | null; createdAt: string; avatarUpdatedAt?: string | null; phone?: string | null; startedOn?: string | null; note?: string | null },
+  viewer: { id: string; role: Role },
+) {
+  const personal = isOwner(viewer.role) || u.role === "EMPLOYEE" || u.id === viewer.id;
   return {
-    id: u.id, name: u.name, role: u.role, isActive: bool(u.isActive), lockedUntil: u.lockedUntil, createdAt: u.createdAt,
-    avatarUpdatedAt: u.avatarUpdatedAt ?? null, phone: u.phone ?? null, startedOn: u.startedOn ?? null, note: u.note ?? null,
+    id: u.id, name: u.name, role: u.role, permissions: parsePermissions(u.permissions),
+    isActive: bool(u.isActive), lockedUntil: u.lockedUntil, createdAt: u.createdAt, avatarUpdatedAt: u.avatarUpdatedAt ?? null,
+    phone: personal ? u.phone ?? null : null, startedOn: personal ? u.startedOn ?? null : null, note: personal ? u.note ?? null : null,
   };
 }
 
@@ -46,7 +54,7 @@ export function shapeDevice(d: { id: string; prefix: string; label: string; regi
 
 /** Recursively removes cost keys — a backstop for composite report rows, not a substitute for shaping. */
 export function stripCost<T>(value: T, role: Role): T {
-  if (isAdmin(role)) return value;
+  if (seesCost(role)) return value;
   const walk = (v: unknown): unknown => {
     if (Array.isArray(v)) return v.map(walk);
     if (v && typeof v === "object") {
@@ -76,7 +84,7 @@ export function shapeProduct(p: ProductRow, role: Role) {
     units: (p.units ?? []).map((u) => ({ id: u.id, uom: u.uom, factorToStockUom: u.factorToStockUom, role: u.role })),
     velocity: p.stats?.avgDailyQty30d ?? 0,
   };
-  if (!isAdmin(role)) return base;
+  if (!seesCost(role)) return base;
   return { ...base, avgCostMdram: p.avgCostMdram, needsDetail: { cost: p.avgCostMdram === null, category: p.categoryId === null, barcode: (p.barcodes ?? []).length === 0 } };
 }
 
@@ -100,7 +108,7 @@ export function shapeSale(s: SaleRow, role: Role) {
         unitPriceMdram: l.unitPriceMdram, taxRateBp: l.taxRateBp, lineTax: l.lineTax, discountAmount: l.discountAmount,
         discountReason: l.discountReason, priceOverridden: bool(l.priceOverridden), lineTotal: l.lineTotal,
       };
-      return isAdmin(role) ? { ...line, unitCostMdram: l.unitCostMdram } : line;
+      return seesCost(role) ? { ...line, unitCostMdram: l.unitCostMdram } : line;
     }),
     payments: (s.payments ?? []).map((p) => ({ id: p.id, method: p.method, amount: p.amount, tenderedAmount: p.tenderedAmount, changeGiven: p.changeGiven })),
   };
@@ -108,7 +116,7 @@ export function shapeSale(s: SaleRow, role: Role) {
 
 export function shapeMovement(m: { id: string; seq: number; type: string; qtyDelta: number; unitCostMdram: number | null; balanceAfter: number; sourceType: string; sourceId: string; reasonCode: string | null; note: string; createdAt: string; user?: { name: string } }, role: Role) {
   const base = { id: m.id, seq: m.seq, type: m.type, qtyDelta: m.qtyDelta, balanceAfter: m.balanceAfter, sourceType: m.sourceType, sourceId: m.sourceId, reasonCode: m.reasonCode, note: m.note, createdAt: m.createdAt, userName: m.user?.name ?? null };
-  return isAdmin(role) ? { ...base, unitCostMdram: m.unitCostMdram } : base;
+  return seesCost(role) ? { ...base, unitCostMdram: m.unitCostMdram } : base;
 }
 
 type CustomerRow = { id: string; fullName: string | null; nameSearch: string; phone: string | null; discountBp: number; creditLimit: number; isBlocked: number; isActive: number; mergedIntoId: string | null; anonymisedAt: string | null; notes: string; updatedAt: string };
@@ -120,7 +128,7 @@ export function shapeCustomer(c: CustomerRow, role: Role, figures?: { outstandin
     isActive: bool(c.isActive), mergedIntoId: c.mergedIntoId, anonymised: c.anonymisedAt !== null, updatedAt: c.updatedAt,
     ...(figures ? { outstanding: figures.outstanding, oldestChargeDays: figures.oldestChargeDays, overdue: figures.overdue, lastSaleAt: figures.lastSaleAt ?? null } : {}),
   };
-  return isAdmin(role) ? { ...base, discountBp: c.discountBp, notes: c.notes } : base;
+  return isManager(role) ? { ...base, discountBp: c.discountBp, notes: c.notes } : base;
 }
 
 type FlagRow = {
@@ -134,7 +142,7 @@ const COST_NOTE_KEY = /cost|mdram|margin/i;
 export function shapeFlag(f: FlagRow, role: Role, labels: { productName?: string | null; customerName?: string | null; sourceLabel?: string | null } = {}) {
   let note: unknown = f.note;
   try { note = f.note ? JSON.parse(f.note) : null; } catch { note = f.note; }
-  if (!isAdmin(role) && note && typeof note === "object" && !Array.isArray(note)) {
+  if (!seesCost(role) && note && typeof note === "object" && !Array.isArray(note)) {
     note = Object.fromEntries(Object.entries(note as Record<string, unknown>).filter(([k]) => !COST_NOTE_KEY.test(k)));
   }
   return {

@@ -1,4 +1,6 @@
 /** Ապրանքներ — opens on what is unfinished, not the whole catalogue (§6.12). Cost appears for ADMIN only. */
+import { isOwner } from "@simon/shared";
+import { useSession } from "@/lib/session-store.ts";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, CheckCircle2, ClipboardList, PackageSearch, PackagePlus, Plus, Search } from "lucide-react";
 import { useState } from "react";
@@ -28,8 +30,12 @@ export function ProductsPage() {
   const qc = useQueryClient();
   // The filter lives in the URL so home's "7 low" tile can open this list already filtered (§6.9).
   const [params, setParams] = useSearchParams();
-  const filter = (params.get("filter") as Filter | null) ?? "needs-detail";
-  const setFilter = (f: Filter) => setParams(f === "needs-detail" ? {} : { filter: f });
+  // What is incomplete includes a missing cost, which is the owner's; a manager starts from everything (§16.5).
+  const owner = isOwner(useSession()?.user.role ?? "EMPLOYEE");
+  const fallback: Filter = owner ? "needs-detail" : "all";
+  const requested = params.get("filter") as Filter | null;
+  const filter: Filter = requested && (owner || requested !== "needs-detail") ? requested : fallback;
+  const setFilter = (f: Filter) => setParams(f === fallback ? {} : { filter: f });
   const [q, setQ] = useState("");
   const [editing, setEditing] = useState<{ id: string | null } | null>(null);
   const list = useQuery({
@@ -60,10 +66,10 @@ export function ProductsPage() {
     }
   };
 
-  const tabs: Array<[Filter, string]> = [
+  const tabs: Array<[Filter, string]> = ([
     ["needs-detail", t("products.incomplete")], ["low-stock", t("products.lowStock")], ["dead-stock", t("products.deadStock")],
     ["all", t("products.all")], ["inactive", t("products.inactive")],
-  ];
+  ] as Array<[Filter, string]>).filter(([f]) => owner || f !== "needs-detail");
 
   return (
     <div className="mx-auto w-full max-w-5xl p-4 md:p-6">

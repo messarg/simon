@@ -5,6 +5,7 @@
  * the review shows only what differs, the costliest difference first. Approval is the owner's and
  * is the one step that changes stock (§13.4).
  */
+import { isManager, isOwner } from "@simon/shared";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, ClipboardCheck, ClipboardList, Pencil, Search, Tags } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -45,15 +46,18 @@ export function StocktakePage() {
   const qc = useQueryClient();
   const connection = useConnection();
   const session = useSession();
-  const admin = session?.user.role === "ADMIN";
+  // Two different questions: the value of a variance is cost, and so the owner's; approving a count
+  // is running the shop, and so an owner's or a manager's (§16.4).
+  const seesCost = !!session && isOwner(session.user.role);
+  const approves = !!session && isManager(session.user.role);
   const current = useQuery({ queryKey: key, queryFn: () => http.get<Stocktake | null>("/stocktakes/current"), enabled: connection === "online" });
   const refresh = () => qc.invalidateQueries({ queryKey: ["stocktakes"] });
 
   if (connection === "offline") return <EmptyState icon={ClipboardList} title={t("stocktake.title")} hint={t("stocktake.offline")} className="flex-1" />;
   if (current.isPending) return null;
   const st = current.data;
-  if (!st) return <StartView onStarted={refresh} admin={admin} />;
-  return st.status === "COUNTING" ? <CountView st={st} onChange={refresh} /> : <ReviewView st={st} admin={admin} onChange={refresh} />;
+  if (!st) return <StartView onStarted={refresh} admin={seesCost} />;
+  return st.status === "COUNTING" ? <CountView st={st} onChange={refresh} /> : <ReviewView st={st} admin={seesCost} approves={approves} onChange={refresh} />;
 }
 
 function StartView({ onStarted, admin }: { onStarted: () => void; admin: boolean }) {
@@ -229,7 +233,7 @@ function CountView({ st, onChange }: { st: Stocktake; onChange: () => void }) {
   );
 }
 
-function ReviewView({ st, admin, onChange }: { st: Stocktake; admin: boolean; onChange: () => void }) {
+function ReviewView({ st, admin, approves, onChange }: { st: Stocktake; admin: boolean; approves: boolean; onChange: () => void }) {
   const [recount, setRecount] = useState<Line | null>(null);
   const [confirm, setConfirm] = useState<null | "approve" | "abandon">(null);
   const byId = new Map(st.lines.map((l) => [l.productId, l]));
@@ -298,7 +302,7 @@ function ReviewView({ st, admin, onChange }: { st: Stocktake; admin: boolean; on
         </div>
       )}
 
-      {st.status === "REVIEW" && (admin ? (
+      {st.status === "REVIEW" && (approves ? (
         <div className="flex flex-wrap gap-2">
           <Button size="lg" className="flex-1" onClick={() => setConfirm("approve")}><ClipboardCheck />{t("stocktake.approve")}</Button>
           <Button size="lg" variant="ghost" onClick={() => setConfirm("abandon")}>{t("stocktake.abandon")}</Button>

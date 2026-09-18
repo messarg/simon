@@ -64,7 +64,7 @@ async function seedPractice(live: Db): Promise<Db> {
   });
 
   // One movement per product with stock, so the practice ledger replays to the same figures.
-  const owner = users.find((u) => u.role === "ADMIN") ?? users[0];
+  const owner = users.find((u) => u.role === "OWNER") ?? users[0];
   if (owner) {
     const { postMovement } = await import("./stock-ledger.service.ts");
     for (const p of products) {

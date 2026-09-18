@@ -12,7 +12,8 @@ import { cn } from "@/lib/cn.ts";
 import { money } from "@/lib/format.ts";
 import { ApiProblem, http } from "@/lib/http.ts";
 
-export interface SupplierRow { id: string; name: string; phone: string | null; paymentTerms: number; leadTimeDays: number; outstanding: number; overdue: number; isActive: boolean }
+/** `paymentTerms` is the owner's; a manager's rows come without it (§16.5). */
+export interface SupplierRow { id: string; name: string; phone: string | null; paymentTerms?: number; leadTimeDays: number; outstanding: number; overdue: number; isActive: boolean }
 
 export function SupplierList({ selectedId, onSelect }: { selectedId: string | null; onSelect: (id: string) => void }) {
   const [query, setQuery] = useState("");
@@ -42,7 +43,7 @@ export function SupplierList({ selectedId, onSelect }: { selectedId: string | nu
               <button onClick={() => onSelect(s.id)} className={cn("flex min-h-touch-lg w-full items-center gap-3 px-4 py-2.5 text-left active:bg-muted", s.id === selectedId && "bg-primary-soft", !s.isActive && "opacity-60")}>
                 <div className="min-w-0 flex-1">
                   <div className="truncate font-medium">{s.name}</div>
-                  <div className="text-sm text-muted-foreground">{t("suppliers.terms")}: {s.paymentTerms}</div>
+                  {s.paymentTerms !== undefined && <div className="text-sm text-muted-foreground">{t("suppliers.terms")}: {s.paymentTerms}</div>}
                 </div>
                 <div className="text-right">
                   {s.outstanding >= 0 ? <MoneyText amount={s.outstanding} className="font-semibold" /> : <span className="text-sm text-success">{t("suppliers.credit", { amount: money(-s.outstanding) })}</span>}

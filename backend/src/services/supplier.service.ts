@@ -19,7 +19,8 @@ import { readSettings } from "./settings.service.ts";
 
 export type CreditType = "SUPPLIER_PAYMENT" | "PURCHASE_RETURN" | "SUPPLIER_ADJUSTMENT";
 
-export async function createSupplier(db: Db, body: z.infer<typeof SupplierBody>, isAdmin: boolean) {
+/** `details` is whoever runs the shop; `terms` the owner alone, since terms are owner data (§16.5). */
+export async function createSupplier(db: Db, body: z.infer<typeof SupplierBody>, may: { details: boolean; terms: boolean }) {
   return db.$transaction(async (tx) => {
     const existing = await tx.supplier.findUnique({ where: { id: body.id } });
     if (existing) return existing;
@@ -28,7 +29,7 @@ export async function createSupplier(db: Db, body: z.infer<typeof SupplierBody>,
     return tx.supplier.create({
       data: {
         id: body.id, name, nameSearch: normalizeForSearch(name), phone: body.phone || null,
-        taxId: isAdmin ? (body.taxId || null) : null, paymentTerms: isAdmin ? (body.paymentTerms ?? 0) : 0, leadTimeDays: isAdmin ? (body.leadTimeDays ?? 0) : 0,
+        taxId: may.details ? (body.taxId || null) : null, paymentTerms: may.terms ? (body.paymentTerms ?? 0) : 0, leadTimeDays: may.details ? (body.leadTimeDays ?? 0) : 0,
         createdAt: now, updatedAt: now,
       },
     });

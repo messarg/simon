@@ -1,18 +1,20 @@
 /** The staff row as `GET /users` returns it (§6.11.1). There is no delete — rule 4. */
-import type { Role } from "@simon/shared";
+import type { Permission, Role } from "@simon/shared";
 
 export interface StaffUser {
   id: string;
   name: string;
   role: Role;
+  /** An employee's granted jobs; empty for an owner or manager, who can do every job (§16.4). */
+  permissions: Permission[];
   isActive: boolean;
   lockedUntil: string | null;
   createdAt?: string;
   /** When the photograph was last written; null when there is none. */
   avatarUpdatedAt?: string | null;
   /**
-   * The personal details, `ADMIN`-only and served only to a signed-in admin: the sign-in tiles
-   * come from `GET /auth/users`, which is unauthenticated and carries none of this (§26.2).
+   * The personal details: the owner reads everyone's, a manager an employee's; any other row comes
+   * back with these null (§16.5, §19.6). Nothing before sign-in carries them — there is no list.
    */
   phone?: string | null;
   /** A business date, `YYYY-MM-DD`. */

@@ -10,7 +10,8 @@ import { useSearchParams } from "react-router";
 import { businessDate, matchesSearch, normalizeForSearch, periodRange } from "@simon/shared";
 import { EmptyState } from "@/components/shared";
 import { Input } from "@/components/ui/input.tsx";
-import { REPORTS, reportEntry } from "@/features/reports/catalogue.ts";
+import { reportsFor } from "@/features/reports/catalogue.ts";
+import { useSession } from "@/lib/session-store.ts";
 import { PeriodPicker } from "@/features/reports/PeriodPicker.tsx";
 import { ReportTable } from "@/features/reports/ReportTable.tsx";
 import type { ReportResult } from "@/features/reports/types.ts";
@@ -24,8 +25,11 @@ export function ReportsPage() {
   const settings = useClientSettings().data;
   const today = businessDate(new Date(), settings?.timezone ?? "Asia/Yerevan");
   const [params, setParams] = useSearchParams();
+  const role = useSession()?.user.role ?? "EMPLOYEE";
+  const reports = reportsFor(role);
   const name = params.get("r");
-  const entry = name ? reportEntry(name) : undefined;
+  // A link to one of the owner's reports, opened by a manager, lands on the catalogue instead.
+  const entry = name ? reports.find((r) => r.name === name) : undefined;
   const period = { from: params.get("from") ?? today, to: params.get("to") ?? today };
   const groupBy = params.get("by") ?? entry?.groupings?.[0];
   const productId = params.get("productId") ?? "";
@@ -47,7 +51,7 @@ export function ReportsPage() {
       <nav className={cn("min-h-0 overflow-y-auto border-border p-3 md:w-80 md:border-r", name && "hidden md:block")} aria-label={t("reports.title")}>
         <h1 className="mb-2 px-1 text-2xl font-semibold">{t("nav.reports")}</h1>
         <ul className="space-y-1">
-          {REPORTS.map((r) => {
+          {reports.map((r) => {
             const Icon = r.icon;
             return (
               <li key={r.name}>

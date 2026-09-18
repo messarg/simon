@@ -6,6 +6,7 @@
  * Rows carry codes, not Armenian: the client holds the words (§4.2). Money is integer drams and
  * quantities milli-units, formatted only at the edge (§10.1).
  */
+import { OWNER_REPORTS } from "@simon/shared";
 import { apportionByValue, businessDate, daysBetween, lineTotal, type Dram, type MovementType } from "@simon/shared";
 import { agePayables } from "../domain/payables-aging.ts";
 import type { Db } from "../lib/db.ts";
@@ -24,6 +25,11 @@ export const REPORT_NAMES = [
   "movements-by-person", "cash-out-by-person", "audit",
 ] as const;
 export type ReportName = (typeof REPORT_NAMES)[number];
+
+// The owner's reports are named in `@simon/shared` so the catalogue leaves out what the route
+// refuses; this checks every one of them is a report that exists.
+export { OWNER_REPORTS } from "@simon/shared";
+void (OWNER_REPORTS satisfies readonly ReportName[]);
 
 export const SALES_GROUPINGS = ["day", "sale", "product", "category", "worker"] as const;
 export type SalesGrouping = (typeof SALES_GROUPINGS)[number];

@@ -561,18 +561,21 @@ model User {
   name             String
   pinHash          String
   recoveryCodeHash String?
+  // OWNER | MANAGER | EMPLOYEE (PRD §16.4). Exactly one OWNER, enforced by the service.
   role             String
+  // An EMPLOYEE's granted jobs, a JSON array of `Permission` (§16.4). Ignored for the other two.
+  permissions      String          @default("[]")
   isActive         Int             @default(1)
   failedAttempts   Int             @default(0)
   lockedUntil      String?
   coachMarksSeen   String          @default("[]")
   createdAt        String
-  // The one personal field and the only BLOB in this schema (PRD §11, §19.6). Bounded by
-  // validation, not by the column; `avatarUpdatedAt` is what a client cache-busts on.
+  // The only BLOB in this schema (PRD §11, §19.6). Bounded by validation, not by the column;
+  // `avatarUpdatedAt` is what a client cache-busts on.
   avatar           Bytes?
   avatarType       String?
   avatarUpdatedAt  String?
-  // Personal details, ADMIN-only and never on the pre-auth sign-in list (PRD §19.6, §16.5).
+  // Personal details: the owner's are the owner's alone; a manager sees employees' (§19.6, §16.5).
   phone            String?
   startedOn        String?
   note             String?

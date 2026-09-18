@@ -12,7 +12,7 @@ import { backdatedCharge, get, makeCustomer, makeProduct, openShift, post, saleB
 
 const today = () => businessDate(new Date(), "Asia/Yerevan");
 const daysAgo = (n: number) => new Date(Date.now() - n * 86_400_000).toISOString();
-const report = async (t: TestApp, name: string, query = "") => (await get(t, `/reports/${name}?from=${today()}&to=${today()}${query}`, "ADMIN")).body;
+const report = async (t: TestApp, name: string, query = "") => (await get(t, `/reports/${name}?from=${today()}&to=${today()}${query}`, "OWNER")).body;
 const rowFor = (body: { rows: Array<Record<string, unknown>> }, key: string) => body.rows.find((r) => r.key === key) as Record<string, number>;
 
 describe("owner home and reports — §6.9, §20.2", () => {
@@ -44,8 +44,8 @@ describe("owner home and reports — §6.9, §20.2", () => {
     await post(t, "/cash-movements", { id: uuidv7(), shiftId, type: "PAY_OUT", amount: 12_000, reasonCode: "EXPENSE", reason: "ջրի վարձ", createdAt: new Date().toISOString(), queued: false });
 
     // A delivery entered forty days ago on thirty-day terms: ten days past term.
-    const supplierRes = await post(t, "/suppliers", { id: uuidv7(), name: "Քարհանք", paymentTerms: 30, leadTimeDays: 5 }, "ADMIN");
-    await request(t.server).patch(`/api/suppliers/${supplierRes.body.id}`).set(bearer(t.tokens.ADMIN)).send({ paymentTerms: 30, leadTimeDays: 5 });
+    const supplierRes = await post(t, "/suppliers", { id: uuidv7(), name: "Քարհանք", paymentTerms: 30, leadTimeDays: 5 }, "OWNER");
+    await request(t.server).patch(`/api/suppliers/${supplierRes.body.id}`).set(bearer(t.tokens.OWNER)).send({ paymentTerms: 30, leadTimeDays: 5 });
     await post(t, "/goods-receipts", {
       id: uuidv7(), supplierId: supplierRes.body.id, supplierInvoiceNo: "INV-77", landedCostTotal: 0, receivedAt: daysAgo(40),
       lines: [{ id: uuidv7(), productId: gravel.id, uom: gravel.stockUom, factorToStockUom: 1, qty: 5_000, invoiceUnitCostMdram: 1_000_000 }],
@@ -58,7 +58,7 @@ describe("owner home and reports — §6.9, §20.2", () => {
   afterAll(async () => { await t.close(); });
 
   it("home answers how the day went, and is the owner's alone", async () => {
-    const home = (await get(t, "/home", "ADMIN")).body;
+    const home = (await get(t, "/home", "OWNER")).body;
     expect(home.today).toMatchObject({
       takings: 3_850,        // 2 400 + 300 on nisya + 1 150 discounted
       salesCount: 3,
@@ -134,21 +134,21 @@ describe("owner home and reports — §6.9, §20.2", () => {
     const history = await report(t, "item-history", `&productId=${cable.id}`);
     expect(history.rows.map((r: { what: string }) => r.what)).toEqual(expect.arrayContaining(["PURCHASE_RECEIPT", "SALE", "SALE_RETURN", "WRITE_OFF"]));
     expect(history.notes).toEqual([{ key: "itemHistoryFor", vars: { product: "Մալուխ" } }]);
-    expect((await get(t, `/reports/item-history?from=${today()}&to=${today()}`, "ADMIN")).status).toBe(400);
+    expect((await get(t, `/reports/item-history?from=${today()}&to=${today()}`, "OWNER")).status).toBe(400);
   });
 
   it("§27.41 — the audit trail is gated as a route, and holds the reason the person typed", async () => {
     expect((await get(t, "/audit-log", "WORKER")).status).toBe(403);
     expect((await get(t, "/audit-log", "STOCK")).status).toBe(403);
-    const log = (await get(t, "/audit-log", "ADMIN")).body;
+    const log = (await get(t, "/audit-log", "OWNER")).body;
     expect(log.items.map((x: { action: string }) => x.action)).toEqual(expect.arrayContaining(["stock.writeOff", "sale.void", "goodsReceipt.create"]));
 
-    const grant = (await post(t, "/auth/reauth", { adminUserId: t.users.ADMIN.id, pin: PINS.ADMIN, action: "stockAdjustment" })).body.grant;
+    const grant = (await post(t, "/auth/reauth", { name: t.users.OWNER.name, pin: PINS.OWNER, action: "stockAdjustment" })).body.grant;
     await post(t, "/adjustments", { id: uuidv7(), productId: cable.id, qtyDelta: 1_000, reauthGrant: grant, reason: "դարակում գտնվեց" }, "STOCK");
-    const adjustment = (await get(t, "/audit-log?action=stock.adjustment", "ADMIN")).body.items[0];
+    const adjustment = (await get(t, "/audit-log?action=stock.adjustment", "OWNER")).body.items[0];
     expect(adjustment).toMatchObject({ action: "stock.adjustment", reason: "դարակում գտնվեց", userName: "Լուսինե" }); // the person who acted, not the admin who approved
 
-    const filtered = (await get(t, `/audit-log?entityType=Product&entityId=${cable.id}`, "ADMIN")).body;
+    const filtered = (await get(t, `/audit-log?entityType=Product&entityId=${cable.id}`, "OWNER")).body;
     expect(filtered.items.every((x: { entityId: string }) => x.entityId === cable.id)).toBe(true);
     // The same rows as a report, for the screen that exports them.
     expect((await report(t, "audit")).columns.map((cx: { key: string }) => cx.key)).toContain("reason");
@@ -156,7 +156,7 @@ describe("owner home and reports — §6.9, §20.2", () => {
 
   it("diagnostics are the owner's, and name the three settings installation sets", async () => {
     expect((await get(t, "/diagnostics", "WORKER")).status).toBe(403);
-    const d = (await get(t, "/diagnostics", "ADMIN")).body;
+    const d = (await get(t, "/diagnostics", "OWNER")).body;
     expect(d.installation).toMatchObject({ taxRegime: "VAT", priceBasis: "INCLUSIVE", timezone: "Asia/Yerevan" });
     expect(d).toMatchObject({ version: expect.any(String), ledgerDriftFlags: 0 });
     expect(d.queues).toMatchObject({ salesWaiting: 0, parked: 0 });
@@ -175,16 +175,16 @@ describe("owner home and reports — §6.9, §20.2", () => {
     expect(stats.avgDailyQty30d).toBe(67); // 2 000 sold net of the return, over thirty days
     expect(stats.daysSinceLastSale).toBe(0);
 
-    const dead = (await get(t, "/products?filter=dead-stock&limit=50", "ADMIN")).body.items;
+    const dead = (await get(t, "/products?filter=dead-stock&limit=50", "OWNER")).body.items;
     expect(dead.map((p: { id: string }) => p.id)).toEqual([forgotten.id]);
     expect(dead[0].stockStatus).toMatchObject({ dead: true, low: false });
 
-    await request(t.server).patch(`/api/products/${cable.id}`).set(bearer(t.tokens.ADMIN)).send({ reorderPoint: 20_000 });
-    const low = (await get(t, "/products?filter=low-stock&limit=50", "ADMIN")).body.items;
+    await request(t.server).patch(`/api/products/${cable.id}`).set(bearer(t.tokens.OWNER)).send({ reorderPoint: 20_000 });
+    const low = (await get(t, "/products?filter=low-stock&limit=50", "OWNER")).body.items;
     expect(low.map((p: { id: string }) => p.id)).toContain(cable.id);
     expect(low.find((p: { id: string }) => p.id === cable.id).stockStatus).toMatchObject({ low: true, manual: true, threshold: 20_000, leadTimeDays: 0, safetyDays: 3 });
 
-    const home = (await get(t, "/home", "ADMIN")).body;
+    const home = (await get(t, "/home", "OWNER")).body;
     expect(home.stock).toMatchObject({ dead: 1 });
     expect(home.stock.low).toBeGreaterThanOrEqual(1);
 
@@ -195,7 +195,7 @@ describe("owner home and reports — §6.9, §20.2", () => {
 
   it("a flag's note reaches a worker without the cost inside it", async () => {
     const bolt = await makeProduct(t, { name: "Հեղույս", priceDram: 30 });
-    const s = (await post(t, "/suppliers", { id: uuidv7(), name: "Մետաղ" }, "ADMIN")).body.id;
+    const s = (await post(t, "/suppliers", { id: uuidv7(), name: "Մետաղ" }, "OWNER")).body.id;
     const line = (qty: number, cost: number) => ({ id: uuidv7(), productId: bolt.id, uom: bolt.stockUom, factorToStockUom: 1, qty, invoiceUnitCostMdram: cost });
     await post(t, "/goods-receipts", { id: uuidv7(), supplierId: s, supplierInvoiceNo: "A1", landedCostTotal: 0, lines: [line(100_000, 14_000)] }, "STOCK");
     await post(t, "/goods-receipts", { id: uuidv7(), supplierId: s, supplierInvoiceNo: "A2", landedCostTotal: 0, lines: [line(100_000, 140_000)] }, "STOCK");
@@ -203,7 +203,7 @@ describe("owner home and reports — §6.9, §20.2", () => {
     const asWorker = (await get(t, "/review-flags?type=COST_VARIANCE", "WORKER")).body.items[0];
     expect(asWorker).toMatchObject({ type: "COST_VARIANCE", productName: "Հեղույս" });
     expect(JSON.stringify(asWorker.note)).not.toMatch(/Mdram/);
-    const asAdmin = (await get(t, "/review-flags?type=COST_VARIANCE", "ADMIN")).body.items[0];
+    const asAdmin = (await get(t, "/review-flags?type=COST_VARIANCE", "OWNER")).body.items[0];
     expect(asAdmin.note).toMatchObject({ lastMdram: 14_000, newMdram: 140_000 });
   });
 

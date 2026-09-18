@@ -82,9 +82,61 @@
   /* Variance and money deltas: neutral in both directions (§6.6 tone rule). */
   --money-neutral: oklch(0.385 0.036 173.8);
 
+  /*
+   * The rail. By default it is a card like any other; the owner's palette below turns it dark.
+   * `--sidebar-mark` is the bar beside the current destination — invisible until then.
+   */
+  --sidebar: var(--card);
+  --sidebar-foreground: var(--foreground);
+  --sidebar-muted: var(--muted-foreground);
+  --sidebar-hover: var(--muted);
+  --sidebar-active: var(--primary-soft);
+  --sidebar-active-foreground: var(--accent-foreground);
+  --sidebar-border: var(--border);
+  --sidebar-mark: transparent;
+
   /* Corners are generous: 10px is a control, and the steps below run up to a card at 16px. */
   --radius: 10px;
   --text-scale: 1;
+}
+
+/*
+ * The owner's palette (§16.4) — a dark rail on a cool grey page, white cards, and a bright green
+ * mark. It exists so that the one session that sees cost, backups and the audit trail is
+ * recognisable from across the counter: an owner who walks away from a shared till leaves a screen
+ * that plainly is not a cashier's. Only the tokens move; every component stays as it is. Every
+ * pairing is checked against WCAG 2.2 AA exactly as the default palette is.
+ */
+:root[data-tier="owner"] {
+  --background: oklch(0.964 0.003 264.5);
+  --foreground: oklch(0.206 0.017 175.7);
+  --muted: oklch(0.939 0.005 258.3);
+  --muted-foreground: oklch(0.508 0.018 257.2);
+  --border: oklch(0.924 0.006 255.5);
+  --input: oklch(0.631 0.015 258.4);
+  --ring: oklch(0.515 0.113 155.3);
+
+  /* Deep pine #0C2B26 — 15:1 with white, so buttons keep their white text. */
+  --primary: oklch(0.264 0.038 181);
+  --primary-soft: oklch(0.942 0.045 149.2);
+  --accent: oklch(0.963 0.025 149.1);
+  --accent-foreground: oklch(0.264 0.038 181);
+
+  /* Butter #F5D565, the reference's badge colour, read with a dark olive. */
+  --attention: oklch(0.879 0.135 93.5);
+  --attention-foreground: oklch(0.306 0.058 91.7);
+  --attention-soft: oklch(0.956 0.056 95.1);
+  --success: oklch(0.513 0.132 146.6);
+  --success-soft: oklch(0.949 0.033 150.8);
+
+  --sidebar: oklch(0.264 0.038 181);
+  --sidebar-foreground: oklch(1 0 0);
+  --sidebar-muted: oklch(0.782 0.023 179);
+  --sidebar-hover: oklch(0.319 0.045 179.3);
+  --sidebar-active: oklch(0.374 0.053 178.4);
+  --sidebar-active-foreground: oklch(1 0 0);
+  --sidebar-border: oklch(0.349 0.045 177.6);
+  --sidebar-mark: oklch(0.816 0.175 145.9);
 }
 
 :root[data-text-size="large"] { --text-scale: 1.125; }
@@ -114,6 +166,14 @@
   --color-destructive-foreground: var(--destructive-foreground);
   --color-destructive-soft: var(--destructive-soft);
   --color-money-neutral: var(--money-neutral);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-muted: var(--sidebar-muted);
+  --color-sidebar-hover: var(--sidebar-hover);
+  --color-sidebar-active: var(--sidebar-active);
+  --color-sidebar-active-foreground: var(--sidebar-active-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-mark: var(--sidebar-mark);
 
   --font-sans: "Mardoto", system-ui, sans-serif;
   /* Mardoto's digits are all one width already, so a money column aligns with no feature on. */

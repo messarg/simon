@@ -21,7 +21,8 @@ import { ReceiptSheet } from "./ReceiptSheet.tsx";
 import { SupplierPickerSheet } from "./SupplierPickerSheet.tsx";
 
 interface Ledger {
-  supplier: { id: string; name: string; phone: string | null; taxId: string | null; paymentTerms: number; leadTimeDays: number; isActive: boolean };
+  /** `paymentTerms` is the owner's and absent for a manager (§16.5). */
+  supplier: { id: string; name: string; phone: string | null; taxId: string | null; paymentTerms?: number; leadTimeDays: number; isActive: boolean };
   outstanding: number; overdue: number;
   receipts: Array<{ id: string; number: string; supplierInvoiceNo: string; receivedAt: string; total: number; unpaid: number; dueDate: string; overdue: boolean; daysPastDue: number }>;
   payments: Array<{ id: string; amount: number; method: string; paidAt: string; userName: string | null; reversesId: string | null; reversed: boolean; settles: { goodsReceiptId: string; amount: number }[] }>;
@@ -46,7 +47,7 @@ export function SupplierLedger({ supplierId, shiftId, onBack }: { supplierId: st
       <div className="mb-3 flex items-start gap-3">
         <div className="min-w-0 flex-1">
           <h1 className="truncate text-2xl font-semibold">{d.supplier.name}</h1>
-          <p className="text-sm text-muted-foreground">{t("suppliers.terms")}: {d.supplier.paymentTerms} · {t("suppliers.lead")}: {d.supplier.leadTimeDays}{d.supplier.taxId ? ` · ${t("suppliers.taxId")} ${d.supplier.taxId}` : ""}</p>
+          <p className="text-sm text-muted-foreground">{d.supplier.paymentTerms !== undefined ? `${t("suppliers.terms")}: ${d.supplier.paymentTerms} · ` : ""}{t("suppliers.lead")}: {d.supplier.leadTimeDays}{d.supplier.taxId ? ` · ${t("suppliers.taxId")} ${d.supplier.taxId}` : ""}</p>
         </div>
         <Button variant="secondary" onClick={() => setSheet("edit")}><Pencil />{t("suppliers.edit")}</Button>
       </div>
@@ -177,11 +178,13 @@ function EditSupplierSheet({ open, onOpenChange, ledger, onDone }: { open: boole
   const [name, setName] = useState(s.name);
   const [phone, setPhone] = useState(s.phone ?? "");
   const [taxId, setTaxId] = useState(s.taxId ?? "");
-  const [terms, setTerms] = useState(String(s.paymentTerms));
+  // A manager is not shown the terms, so is not given a field that would overwrite them.
+  const showsTerms = s.paymentTerms !== undefined;
+  const [terms, setTerms] = useState(String(s.paymentTerms ?? 0));
   const [lead, setLead] = useState(String(s.leadTimeDays));
   const save = async () => {
     try {
-      await http.patch(`/suppliers/${s.id}`, { name, phone: phone || null, taxId: taxId || null, paymentTerms: Number(terms || "0"), leadTimeDays: Number(lead || "0") });
+      await http.patch(`/suppliers/${s.id}`, { name, phone: phone || null, taxId: taxId || null, ...(showsTerms ? { paymentTerms: Number(terms || "0") } : {}), leadTimeDays: Number(lead || "0") });
       toast.success(t("suppliers.saved"));
       await onDone();
       onOpenChange(false);
@@ -194,7 +197,7 @@ function EditSupplierSheet({ open, onOpenChange, ledger, onDone }: { open: boole
         <div className="grid grid-cols-2 gap-3">
           <div><Label htmlFor="es-phone">{t("suppliers.phone")}</Label><Input id="es-phone" value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel" /></div>
           <div><Label htmlFor="es-tax">{t("suppliers.taxId")}</Label><Input id="es-tax" value={taxId} onChange={(e) => setTaxId(e.target.value)} className="tabular" /></div>
-          <div><Label htmlFor="es-terms">{t("suppliers.terms")}</Label><Input id="es-terms" value={terms} onChange={(e) => setTerms(e.target.value.replace(/\D/g, ""))} inputMode="numeric" className="tabular" /></div>
+          {showsTerms && <div><Label htmlFor="es-terms">{t("suppliers.terms")}</Label><Input id="es-terms" value={terms} onChange={(e) => setTerms(e.target.value.replace(/\D/g, ""))} inputMode="numeric" className="tabular" /></div>}
           <div><Label htmlFor="es-lead">{t("suppliers.lead")}</Label><Input id="es-lead" value={lead} onChange={(e) => setLead(e.target.value.replace(/\D/g, ""))} inputMode="numeric" className="tabular" /></div>
         </div>
         <Button type="submit" size="lg" className="w-full">{t("common.save")}</Button>

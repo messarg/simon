@@ -59,4 +59,46 @@ describe("migrations over existing data", () => {
     expect(() => rw.prepare(`UPDATE StocktakeLine SET countedQty = 3000`).run()).toThrow(/CHECK/); // a count must say when it was taken
     rw.close();
   });
+
+  /**
+   * The three-tier migration (§16.4) maps people rather than columns, so it is checked person by
+   * person: nobody may gain or lose a capability except an admin who becomes a manager.
+   */
+  it("maps every old role to a tier, and each employee to the grants their role carried", () => {
+    const work = mkdtempSync(path.join(tmpdir(), "simon-roles-"));
+    dirs.push(work);
+    const TARGET = "20260918140000_owner_manager_employee";
+    const before = path.join(work, "before");
+    mkdirSync(before);
+    const names = readdirSync(MIGRATIONS_DIR, { withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => d.name).sort();
+    expect(names).toContain(TARGET);
+    for (const n of names.filter((n) => n < TARGET)) cpSync(path.join(MIGRATIONS_DIR, n), path.join(before, n), { recursive: true });
+
+    const file = path.join(work, "shop.db");
+    applyMigrations(file, before);
+    const db = new Database(file);
+    db.pragma("foreign_keys = ON");
+    const add = db.prepare(`INSERT INTO User (id, name, pinHash, recoveryCodeHash, role, createdAt, phone) VALUES (?, ?, 'x', ?, ?, ?, ?)`);
+    // An admin added before the one holding the recovery code: age alone must not make an owner.
+    add.run("early", "Անի", null, "ADMIN", "2026-01-01T00:00:00.000Z", "091");
+    add.run("setup", "Արամ", "code-hash", "ADMIN", "2026-02-01T00:00:00.000Z", "010");
+    add.run("stock", "Լուսինե", null, "STOCK", "2026-03-01T00:00:00.000Z", null);
+    add.run("till", "Գոռ", null, "WORKER", "2026-03-02T00:00:00.000Z", null);
+    db.prepare(`INSERT INTO Stocktake (id, status, startedAt, startedBy) VALUES ('st1', 'COUNTING', '2026-03-03T00:00:00.000Z', 'stock')`).run();
+    db.close();
+
+    expect(applyMigrations(file)).toContain(TARGET);
+    const after = new Database(file);
+    const rows = Object.fromEntries((after.prepare(`SELECT id, role, permissions, recoveryCodeHash, phone FROM User`).all() as Array<Record<string, string | null>>).map((r) => [r.id, r]));
+    expect(rows.setup).toMatchObject({ role: "OWNER", permissions: "[]", recoveryCodeHash: "code-hash", phone: "010" });
+    expect(rows.early).toMatchObject({ role: "MANAGER", permissions: "[]", recoveryCodeHash: null, phone: "091" });
+    expect(rows.stock).toMatchObject({ role: "EMPLOYEE", permissions: '["sell","returns","debt","receive","stocktake","writeoff","labels"]' });
+    expect(rows.till).toMatchObject({ role: "EMPLOYEE", permissions: '["sell","returns","debt"]' });
+    // References into the rebuilt table survive, and the old role is now an unknown value.
+    expect(after.pragma("foreign_key_check")).toEqual([]);
+    expect(after.prepare(`SELECT startedBy FROM Stocktake`).get()).toEqual({ startedBy: "stock" });
+    expect(() => after.prepare(`UPDATE User SET role = 'ADMIN' WHERE id = 'early'`).run()).toThrow(/CHECK/);
+    expect(after.prepare(`SELECT strict FROM pragma_table_list WHERE name = 'User'`).get()).toEqual({ strict: 1 });
+    after.close();
+  });
 });

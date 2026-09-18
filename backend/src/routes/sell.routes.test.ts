@@ -15,7 +15,7 @@ const printDir = mkdtempSync(path.join(tmpdir(), "simon-prints-"));
 printer.set(new ConsolePrinter(printDir));
 
 async function reauth(t: TestApp, action: string) {
-  const res = await post(t, "/auth/reauth", { adminUserId: t.users.ADMIN.id, pin: PINS.ADMIN, action });
+  const res = await post(t, "/auth/reauth", { name: t.users.OWNER.name, pin: PINS.OWNER, action });
   return res.body.grant as string;
 }
 
@@ -217,7 +217,7 @@ describe("shifts, returns and the drawer", () => {
     const sale = (await post(t, "/sales", saleBody({ shiftId, lines: [{ product: item, qty: 5000 }] }))).body;
     await t.db.$transaction(async (tx) => {
       const { postMovement } = await import("../services/stock-ledger.service.ts");
-      await postMovement(tx, { productId: item.id, type: "PURCHASE_RECEIPT", qtyDelta: 995_000, unitCostMdram: 900_000, source: { type: "Test", id: "r2" }, userId: t.users.ADMIN.id });
+      await postMovement(tx, { productId: item.id, type: "PURCHASE_RECEIPT", qtyDelta: 995_000, unitCostMdram: 900_000, source: { type: "Test", id: "r2" }, userId: t.users.OWNER.id });
     });
     const before = await t.db.product.findUniqueOrThrow({ where: { id: item.id } });
     const res = await post(t, "/sale-returns", { id: uuidv7(), originalSaleId: sale.id, shiftId, reason: "ավել", lines: [{ id: uuidv7(), saleLineId: sale.lines[0].id, qty: 2000, restock: true }], createdAt: new Date().toISOString(), sentAt: new Date().toISOString(), queued: false });
@@ -259,7 +259,7 @@ describe("shifts, returns and the drawer", () => {
     const res = await post(t, "/sales", late, "WORKER", worker.token);
     expect(res.status).toBe(200);
     expect(res.body.shiftId).toBe(shiftId);
-    const report = (await get(t, `/shifts/${shiftId}/z-report`, "ADMIN")).body;
+    const report = (await get(t, `/shifts/${shiftId}/z-report`, "OWNER")).body;
     expect(report.variance).toBe(0);
     expect(report.figures.expected).toBe(0);
     expect(report.lateArrivals).toEqual([expect.objectContaining({ sourceId: late.id, amount: 4000 })]);
@@ -330,14 +330,14 @@ describe("catalogue rules", () => {
 
   it("§27.21 — decimalPlaces cannot change once movements exist; a price change needs re-auth and keeps history", async () => {
     const p = await makeProduct(t, { name: "Ավազ", priceDram: 500, decimalPlaces: 0, stock: 10_000, costMdram: 300_000 });
-    const change = await t.app && (await import("supertest")).default(t.app).patch(`/api/products/${p.id}`).set({ Authorization: `Bearer ${t.tokens.ADMIN}` });
+    const change = await t.app && (await import("supertest")).default(t.app).patch(`/api/products/${p.id}`).set({ Authorization: `Bearer ${t.tokens.OWNER}` });
     const blocked = await change!.send({ decimalPlaces: 2 });
     expect(blocked.status).toBe(422);
     expect(blocked.body.type).toMatch(/immutable-after-movements$/);
     const req = (await import("supertest")).default(t.app);
-    expect((await req.patch(`/api/products/${p.id}`).set({ Authorization: `Bearer ${t.tokens.ADMIN}` }).send({ sellPriceMdram: 550_000 })).body.type).toMatch(/reauth-required$/);
+    expect((await req.patch(`/api/products/${p.id}`).set({ Authorization: `Bearer ${t.tokens.OWNER}` }).send({ sellPriceMdram: 550_000 })).body.type).toMatch(/reauth-required$/);
     const grant = await reauth(t, "priceChange");
-    const ok = await req.patch(`/api/products/${p.id}`).set({ Authorization: `Bearer ${t.tokens.ADMIN}` }).send({ sellPriceMdram: 550_000, reauthGrant: grant });
+    const ok = await req.patch(`/api/products/${p.id}`).set({ Authorization: `Bearer ${t.tokens.OWNER}` }).send({ sellPriceMdram: 550_000, reauthGrant: grant });
     expect(ok.body.sellPriceMdram).toBe(550_000);
     expect(await t.db.priceHistory.count({ where: { productId: p.id } })).toBe(2);
     expect(await t.db.auditLog.count({ where: { action: "product.priceChange", entityId: p.id } })).toBe(1);
@@ -346,12 +346,12 @@ describe("catalogue rules", () => {
   it("a barcode belongs to one product forever; a retired code still scans", async () => {
     const a = await makeProduct(t, { name: "Ա", priceDram: 1, barcode: "111" });
     const b = await makeProduct(t, { name: "Բ", priceDram: 1 });
-    const dup = await post(t, `/products/${b.id}/barcodes`, { barcode: "111" }, "ADMIN");
+    const dup = await post(t, `/products/${b.id}/barcodes`, { barcode: "111" }, "OWNER");
     expect(dup.status).toBe(422);
     expect(dup.body).toMatchObject({ productId: a.id, productName: "Ա" });
-    const internal = await post(t, `/products/${b.id}/barcodes`, {}, "ADMIN");
+    const internal = await post(t, `/products/${b.id}/barcodes`, {}, "OWNER");
     expect(internal.body.barcodes[0].barcode).toMatch(/^S\d{7}$/);
-    await post(t, `/products/${a.id}/barcodes/111/retire`, {}, "ADMIN");
+    await post(t, `/products/${a.id}/barcodes/111/retire`, {}, "OWNER");
     expect((await get(t, "/products/by-barcode/111")).body.id).toBe(a.id);
   });
 
