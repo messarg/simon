@@ -38,6 +38,10 @@ Shared hooks that more than one feature needs (current shift, client settings) l
 - `ActionBar` — a screen's one main action pinned above the tab bar and beside the rail
   (receiving, stocktake, the cash count). `width` matches the page's `max-w-*`.
 - `Toggle` — an on/off row: label left and wrapping, switch on the right edge.
+- `Avatar` — a person as a square tile: their photograph when `avatarUpdatedAt` is set, otherwise
+  the first letter of their name. Fetched by `<img src>` (no auth header) because the sign-in
+  tiles are drawn before anyone has signed in; a broken image falls back to the initial. It is
+  `aria-hidden` — the name is always beside it.
 - `ConfirmSheet`, `ScreenHelp`, `Barcode` — confirmation, contextual help, Code128 rendering.
 
 ## Design system — "calm utilitarian"
@@ -45,9 +49,13 @@ Shared hooks that more than one feature needs (current shift, client settings) l
 Tokens in `src/styles/theme.css` (`@theme inline`). Use names, never values:
 
 - surfaces `bg-background`, `bg-card`, `bg-muted`, `border-border`
-- action `bg-primary` (teal), `bg-primary-soft`, `text-accent-foreground`
-- attention `bg-attention`, `bg-attention-soft`, `text-attention-foreground` (amber — offline, stale, recount)
-- `bg-destructive` only for irreversible actions; **variance uses `text-money-neutral`**, never red (§6.6)
+- action `bg-primary` (slate #45575D), `bg-primary-soft`, `text-accent-foreground`
+- attention `bg-attention` (gold #EDC03B), `bg-attention-soft` (wheat #E6D18D), `text-attention-foreground` — offline, stale, recount
+- `bg-destructive` (oxblood #490905) only for irreversible actions; **variance uses `text-money-neutral`**, never red (§6.6)
+- **corners never exceed 4px.** Every `rounded-*` step is clamped to `--radius`, so any of them is
+  safe; `rounded-full` is not — use `rounded-xs` for a pill or dot, `rounded-md` for anything larger
+- **one exception: an avatar is a circle** (`components/shared/Avatar.tsx`, PRD §6.17). A face in a
+  rounded rectangle reads as a product tile. `rounded-full` there is correct; anywhere else it is a bug
 - sizes `h-touch` (48 px floor), `h-touch-lg`, `h-touch-xl`; `tabular` for every number
 - text scale follows the text-size setting via `data-text-size` on `<html>`
 

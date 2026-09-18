@@ -21,7 +21,7 @@ backend/src/
 ```
 
 **Reports return one shape.** `GET /reports/:name` answers `{ name, from, to, columns, rows, totals?, notes? }`
-with codes rather than Armenian, so one screen renders and exports all thirteen of §20.2's reports and
+with codes rather than Armenian, so one screen renders and exports every one of §20.2's reports and
 the words stay in `hy.ts`. Every report is `ADMIN`; the audit trail and `GET /diagnostics` are gated as
 routes rather than stripped field by field, because they carry whole-record JSON and the shop's business.
 

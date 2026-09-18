@@ -1,17 +1,18 @@
 /**
  * Կարգավորումներ (§6.11): the few things that differ between shops, each explained. The three
- * installation settings are marked as such. Users, devices and sessions live here too (§16).
+ * installation settings are marked as such. Devices and sessions live here too (§16).
+ *
+ * The staff list is **not** here. It is Աշխատակիցներ, a destination of its own
+ * (`pages/StaffPage.tsx`, §6.11.1) — Settings is for settings, and hiring somebody is not one.
  */
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Lock, Plus, Smartphone, Upload, UserRound } from "lucide-react";
+import { Smartphone, Upload } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { Link } from "react-router";
 import { toast } from "sonner";
-import type { Role } from "@simon/shared";
 import { Button } from "@/components/ui/button.tsx";
 import { Input, Label } from "@/components/ui/input.tsx";
 import { ConfirmSheet, Toggle } from "@/components/shared";
-import { Sheet } from "@/components/ui/sheet.tsx";
 import { BackupSection } from "@/features/control/BackupSection.tsx";
 import { DiagnosticsSection } from "@/features/control/DiagnosticsSection.tsx";
 import { problemMessage, t, type StringKey } from "@/i18n/t.ts";
@@ -149,76 +150,10 @@ function SettingsForm({ saved, refetch }: { saved: Settings; refetch: () => Prom
         <Button asChild variant="soft"><Link to="/import"><Upload />{t("imports.choose")}</Link></Button>
       </Section>
 
-      <UsersSection />
       <DevicesSection />
       <BackupSection Section={Section} />
       <DiagnosticsSection Section={Section} />
     </div>
-  );
-}
-
-interface UserRow { id: string; name: string; role: Role; isActive: boolean; lockedUntil: string | null }
-
-function UsersSection() {
-  const users = useQuery({ queryKey: ["users"], queryFn: () => http.get<{ items: UserRow[] }>("/users") });
-  const [editing, setEditing] = useState<UserRow | "new" | null>(null);
-  const [deactivating, setDeactivating] = useState<UserRow | null>(null);
-  const [now] = useState(() => Date.now());
-  const [name, setName] = useState("");
-  const [role, setRole] = useState<Role>("WORKER");
-  const [pin, setPin] = useState("");
-  const act = async (fn: () => Promise<unknown>) => {
-    try { await fn(); await users.refetch(); toast.success(t("settings.saved")); } catch (err) { toast.error(problemMessage(err instanceof ApiProblem ? err.type : "network")); }
-  };
-  const openEditor = (u: UserRow | "new") => { setEditing(u); setName(u === "new" ? "" : u.name); setRole(u === "new" ? "WORKER" : u.role); setPin(""); };
-  const submit = () => act(async () => {
-    if (editing === "new") await http.post("/users", { name, role, pin });
-    else if (editing) await http.patch(`/users/${editing.id}`, { name, role, ...(pin ? { pin } : {}) });
-    setEditing(null);
-  });
-  return (
-    <Section title={t("settings.users")}>
-      <ul className="divide-y divide-border">
-        {users.data?.items.map((u) => {
-          const locked = u.lockedUntil !== null && Date.parse(u.lockedUntil) > now;
-          return (
-            <li key={u.id} className="flex flex-wrap items-center gap-2 py-2">
-              <UserRound className="size-5 text-muted-foreground" aria-hidden />
-              <button className="min-w-0 flex-1 text-left" onClick={() => openEditor(u)}>
-                <div className={cn("font-medium", !u.isActive && "text-muted-foreground line-through")}>{u.name}</div>
-                <div className="text-sm text-muted-foreground">{t(`settings.roles.${u.role}` as StringKey)}{locked ? ` · ${t("settings.locked")}` : ""}{!u.isActive ? ` · ${t("settings.inactiveUser")}` : ""}</div>
-              </button>
-              {locked && <Button size="sm" variant="attention" onClick={() => void act(() => http.post("/auth/unlock", { userId: u.id }))}><Lock />{t("settings.unlock")}</Button>}
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => (u.isActive ? setDeactivating(u) : void act(() => http.patch(`/users/${u.id}`, { isActive: true })))}
-              >
-                {u.isActive ? t("settings.deactivate") : t("settings.activate")}
-              </Button>
-            </li>
-          );
-        })}
-      </ul>
-      <Button variant="soft" onClick={() => openEditor("new")}><Plus />{t("settings.addUser")}</Button>
-      {/* Taking someone's access away is not undoable from their side (§27.16). */}
-      <ConfirmSheet
-        open={deactivating !== null}
-        onOpenChange={(o) => { if (!o) setDeactivating(null); }}
-        title={t("settings.deactivateUserTitle", { name: deactivating?.name ?? "" })}
-        description={t("settings.deactivateUserHint")}
-        confirmLabel={t("settings.confirmDeactivate")}
-        onConfirm={() => { const u = deactivating; setDeactivating(null); if (u) void act(() => http.patch(`/users/${u.id}`, { isActive: false })); }}
-      />
-      <Sheet open={editing !== null} onOpenChange={(o) => { if (!o) setEditing(null); }} title={editing === "new" ? t("settings.addUser") : (editing?.name ?? "")}>
-        <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); void submit(); }}>
-          <div><Label>{t("products.name")}</Label><Input value={name} onChange={(e) => setName(e.target.value)} autoFocus /></div>
-          <div><Label>{t("settings.role")}</Label><Choice value={role} options={(["WORKER", "STOCK", "ADMIN"] as const).map((r) => [r, t(`settings.roles.${r}`)])} onChange={setRole} /></div>
-          <div><Label>{editing === "new" ? t("settings.pin") : t("settings.changePin")}</Label><Input value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 8))} inputMode="numeric" type="password" autoComplete="new-password" className="tabular tracking-widest" /></div>
-          <Button type="submit" size="lg" className="w-full" disabled={!name.trim() || (editing === "new" ? pin.length < 4 : pin.length > 0 && pin.length < 4)}>{t("common.save")}</Button>
-        </form>
-      </Sheet>
-    </Section>
   );
 }
 

@@ -12,6 +12,13 @@ import { createOwner, listAdmins, listSignInUsers, needsSetup } from "../service
 
 const pin = z.string().regex(/^\d{4,8}$/);
 
+/** `If-None-Match` is a list, and a proxy may have made ours weak on the way out. */
+function matchesEtag(header: string | string[] | undefined, etag: string) {
+  const raw = Array.isArray(header) ? header.join(",") : header;
+  if (!raw) return false;
+  return raw.split(",").map((x) => x.trim()).some((x) => x === "*" || x === etag || x === `W/${etag}`);
+}
+
 export function systemRoutes(live: Db) {
   const r = Router();
   const limiter = new DeviceRateLimiter();
@@ -42,6 +49,29 @@ export function systemRoutes(live: Db) {
   r.get("/auth/users", async (_req, res) => {
     if (await needsSetup(live)) throw problem("setup-required");
     res.json({ items: await listSignInUsers(live) });
+  });
+
+  /**
+   * The photograph itself, one request per face and the only personal field served without a
+   * session (§6.11.1, §16.5, §26.2). It draws the sign-in tiles, so it cannot require the session
+   * you do not have yet. `ETag` is the write stamp: the browser asks once per face and is told
+   * `304` every time afterwards, while `no-cache` keeps a replaced photograph from surviving.
+   */
+  r.get("/users/:id/avatar", async (req, res) => {
+    const u = await live.user.findUnique({
+      where: { id: String(req.params.id) },
+      select: { avatar: true, avatarType: true, avatarUpdatedAt: true },
+    });
+    if (!u?.avatar || !u.avatarType || !u.avatarUpdatedAt) throw problem("not-found");
+    const etag = `"${u.avatarUpdatedAt}"`;
+    res.setHeader("ETag", etag);
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Content-Type", u.avatarType);
+    if (matchesEtag(req.headers["if-none-match"], etag)) {
+      res.status(304).end();
+      return;
+    }
+    res.send(Buffer.from(u.avatar));
   });
 
   // The admins an override can be approved by (§16.3): the same names, filtered by who may say yes.

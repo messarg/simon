@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE "User" ADD COLUMN "note" TEXT;
+ALTER TABLE "User" ADD COLUMN "phone" TEXT;
+ALTER TABLE "User" ADD COLUMN "startedOn" TEXT;

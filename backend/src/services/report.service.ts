@@ -6,7 +6,7 @@
  * Rows carry codes, not Armenian: the client holds the words (§4.2). Money is integer drams and
  * quantities milli-units, formatted only at the edge (§10.1).
  */
-import { apportionByValue, businessDate, daysBetween, lineTotal, type Dram } from "@simon/shared";
+import { apportionByValue, businessDate, daysBetween, lineTotal, type Dram, type MovementType } from "@simon/shared";
 import { agePayables } from "../domain/payables-aging.ts";
 import type { Db } from "../lib/db.ts";
 import { problem } from "../lib/problem.ts";
@@ -20,7 +20,8 @@ import { productStatuses } from "./stock-status.service.ts";
 
 export const REPORT_NAMES = [
   "sales", "margin", "valuation", "debtor-aging", "payables-aging", "item-history",
-  "z-reports", "discounts", "write-offs", "stock-turnover", "voids-returns", "cash-out", "audit",
+  "z-reports", "discounts", "write-offs", "stock-turnover", "voids-returns", "cash-out",
+  "movements-by-person", "cash-out-by-person", "audit",
 ] as const;
 export type ReportName = (typeof REPORT_NAMES)[number];
 
@@ -87,6 +88,8 @@ export async function runReport(db: Db, name: ReportName, params: ReportParams):
     case "stock-turnover": return stockTurnover(ctx);
     case "voids-returns": return voidsAndReturns(ctx);
     case "cash-out": return cashOutByReason(ctx);
+    case "movements-by-person": return movementsByPerson(ctx);
+    case "cash-out-by-person": return cashOutByPerson(ctx);
     case "audit": return auditTrail(ctx);
   }
 }
@@ -97,10 +100,11 @@ type Ctx = ReportParams & { db: Db; tz: string };
 
 async function salesReport(c: Ctx): Promise<ReportResult> {
   const groupBy = (SALES_GROUPINGS as readonly string[]).includes(c.groupBy ?? "") ? (c.groupBy as SalesGrouping) : "day";
-  const where = { status: "COMPLETED", businessDate: { gte: c.from, lte: c.to } };
+  // `userId` narrows every grouping to one person rather than changing the grouping (§6.11.1).
+  const where = { status: "COMPLETED", businessDate: { gte: c.from, lte: c.to }, userId: c.userId };
   const [sales, returns, products, categories] = await Promise.all([
     c.db.sale.findMany({ where, include: { lines: { orderBy: { id: "asc" } }, user: { select: { name: true } }, payments: true } }),
-    c.db.saleReturn.findMany({ where: { businessDate: { gte: c.from, lte: c.to } }, include: { lines: true, user: { select: { name: true } } } }),
+    c.db.saleReturn.findMany({ where: { businessDate: { gte: c.from, lte: c.to }, userId: c.userId }, include: { lines: true, user: { select: { name: true } } } }),
     c.db.product.findMany({ select: { id: true, name: true, stockUom: true, decimalPlaces: true, categoryId: true } }),
     c.db.category.findMany({ select: { id: true, name: true } }),
   ]);
@@ -322,7 +326,7 @@ async function itemHistory(c: Ctx): Promise<ReportResult> {
 async function zReports(c: Ctx): Promise<ReportResult> {
   const window = instantWindow(c.from, c.to);
   const rows: Array<{ key: string; closedAt: string | null; worker: string; openingFloat: Dram; cashSales: Dram; cardSales: Dram; expected: Dram | null; counted: Dram | null; variance: Dram | null; unsynced: number; note: string }> = [];
-  const shifts = (await c.db.shift.findMany({ where: { status: "CLOSED", closedAt: window }, include: { user: { select: { name: true } } }, orderBy: { closedAt: "desc" } }))
+  const shifts = (await c.db.shift.findMany({ where: { status: "CLOSED", closedAt: window, userId: c.userId }, include: { user: { select: { name: true } } }, orderBy: { closedAt: "desc" } }))
     .filter((s) => s.closedAt && businessDate(s.closedAt, c.tz) >= c.from && businessDate(s.closedAt, c.tz) <= c.to);
   for (const s of shifts) {
     const f = await shiftFigures(c.db, s.id);
@@ -342,7 +346,7 @@ async function zReports(c: Ctx): Promise<ReportResult> {
 // ── Discount by worker, and voids and returns by worker (§20.2) ──────────────
 
 async function discountsByWorker(c: Ctx): Promise<ReportResult> {
-  const sales = await c.db.sale.findMany({ where: { status: "COMPLETED", businessDate: { gte: c.from, lte: c.to } }, include: { lines: true, user: { select: { name: true } } } });
+  const sales = await c.db.sale.findMany({ where: { status: "COMPLETED", businessDate: { gte: c.from, lte: c.to }, userId: c.userId }, include: { lines: true, user: { select: { name: true } } } });
   const groups = new Map<string, { key: string; worker: string; sales: number; discountedSales: number; discount: Dram; overrides: number }>();
   for (const s of sales) {
     const g = groups.get(s.userId) ?? { key: s.userId, worker: s.user.name, sales: 0, discountedSales: 0, discount: 0, overrides: 0 };
@@ -365,8 +369,8 @@ async function discountsByWorker(c: Ctx): Promise<ReportResult> {
 async function voidsAndReturns(c: Ctx): Promise<ReportResult> {
   const window = instantWindow(c.from, c.to);
   const [voids, returns] = await Promise.all([
-    c.db.sale.findMany({ where: { status: "VOIDED", createdAt: window }, include: { user: { select: { name: true } } } }),
-    c.db.saleReturn.findMany({ where: { businessDate: { gte: c.from, lte: c.to } }, include: { user: { select: { name: true } } } }),
+    c.db.sale.findMany({ where: { status: "VOIDED", createdAt: window, userId: c.userId }, include: { user: { select: { name: true } } } }),
+    c.db.saleReturn.findMany({ where: { businessDate: { gte: c.from, lte: c.to }, userId: c.userId }, include: { user: { select: { name: true } } } }),
   ]);
   const groups = new Map<string, { key: string; worker: string; voids: number; voided: Dram; returns: number; returned: Dram; blind: number }>();
   const groupFor = (userId: string, worker: string) => {
@@ -399,7 +403,7 @@ async function voidsAndReturns(c: Ctx): Promise<ReportResult> {
 
 async function writeOffsByReason(c: Ctx): Promise<ReportResult> {
   const window = instantWindow(c.from, c.to);
-  const movements = (await c.db.stockMovement.findMany({ where: { type: "WRITE_OFF", createdAt: window }, include: { product: { select: { name: true } } } }))
+  const movements = (await c.db.stockMovement.findMany({ where: { type: "WRITE_OFF", createdAt: window, userId: c.userId }, include: { product: { select: { name: true } } } }))
     .filter((m) => businessDate(m.createdAt, c.tz) >= c.from && businessDate(m.createdAt, c.tz) <= c.to);
   const groups = new Map<string, { key: string; reasonCode: string; lines: number; value: Dram; unknownCost: number }>();
   for (const m of movements) {
@@ -439,6 +443,138 @@ async function cashOutByReason(c: Ctx): Promise<ReportResult> {
     columns: [{ key: "reasonCode", kind: "code", codeSet: "cashReason" }, { key: "count", kind: "int" }, { key: "amount", kind: "money" }],
     rows: rows.map(({ sortKey: _sortKey, ...r }) => r),
     totals: { count: sum(rows, (r) => r.count), amount: sum(rows, (r) => r.amount) },
+  };
+}
+
+// ── The two ledgers read by person (§20.2, §6.11.1) ──────────────────────────
+
+/**
+ * Which column a movement type lands in. The four stock-handling families are what §6.11.1's
+ * Պահեստ facet asks for — *goods received, written off, adjusted* — and selling is kept apart
+ * from them rather than dropped, so the count of rows a person posted still adds up.
+ */
+const MOVEMENT_FAMILY = {
+  PURCHASE_RECEIPT: "receipts", PURCHASE_RETURN: "receipts",
+  WRITE_OFF: "writeOffs",
+  ADJUSTMENT: "adjustments", OPENING_BALANCE: "adjustments", TRANSFER: "adjustments",
+  STOCKTAKE: "stocktake",
+  SALE: "saleLines", SALE_RETURN: "saleLines",
+} as const satisfies Record<MovementType, string>;
+
+type MovementFamily = (typeof MOVEMENT_FAMILY)[MovementType];
+
+/**
+ * The stock ledger grouped by `StockMovement.userId` instead of by product — item history asked
+ * from the other end, and the answer to *what did this person move* (§20.2, §6.11.1).
+ *
+ * **Quantities are not added across products**: metres and pieces do not sum, and §10.3 is why the
+ * sales report refuses a quantity total. So the size and direction of what someone moved is carried
+ * as value at cost, which does add, **signed by `qtyDelta`** — goods in positive, goods out
+ * negative. A movement whose cost was never known is counted in a note rather than silently valued
+ * at zero (§10.5). Nothing here is ranked or compared between people (§6.11.1).
+ */
+async function movementsByPerson(c: Ctx): Promise<ReportResult> {
+  const window = instantWindow(c.from, c.to);
+  const movements = (await c.db.stockMovement.findMany({
+    where: { createdAt: window, userId: c.userId },
+    include: { user: { select: { name: true } } },
+  })).filter((m) => businessDate(m.createdAt, c.tz) >= c.from && businessDate(m.createdAt, c.tz) <= c.to);
+
+  type Row = {
+    key: string; worker: string; movements: number; products: number;
+    receipts: number; receiptsValue: Dram; writeOffs: number; writeOffsValue: Dram;
+    adjustments: number; adjustmentsValue: Dram; stocktake: number; stocktakeValue: Dram; saleLines: number;
+  };
+  const groups = new Map<string, Row>();
+  const seen = new Map<string, Set<string>>();
+  let unknownCost = 0;
+  for (const m of movements) {
+    const row = groups.get(m.userId) ?? {
+      key: m.userId, worker: m.user.name, movements: 0, products: 0,
+      receipts: 0, receiptsValue: 0, writeOffs: 0, writeOffsValue: 0,
+      adjustments: 0, adjustmentsValue: 0, stocktake: 0, stocktakeValue: 0, saleLines: 0,
+    };
+    const family: MovementFamily = MOVEMENT_FAMILY[m.type as MovementType] ?? "adjustments";
+    row.movements++;
+    row[family]++;
+    if (family !== "saleLines") {
+      if (m.unitCostMdram === null) unknownCost++;
+      else row[`${family}Value`] += lineTotal(m.qtyDelta, m.unitCostMdram);
+    }
+    const products = seen.get(m.userId) ?? new Set<string>();
+    products.add(m.productId);
+    seen.set(m.userId, products);
+    row.products = products.size;
+    groups.set(m.userId, row);
+  }
+  const rows = [...groups.values()].map((g) => ({ ...g, sortKey: g.movements })).sort(byKeyDesc);
+  const total = (k: keyof Omit<Row, "key" | "worker">) => sum(rows, (r) => r[k]);
+  return {
+    name: "movements-by-person", from: c.from, to: c.to,
+    columns: [
+      { key: "worker", kind: "text" }, { key: "movements", kind: "int" }, { key: "products", kind: "int" },
+      { key: "receipts", kind: "int" }, { key: "receiptsValue", kind: "money" },
+      { key: "writeOffs", kind: "int" }, { key: "writeOffsValue", kind: "money" },
+      { key: "adjustments", kind: "int" }, { key: "adjustmentsValue", kind: "money" },
+      { key: "stocktake", kind: "int" }, { key: "stocktakeValue", kind: "money" },
+      { key: "saleLines", kind: "int" },
+    ],
+    rows: rows.map(({ sortKey: _sortKey, ...r }) => r),
+    totals: {
+      movements: total("movements"), products: total("products"),
+      receipts: total("receipts"), receiptsValue: total("receiptsValue"),
+      writeOffs: total("writeOffs"), writeOffsValue: total("writeOffsValue"),
+      adjustments: total("adjustments"), adjustmentsValue: total("adjustmentsValue"),
+      stocktake: total("stocktake"), stocktakeValue: total("stocktakeValue"),
+      saleLines: total("saleLines"),
+    },
+    notes: unknownCost ? [{ key: "noCostBasis", vars: { n: unknownCost } }] : [],
+  };
+}
+
+/** The reason columns are the reason codes themselves, so the client labels them from `cashReason` (§11). */
+const CASH_OUT_REASONS = ["SUPPLIER_PAYMENT", "WAGE", "EXPENSE", "OWNER_DRAW", "CORRECTION", "OTHER"] as const;
+
+/**
+ * The same `PAY_OUT` rows as *cash out by reason*, grouped by `CashMovement.userId` instead:
+ * *which reason* and *whose hand* are two different questions and the drawer answered only the
+ * first (§20.2). A reversed pair leaves on both sides, and the pairs are found over the whole
+ * period rather than over one person's rows — a correction may be somebody else's (§10.7).
+ */
+async function cashOutByPerson(c: Ctx): Promise<ReportResult> {
+  const movements = await c.db.cashMovement.findMany({
+    where: { type: "PAY_OUT", businessDate: { gte: c.from, lte: c.to } },
+    include: { user: { select: { name: true } } },
+  });
+  const reversed = new Set(movements.flatMap((m) => (m.reversesId ? [m.reversesId, m.id] : [])));
+  type Row = { key: string; worker: string; count: number; amount: Dram } & Record<string, Cell>;
+  const groups = new Map<string, Row>();
+  for (const m of movements) {
+    if (reversed.has(m.id)) continue;
+    if (c.userId && m.userId !== c.userId) continue;
+    const row = groups.get(m.userId) ?? {
+      key: m.userId, worker: m.user.name, count: 0, amount: 0,
+      ...Object.fromEntries(CASH_OUT_REASONS.map((x) => [x, 0])),
+    };
+    const code: string = (CASH_OUT_REASONS as readonly string[]).includes(m.reasonCode ?? "") ? m.reasonCode! : "OTHER";
+    row.count++;
+    row.amount += m.amount;
+    row[code] = (row[code] as number) + m.amount;
+    groups.set(m.userId, row);
+  }
+  const rows: Array<Row & { sortKey: number }> = [...groups.values()].map((g) => ({ ...g, sortKey: g.amount }));
+  rows.sort(byKeyDesc);
+  return {
+    name: "cash-out-by-person", from: c.from, to: c.to,
+    columns: [
+      { key: "worker", kind: "text" }, { key: "count", kind: "int" }, { key: "amount", kind: "money" },
+      ...CASH_OUT_REASONS.map((x) => ({ key: x, kind: "money" as const })),
+    ],
+    rows: rows.map(({ sortKey: _sortKey, ...r }) => r),
+    totals: {
+      count: sum(rows, (r) => r.count), amount: sum(rows, (r) => r.amount),
+      ...Object.fromEntries(CASH_OUT_REASONS.map((x) => [x, sum(rows, (r) => r[x] as number)])),
+    },
   };
 }
 

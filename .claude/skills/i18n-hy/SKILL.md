@@ -105,7 +105,14 @@ the result. Getting this subtly wrong makes the UI read as machine-translated.
 - Armenian text runs **10–30% longer** than English. Buttons, table headers, and tab labels
   must not be fixed-width; test the longest realistic string, not a placeholder.
 - Armenian is LTR — no RTL work needed.
-- Verify the chosen font renders the full Armenian block, including `֏`. Many otherwise good
+- The font is **Mardoto** (Apache-2.0), self-hosted in `frontend/src/assets/fonts/` and declared
+  in `theme.css` — one family for Armenian and Latin, covering the full block including `֏`, with
+  digits that are already one width so money columns align. Never load a font from a CDN: a shop
+  may have no internet.
+- **Mardoto has no 600 weight.** The four faces are remapped onto the four steps the UI uses, so
+  `font-semibold` renders Bold and `font-bold` renders Black. Replacing the family means redoing
+  that mapping.
+- Verify any new font renders the full Armenian block, including `֏`. Many otherwise good
   UI fonts have incomplete or poorly-hinted Armenian glyphs; check at real device sizes.
 - Uppercase Armenian is unusual in UI — avoid `text-transform: uppercase` on labels.
 

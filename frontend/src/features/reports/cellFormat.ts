@@ -32,4 +32,9 @@ export function cellText(column: ReportColumn, row: Record<string, unknown>): st
 
 export const isNumeric = (kind: ReportColumn["kind"]) => kind === "money" || kind === "qty" || kind === "int" || kind === "days" || kind === "percent";
 
-export const columnLabel = (key: string) => t(`reports.cols.${key}` as StringKey);
+/**
+ * A column the resource file does not name falls back to the key the server sent, rather than to
+ * the lookup path — a report gaining a column must never print «reports.cols.…» at a shop.
+ */
+export const columnLabel = (key: string) =>
+  key in (hy.reports.cols as Record<string, string>) ? t(`reports.cols.${key}` as StringKey) : key;

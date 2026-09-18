@@ -11,6 +11,8 @@ import { AttentionPage } from "./pages/AttentionPage.tsx";
 import { HomePage } from "./pages/HomePage.tsx";
 import { ImportPage } from "./pages/ImportPage.tsx";
 import { LabelsPage } from "./pages/LabelsPage.tsx";
+import { PersonPage } from "./pages/PersonPage.tsx";
+import { StaffPage } from "./pages/StaffPage.tsx";
 import { StocktakePage } from "./pages/StocktakePage.tsx";
 import { ReportsPage } from "./pages/ReportsPage.tsx";
 import { DebtsPage } from "./pages/DebtsPage.tsx";
@@ -102,6 +104,9 @@ export function App() {
               <Route path="/import" element={<ImportPage />} />
               <Route path="/customers" element={<DebtsPage admin />} />
               <Route path="/suppliers" element={<SuppliersPage />} />
+              {/* Աշխատակիցներ: the staff list is a destination, and a person's page hangs off it (§6.11.1). */}
+              <Route path="/staff" element={<StaffPage />} />
+              <Route path="/staff/:id" element={<PersonPage />} />
               <Route path="/settings" element={<SettingsPage />} />
             </Route>
           </Route>

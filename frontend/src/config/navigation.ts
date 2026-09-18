@@ -1,9 +1,9 @@
 /**
  * Navigation. PRD §5.1. Role decides what exists: a worker's app is four destinations and
- * nothing else; the owner adds six. The debts destination is absent — not disabled — when
+ * nothing else; the owner adds the rest. The debts destination is absent — not disabled — when
  * the shop keeps no debt book (§6.11).
  */
-import { BarChart3, BookUser, Clock, House, Package, ScanLine, Settings, Truck, Users, Warehouse, type LucideIcon } from "lucide-react";
+import { BarChart3, BookUser, Clock, Contact, House, Package, ScanLine, Settings, Truck, Users, Warehouse, type LucideIcon } from "lucide-react";
 import type { Role } from "@simon/shared";
 import type { StringKey } from "@/i18n/t.ts";
 
@@ -30,6 +30,7 @@ export const OWNER_DESTINATIONS: readonly Destination[] = [
   { path: "/products", label: "nav.products", icon: Package, roles: ["ADMIN"] },
   { path: "/customers", label: "nav.customers", icon: Users, roles: ["ADMIN"], requiresDebtBook: true },
   { path: "/suppliers", label: "nav.suppliers", icon: Truck, roles: ["ADMIN"] },
+  { path: "/staff", label: "nav.staff", icon: Contact, roles: ["ADMIN"] },
   { path: "/settings", label: "nav.settings", icon: Settings, roles: ["ADMIN"] },
 ];
 

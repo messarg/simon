@@ -36,7 +36,16 @@ colour-vision deficiency, and a hardware-store owner is disproportionately likel
 grep -rnE 'className="[^"]{160,}"' frontend/src --include=*.tsx   # extract a component
 grep -rn '!important\|!\[' frontend/src --include=*.tsx           # specificity escape hatch
 grep -rnE '\b(w|h|p|m|gap)-\[[0-9]' frontend/src --include=*.tsx  # arbitrary sizing
+grep -rn 'rounded-full' frontend/src --include=*.tsx              # corners cap at 4px
 ```
+
+Every `rounded-*` step resolves to `--radius` (4px) or less, so the step name is free to choose.
+`rounded-full` is the one that escapes the cap on anything taller than 8px — use `rounded-xs` for
+a pill or dot and `rounded-md` for anything larger.
+
+**The one legitimate `rounded-full`** is the avatar (`components/shared/Avatar.tsx`, PRD §6.17 and
+§26.2): a face in a rounded rectangle reads as a product tile. The grep above will hit it — that
+hit is correct, and anything else it finds is not.
 
 - Long class strings are a component boundary, not a formatting problem.
 - Conditional classes go through the project's `cn()`; never string-concatenate, which breaks

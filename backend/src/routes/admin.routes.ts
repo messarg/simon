@@ -1,15 +1,16 @@
 /** Session-bound account routes, and the ADMIN block of §15.4. */
 import { Router } from "express";
 import { z } from "zod";
-import { Role } from "@simon/shared";
+import { UserBody, UserPatchBody } from "@simon/shared";
 import { auth, requireRole } from "../middleware/auth.ts";
 import { problem } from "../lib/problem.ts";
+import { AVATAR_MAX_DATA_URL, decodeAvatar } from "../domain/avatar.ts";
 import { shapeDevice, shapeSession, shapeUser } from "../lib/shape.ts";
 import { clock } from "../lib/time.ts";
 import { enterPractice, exitPractice } from "../services/practice.service.ts";
 import { deactivateDevice, logout, revokeSession, unlockUser } from "../services/auth.service.ts";
 import { clientSettings, readSettings, writeSettings } from "../services/settings.service.ts";
-import { createUser, listUsers, updateUser } from "../services/user.service.ts";
+import { createUser, getUser, listUsers, updateUser } from "../services/user.service.ts";
 
 const safeList = (json: string): string[] => {
   try {
@@ -91,14 +92,49 @@ export function adminRoutes() {
     res.json(await a.db.$transaction((tx) => writeSettings(tx, patch, a.userId)));
   });
 
+  /**
+   * The staff list and one person's page (§6.11, §15.4). Both carry the personal details, and both
+   * are behind this router's `ADMIN` gate — §19.6: *"the phone, the start date and the note are
+   * `ADMIN`-only and reach two routes."* These are the two.
+   */
   r.get("/users", async (req, res) => { res.json({ items: (await listUsers(auth(req).live)).map(shapeUser) }); });
+  r.get("/users/:id", async (req, res) => { res.json(shapeUser(await getUser(auth(req).live, req.params.id))); });
   r.post("/users", async (req, res) => {
-    const body = z.object({ name: z.string().trim().min(1).max(60), pin: z.string(), role: Role }).parse(req.body);
-    res.status(201).json(shapeUser(await createUser(auth(req).live, auth(req).userId, body)));
+    res.status(201).json(shapeUser(await createUser(auth(req).live, auth(req).userId, UserBody.parse(req.body))));
   });
   r.patch("/users/:id", async (req, res) => {
-    const body = z.object({ name: z.string().trim().min(1).max(60).optional(), pin: z.string().optional(), role: Role.optional(), isActive: z.boolean().optional() }).parse(req.body);
-    res.json(shapeUser(await updateUser(auth(req).live, auth(req).userId, req.params.id, body)));
+    res.json(shapeUser(await updateUser(auth(req).live, auth(req).userId, req.params.id, UserPatchBody.parse(req.body))));
+  });
+
+  /**
+   * The photograph is written and removed under the role that manages the person (§15.4). It is
+   * re-checked here rather than trusted: the device downscales, but the bound on a column served
+   * before authentication has to hold where the caller cannot reach it (§11, §26.2).
+   *
+   * No `AuditLog` row: §10.7 enumerates what is audited, and a photograph is neither a financial
+   * event nor a permission change.
+   */
+  r.put("/users/:id/avatar", async (req, res) => {
+    const a = auth(req);
+    const { image } = z.object({ image: z.string().min(1).max(AVATAR_MAX_DATA_URL) }).parse(req.body);
+    const decoded = decodeAvatar(image);
+    if (!decoded.ok) throw problem("malformed-request", { errors: { image: [decoded.reason] } });
+    const user = await a.live.user.findUnique({ where: { id: req.params.id }, select: { id: true } });
+    if (!user) throw problem("not-found");
+    const avatarUpdatedAt = clock.iso();
+    await a.live.user.update({
+      where: { id: user.id },
+      data: { avatar: Buffer.from(decoded.bytes), avatarType: decoded.mediaType, avatarUpdatedAt },
+    });
+    res.json({ avatarUpdatedAt });
+  });
+
+  r.delete("/users/:id/avatar", async (req, res) => {
+    const a = auth(req);
+    const user = await a.live.user.findUnique({ where: { id: req.params.id }, select: { id: true } });
+    if (!user) throw problem("not-found");
+    await a.live.user.update({ where: { id: user.id }, data: { avatar: null, avatarType: null, avatarUpdatedAt: null } });
+    res.json({ avatarUpdatedAt: null });
   });
 
   r.post("/auth/unlock", async (req, res) => {
@@ -108,7 +144,9 @@ export function adminRoutes() {
   });
 
   r.get("/sessions", async (req, res) => {
-    const rows = await auth(req).live.session.findMany({ where: { revokedAt: null, expiresAt: { gt: clock.iso() } }, include: { user: true, device: true }, orderBy: { createdAt: "desc" } });
+    // Only the name is shaped out of the user row, and only the name is read: `user: true` would
+    // fetch the photograph's bytes and the personal details on every session in the list (§11).
+    const rows = await auth(req).live.session.findMany({ where: { revokedAt: null, expiresAt: { gt: clock.iso() } }, include: { user: { select: { name: true } }, device: true }, orderBy: { createdAt: "desc" } });
     res.json({ items: rows.map(shapeSession) });
   });
   r.post("/sessions/:id/revoke", async (req, res) => {

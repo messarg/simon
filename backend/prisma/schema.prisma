@@ -131,6 +131,7 @@ model Sale {
   @@index([businessDate])
   @@index([completedAt])
   @@index([shiftId, status])
+  @@index([userId, businessDate])
   @@index([status, createdAt])
 }
 
@@ -417,6 +418,7 @@ model StockMovement {
 
   @@index([productId, seq])
   @@index([sourceType, sourceId])
+  @@index([userId, seq])
 }
 
 model ReviewFlag {
@@ -539,6 +541,7 @@ model CashMovement {
 
   @@index([shiftId])
   @@index([sourceType, sourceId])
+  @@index([userId, createdAt])
 }
 
 model ShiftLateArrival {
@@ -564,6 +567,15 @@ model User {
   lockedUntil      String?
   coachMarksSeen   String          @default("[]")
   createdAt        String
+  // The one personal field and the only BLOB in this schema (PRD §11, §19.6). Bounded by
+  // validation, not by the column; `avatarUpdatedAt` is what a client cache-busts on.
+  avatar           Bytes?
+  avatarType       String?
+  avatarUpdatedAt  String?
+  // Personal details, ADMIN-only and never on the pre-auth sign-in list (PRD §19.6, §16.5).
+  phone            String?
+  startedOn        String?
+  note             String?
   sessions         Session[]
   shifts           Shift[]
   sales            Sale[]
@@ -627,6 +639,7 @@ model AuditLog {
   @@index([entityType, entityId])
   @@index([createdAt])
   @@index([action, entityId])
+  @@index([userId, createdAt])
 }
 
 model Stocktake {

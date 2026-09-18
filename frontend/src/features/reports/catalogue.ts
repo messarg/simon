@@ -2,7 +2,7 @@
  * The report catalogue, in §20.2's order. The PRD lists it once and so does this file: adding a
  * report here is what puts it on the screen, with its own one-line explanation of what it answers.
  */
-import { BookUser, Coins, FileClock, HandCoins, LineChart, PackageSearch, Percent, ReceiptText, Scale, ShieldCheck, Trash2, Truck, Undo2, type LucideIcon } from "lucide-react";
+import { BookUser, Coins, FileClock, HandCoins, LineChart, PackageSearch, Percent, ReceiptText, Scale, ShieldCheck, Trash2, Truck, Undo2, UserRoundCog, Warehouse, type LucideIcon } from "lucide-react";
 import type { ReportName } from "./types.ts";
 
 export interface ReportEntry {
@@ -24,7 +24,9 @@ export const REPORTS: readonly ReportEntry[] = [
   { name: "payables-aging", icon: Truck, period: false },
   { name: "stock-turnover", icon: PackageSearch, period: false },
   { name: "write-offs", icon: Trash2, period: true },
+  { name: "movements-by-person", icon: Warehouse, period: true },
   { name: "cash-out", icon: HandCoins, period: true },
+  { name: "cash-out-by-person", icon: UserRoundCog, period: true },
   { name: "discounts", icon: Percent, period: true },
   { name: "voids-returns", icon: Undo2, period: true },
   { name: "z-reports", icon: Coins, period: true },

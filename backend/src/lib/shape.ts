@@ -15,8 +15,21 @@ export const isAdmin = (role: Role) => role === "ADMIN";
 
 export const bool = (v: number) => v === 1;
 
-export function shapeUser(u: { id: string; name: string; role: string; isActive: number; failedAttempts: number; lockedUntil: string | null; createdAt: string }) {
-  return { id: u.id, name: u.name, role: u.role, isActive: bool(u.isActive), lockedUntil: u.lockedUntil, createdAt: u.createdAt };
+/**
+ * `avatarUpdatedAt` says whether there is a photograph and what to cache-bust on; the bytes never
+ * travel in JSON (§15.4).
+ *
+ * `phone`, `startedOn` and `note` are personal details (§6.11, §19.6) and this shape is reached
+ * only from the `ADMIN` block of §15.4. The sign-in tiles do **not** come through here: they are
+ * their own three-key projection in `listSignInUsers`, because that route answers before anyone
+ * has signed in (§16.5, §26.2), and a shared shaper would have carried a hire date to it the day
+ * someone added the column.
+ */
+export function shapeUser(u: { id: string; name: string; role: string; isActive: number; failedAttempts: number; lockedUntil: string | null; createdAt: string; avatarUpdatedAt?: string | null; phone?: string | null; startedOn?: string | null; note?: string | null }) {
+  return {
+    id: u.id, name: u.name, role: u.role, isActive: bool(u.isActive), lockedUntil: u.lockedUntil, createdAt: u.createdAt,
+    avatarUpdatedAt: u.avatarUpdatedAt ?? null, phone: u.phone ?? null, startedOn: u.startedOn ?? null, note: u.note ?? null,
+  };
 }
 
 export function shapeSession(s: { id: string; userId: string; deviceId: string; mode: string; shiftId: string | null; createdAt: string; lastSeenAt: string; expiresAt: string; revokedAt: string | null; user?: { name: string }; device?: { label: string; prefix: string } }) {

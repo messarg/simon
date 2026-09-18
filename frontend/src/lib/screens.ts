@@ -12,6 +12,7 @@ export function screenFor(pathname: string): HelpScreen | null {
   if (path.startsWith("/home")) return "home";
   if (path.startsWith("/reports")) return "reports";
   if (path.startsWith("/products")) return "products";
+  if (path.startsWith("/staff")) return "staff";
   if (path.startsWith("/settings")) return "settings";
   return null;
 }

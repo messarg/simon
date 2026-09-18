@@ -11,6 +11,13 @@ const nonNeg = int.min(0);
 const pos = int.min(1);
 const iso = z.string().datetime({ offset: true });
 const text = (max: number) => z.string().trim().max(max);
+/** A calendar day, stored as TEXT (§11) — and a real one: `2026-02-31` matches the shape and is not a date. */
+const dateOnly = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine((s) => {
+  const d = new Date(`${s}T00:00:00.000Z`);
+  // Every check runs, including on a value the pattern already rejected — so this must answer
+  // for `01/03/2024` too, where `Date` is invalid and `toISOString` throws rather than returns.
+  return !Number.isNaN(d.getTime()) && d.toISOString().startsWith(s);
+}, "not-a-date");
 
 export const SaleLineBody = z.object({
   id,
@@ -275,4 +282,28 @@ export const UpdateProductBody = z.object({
   reauthGrant: z.string().nullish(),
 });
 
-export const UserBody = z.object({ name: text(60).min(1), pin: z.string(), role: Role });
+/**
+ * A staff member's personal details (PRD §6.11, §19.6). All three are optional and all three are
+ * `ADMIN`-only on the way out — they are never part of the pre-auth sign-in list (§16.5, §26.2).
+ *
+ * `phone` is deliberately not pattern-matched. An Armenian number is written `+374 77 123456`,
+ * `077123456`, `(077) 12-34-56` and half a dozen other ways, and refusing one of them costs the
+ * owner a record he wanted while buying nothing: nothing in Simon dials it. `Customer.phone` is
+ * normalised to digits because it is a unique key used to find a debtor; this one is a label.
+ * An empty string is how a cleared field arrives from a form, and it means null (§15.1).
+ */
+export const PersonalDetails = {
+  phone: text(40).nullish(),
+  startedOn: dateOnly.or(z.literal("")).nullish(),
+  note: text(500).nullish(),
+};
+
+export const UserBody = z.object({ name: text(60).min(1), pin: z.string(), role: Role, ...PersonalDetails });
+
+export const UserPatchBody = z.object({
+  name: text(60).min(1).optional(),
+  pin: z.string().optional(),
+  role: Role.optional(),
+  isActive: z.boolean().optional(),
+  ...PersonalDetails,
+});

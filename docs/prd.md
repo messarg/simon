@@ -1,19 +1,21 @@
 # Product Requirements Document — Simon
 
 **Product:** Simon (Սիմոն) — trade management for small retail
-**Document version:** 3.78 — see the revision history below
+**Document version:** 3.80 — see the revision history below
 **Primary market:** Small & medium retail and hardware stores in Armenia
 **UI language:** Armenian. Code, schema, API, comments, commits: English.
 **Currency:** Armenian Dram (AMD, ֏)
 **Type:** Full PRD
 **Document owner:** messarg
-**Last updated:** 2026-09-15
+**Last updated:** 2026-09-18
 **Status:** §17 (fiscal) and §26 (open questions) need local professional advice before launch.
 
 ### Revision history
 
 | Version | Date | Change |
 |:--|:--|:--|
+| **3.80** | 2026-09-18 | **Three of 3.79's decisions reversed within a day of taking them, which is the useful part of this entry.** **Staff becomes an owner destination** rather than a sub-surface of Settings. 3.79's argument was §5.3's tiering — *"show me last month by worker"* is a tier-3 *Explore* question and tier 3 lives in reporting — and it was **right about the activity and wrong about the person**. A shop is made of its goods, the people who owe it money, the people it owes, and the people who work in it; the first three have had a destination since §5.1 was written and the fourth was filed under configuration. **Settings is where a shop is configured, and a person is not a setting.** **Personal details are held** — `phone`, `startedOn`, `note`, `ADMIN`-only and reaching exactly two routes. 3.79 refused all of them on the argument that each costs a lawful basis, a retention rule and an erasure path; the argument was sound and the line was in the wrong place, because a phone number is how an owner reaches someone who has not arrived, which is operational rather than payroll. Address, wage and identity-document number stay refused, and §19.6 now carries the basis, retention and erasure **per field** rather than for staff as a block — where the sharp end is retention: *a shop keeps a former employee's sales for ten years and their telephone number for none*, so all three are dropped on deactivation in the same transaction that revokes the sessions. **And §16.5's personal-field rule was falsified by its own successor.** 3.79 wrote *"there is exactly one personal field"* and added that the rule would stop being the whole rule the moment a second arrived; the second arrived one version later. The paragraph now names the fields and the routes instead of the count — **the argument against a rule whose correctness depends on a number, written by that rule failing inside a day**. The cost of the move is one more screen and one more destination, both of which this document had written down as counts (*"the sixteen screens"* in §6 and in §23.1's layer 5, the owner's six in §5.1); all three now enumerate rather than count, which is what §23.1 has said to do since it was written and what §0's 3.51 entry records four wrong counts for. Also: an **avatar is a circle**, the one stated exception to the 4px corner cap, because a face in a rounded rectangle reads as a product tile |
+| **3.79** | 2026-09-18 | **Աշխատակիցներ — the staff list §6 never specified, and the per-person view the data has supported since Phase 0.** §15.4 has listed `GET`/`POST`/`PATCH /users` throughout, §16.4 gives `ADMIN` *"users"* among the things he owns, and §7.1 asks for staff in wizard Q2 — while **§6 specified no screen for any of it**, so the one surface that creates the identities every audit row depends on was built from an endpoint list. §6.11 now specifies it. **The activity half is mostly re-presentation**: five of §20.2's reports were already per-worker, and the audit trail's *"filtered by person"* was implemented on the server and reachable from no screen. Two groupings were missing and both were the same omission — `StockMovement` and `CashMovement` each carry a `userId` that no report read, so *"what did this person move"* and *"who took money out"* were answerable only by drilling one document at a time. **It lives inside Settings rather than becoming a destination**, which is §5.3's tiering applied rather than argued with: *"show me last month by worker"* is a tier-3 Explore question, §6.10 refuses a second catalogue, and §6's sixteen screens stay sixteen. **§6.6's tone rule is extended verbatim rather than restated** — cumulative variance per worker is the same fact §6.6 spends four bullets refusing to frame as an accusation, and a rule that survives one screen and not the screen that re-presents it is not a rule. **The photograph is the one new field and the one real cost.** It falsifies §19.6's opening sentence — *"it is the **only** personal data Simon holds"* — so §19.6 grows a staff half it never had: what is held, the lawful basis, retention, and an erasure path, none of which `User` had, since it carries no `anonymisedAt` and ten `ON DELETE RESTRICT` relations make deletion impossible anyway. **And it is visible before anyone signs in**, because `GET /auth/users` draws the sign-in tiles and is necessarily unauthenticated; that is recorded in §26.2 as a decision with its argument rather than left for someone to discover in the network tab. **The assumption underneath all of it is A4**, which is unconfirmed, whose falsification test is *"whether PINs stay per-user, or get shared within a week"*, and which this feature is the strongest incentive in the product to falsify — so §24.2 says so on the row, and §25 gains the adoption risk the register did not have: its only worker-rejection row is mitigated entirely by speed, and this is a reason to reject Simon that has nothing to do with speed |
 | **3.78** | 2026-09-15 | **The guard 3.77 built was blind in the direction the defect arrives from, and fixing that found one more instance of the defect.** The membership checks verified *declared → present in every list* and not the reverse, so adding an audited action to §10.7 alone, or a re-authenticated operation to §16.3 alone, passed silently — and **a term always reaches some list before it reaches a declaration**, which makes that the direction that matters. A declaration nothing checks against reality is the second source of truth it was added to remove. The canonical lists are parsed and compared back now, with the parentheticals stripped first, because these lists carry their own arguments inside them and the commas in an argument are not separators. **It failed on its first run and was right**: a repayment reversal had reached §8.2's recovery table, §14.5's offline table and the declaration itself, while **§16.3 — the one sentence that decides what needs an admin PIN — had never listed it**. §8.2 has called it *"an admin correction"* since v2. That is the blind-return defect of 3.72 and the reason-list defect of 3.76 for a third time, caught this time by a script on the day it was introduced rather than by a reading round two versions later. Also: the declaration for that set sat in §16.2 while the list it declares is §16.3's, which is the kind of drift the convention exists to prevent — it has moved; a wording drift that hid an enumeration reported the drift **and** every member as missing, seven failures from one cause, and now reports the cause alone; the mutation suite gained the three cases for the new direction and no longer carries a count in its prose, for the reason §23.1 gives about counts; and **`npm test` now runs both guards** through `pretest`, because a control that depends on someone remembering to invoke it is the thing §16.5 spends a page refusing |
 | **3.77** | 2026-09-15 | **The four findings were 3.76's, and all three substantive ones were one defect wearing three coats — so this version fixes the defect rather than the instances.** A **correction `PAY_OUT`** was added to the cash ledger in 3.76 and never classified by §11's `sourceId` rule, which enumerates every type and reason code as sourced or self-sourced; the one movement whose entire purpose is saying which repayment it undoes could not say it. A **repayment reversal** was added to §10.7's audited actions and not to §11's `reason`-required list, so an admin could move money between two customers' pages and type nothing — the same shape as the blind return of 3.72, which was fixed in §10.7 while its sibling list went untouched. And the same reversal, needing admin re-auth, was **absent from §14.5's offline table**, neither permitted nor refused — the state supplier payments sat in until 3.74. Each was invisible to six rounds of careful reading and is one line to a script. **So `npm run check:prd` now enforces enumerated-set membership**: movement types against §10.4's per-type table, cash types and `PAY_OUT` reason codes against the source rule, `ReviewFlag` against §8.5's warning types, the three audit lists against each other, `reason`-required against audited, and re-auth operations against §14.5. Sets that live in prose declare their membership in a `prd-check` marker beside the argument for them, the convention §9 already used for its criteria exemption. **And the checker has mutation tests** (`npm run check:prd:test`): nine defects this document actually shipped, reintroduced one at a time, each asserted caught. Writing them earned their keep immediately — the first version of the audit check tested whether a term appeared anywhere in a row, and **these rows carry prose explaining why a member is in the list, using the member's own name**, so it passed on the explanation while the enumeration was wrong. That is a false negative in the guard against false negatives, and it is exactly what a checker nobody has watched fail looks like. The checks are scoped to the enumeration now, with a test that fails if the scoping stops finding it. Also fixed: §11's `AuditLog.reason` said *"price override"* where every other list says *"line price override"* — a terminology drift §4.2 forbids, found by the new check on its first run — and §20.2 claimed payables used *"the same bands"* as the debtor row while reading `1–30` against `0–30`, correct arithmetic in an overclaiming sentence |
 | **3.76** | 2026-09-15 | **Every finding this pass was 3.75's own, and the worst of them is §12.5's defect for the fourth time.** 3.75 specified how a repayment taken against the wrong customer is corrected — reverse the `DebtEntry`, re-enter it against the right person — and specified it **only for the debt ledger**. A cash repayment writes a `CashMovement` of type `REPAYMENT` (§12.3) and §12.5 counts those, so a correction that wrote one on the reversal and another on the re-entry closes the shift **15 000 ֏ over** on a single 15 000 ֏ payment. That is a repayment counted twice (3.6), a missing refund term (3.48), a card repayment counted as cash (3.72), and now a re-attribution counted as a second receipt — one formula, four ways of getting money into it wrongly. **The correction moves an attribution, not money**: the reversing entry mirrors the original's `method`, neither it nor the re-entry writes a movement, and the original stands. Where cash genuinely has to come back out — a repayment recorded that never happened — that is a `PAY_OUT` with `reasonCode = CORRECTION`, recorded as its own act rather than as a side effect, because cash leaving the drawer is something a person did and §20.2 counts it by that reason. **The lesson is narrower than "be careful": 3.75 fixed the aging half of a correction and never asked what the same correction does to the drawer.** A document with two ledgers has two halves to every correction, and §9's five directions do not say so because they are organised by *section*, not by *ledger*. Also fixed, all three 3.75's: an `AllocationOverride` whose credit had left the projection's inputs stayed in them, an instruction to allocate an entry that no longer stands — it now leaves with the pair `reversesId` links; §20.2's payables bands read `31–60 · 60+` and **put day 60 in two of them**, a boundary overlap in the row beside the debtor buckets that do not overlap, now `1–30 · 31–60 · 61–90 · 90+` to match, since different anchoring was never a reason for different bands; and §10.6's outstanding identity lacked the *over the entries that still stand* qualifier the projection formula ten lines above it carries. Walking §9's fifth direction for the cash fix turned up one more, older: **a repayment reversal was not in §10.7's audited-action list**, though §8.2 has promised since v2 that it is *"logged"* and it moves money between two people's pages with no cash moving at all. It is in §10.7, FR-SEC-05 and §27.41 now — the same three places a blind return needed in 3.72, for the same reason |
@@ -729,7 +731,9 @@ used instead.
 stocktake (§6.8) and write-offs live *inside* **Պահեստ**, because that is where a person
 already goes to think about stock. The role adds capability, not navigation.
 
-**Owner (desktop, back room or home).** Everything the worker sees, plus:
+**Owner (desktop, back room or home).** Everything the worker sees, plus the things a shop is
+made of — its goods, the people who owe it money, the people it owes, and the people who work in
+it — each with a destination of its own:
 
 ```
 Գլխավոր       (Home)         ← today at a glance                (§6.9)
@@ -737,6 +741,7 @@ already goes to think about stock. The role adds capability, not navigation.
 Ապրանքներ     (Products)     ← catalogue, prices, costs          (§6.12)
 Հաճախորդներ   (Customers)    ← debts, limits                     (§6.13)
 Մատակարարներ  (Suppliers)    ← orders, what I owe                (§6.14)
+Աշխատակիցներ  (Staff)        ← who works here, and what they did (§6.17)
 Կարգավորումներ (Settings)     ← few, defaulted, explained         (§6.11)
 ```
 
@@ -788,7 +793,7 @@ only here are now in §6's five.
 Each screen below specifies: **purpose · layout · states · interactions · what can go wrong ·
 why it is learnable**. Where a rule from §3 drives a decision, it is cited.
 
-**The sixteen screens, by who opens them.** They are numbered in the order they were specified,
+**The screens, by who opens them.** They are numbered in the order they were specified,
 which is not the order anyone meets them. This is the map; §5.1 is the navigation.
 
 | Who | Screens |
@@ -796,7 +801,7 @@ which is not the order anyone meets them. This is the map; §5.1 is the navigati
 | **Worker — the four destinations of §5.1** | Till **§6.1** · Debts **§6.15** · Stock **§6.16** · Shift **§6.6** |
 | Reached from the till, inside a sale | Payment **§6.2** · Debt sale **§6.3** · Repayment **§6.4** · Returns **§6.5** |
 | Reached from Stock, `STOCK` role only | Receiving **§6.7** · Stocktake **§6.8** *(v2)* |
-| **Owner** | Home **§6.9** · Reports **§6.10** · Products **§6.12** · Customers **§6.13** · Suppliers **§6.14** · Settings **§6.11** |
+| **Owner** | Home **§6.9** · Reports **§6.10** · Products **§6.12** · Customers **§6.13** · Suppliers **§6.14** · Staff **§6.17** · Settings **§6.11** |
 
 ### The five journeys
 
@@ -1430,6 +1435,79 @@ ways. Never alphabetical.
 
 ---
 
+### 6.17 Staff — Աշխատակիցներ
+
+**Purpose.** Hold the identities every audit row in this system is attributed to, and answer
+*"who did this?"* — **without turning the person into a suspect**.
+
+> **v2** (§9), except the staff list itself, which is v1 and has been built since Phase 0 —
+> what this section adds for that half is the specification it never had.
+>
+> *This was specified in 3.79 as a sub-surface of Settings, on the argument that §5.3 files
+> "show me last month by worker" under tier 3 and tier 3 lives in reporting. **3.80 reverses
+> that.** The tiering argument was sound about the **activity** and wrong about the **person**:
+> an employee is not a report, it is one of the things a shop is made of, alongside its products,
+> its customers and its suppliers — each of which has had an owner destination since §5.1 was
+> written. Settings is where a shop is configured, and a person is not a setting. The cost of the
+> reversal is a seventh owner destination and one more screen, both of which this document had
+> written down as counts; §5.1 and §6's map now enumerate rather than count, which is what §23.1
+> says to do with a number that rots.*
+
+**The list.** Every person, with photograph, name, role (§16.4), phone, and whether they are
+active or locked out. The owner adds someone, renames them, changes their role, sets a new PIN, and deactivates
+them. **There is no delete** — rule 4, and ten relations point at the row: a person who sold
+anything is part of the books for as long as the books are kept. Deactivating revokes their live
+sessions in the same transaction (§16.3), because a dismissed worker's till is otherwise still
+signed in. Demoting or deactivating the last active `ADMIN` is refused.
+
+**A person's page.** Their details at the top — photograph, name, role, phone, when they started,
+and a note (§19.6 binds all of it) — and beneath them **four facets, none of them new**: each is one
+of §20.2's reports scoped to that person, over a period that defaults to this month:
+
+| Facet | What it shows | Which report |
+|:--|:--|:--|
+| **Վաճառք** | Sales, their value, discounts given, voids and returns | sales by worker · discount by worker · voids and returns by worker |
+| **Պահեստ** | Goods received, written off, adjusted — what they moved | stock movements by person · write-offs by reason |
+| **Հերթափոխ** | Shifts opened and closed, and what the drawer came to | shift Z-reports with variances · cash out by person |
+| **Մուտքեր** | Signed in when, on which device, and what needed an admin PIN | the session list (§15.4) · the audit trail filtered by person |
+
+**It defines no report of its own.** §6.10 states the rule this obeys: *"the report catalogue is
+listed once, in §20.2 — one list, so the two cannot drift apart."* This page is a **view onto that
+catalogue with the person already chosen**, and a figure that cannot be got from §20.2 does not
+belong on it. Two of the groupings above did not exist and were added there rather than here.
+
+**Every figure drills to the events behind it** (rule 3) — and here that rule does a second job.
+A number about a person is a number that person may need to contest, and a total that cannot be
+opened is an accusation with no evidence attached.
+
+**§6.6's tone rule applies here in full**, and is not restated in weaker words: *"never 'Missing',
+never 'Shortage', never a red alarm."* Variance is shown neutrally, in both directions, in the
+same words §6.6 uses. Nothing on this page is ranked, scored, coloured by performance, or compared
+between people — a league table of workers is a different product, and §1 already refuses it. The
+page answers *what happened*; **why** is a conversation between two people who know each other,
+and Simon is not a party to it.
+
+**The photograph.** One per person, optional, square, downscaled on the device before upload and
+bounded by §11's validation. **It is drawn as a circle** — the one exception to the 4px corner
+cap the rest of this interface holds to, because a face in a rounded rectangle reads as a product
+tile and a face in a circle reads as a person. It exists because a shared till is a list of names a worker taps
+twice a day in bad light, and a face is faster to find than a word. **It is shown on the sign-in
+tiles, which means it is served before anyone has signed in** — the tile list and the photograph
+route behind it are both necessarily unauthenticated, since they draw the very screen you sign in from. §26.2 records that trade and
+§19.6 records what the photograph is.
+
+**What can go wrong.** The numbers are attributed by PIN, and a PIN that has been shared attributes
+them to the wrong person (**A4**, §24.2) — which is the one failure this page cannot detect and the
+owner would never see. The page therefore states the period and the person and claims nothing else;
+it is evidence to be read, not a verdict to be acted on.
+
+**Why it is learnable.** It is the staff list the owner already opens to add someone, with each
+person now tappable. Nothing new is named: §4.3 already makes *"what changed, when, **who**"* the
+form a history takes, and this is that list with *who* fixed instead of *what*.
+
+---
+
+
 ## 7. Making it easy to learn
 
 The single largest risk to this product is not a bug. It is a shop that installs Simon,
@@ -1723,7 +1801,7 @@ backup & tested restore · Armenian UI · setup wizard, import, quick-add, pract
 ### v2 — next
 Fiscal/ՀԴՄ integration (§17) · label printing · stocktake sessions with approval (§6.8) ·
 purchase orders, including turning a reorder suggestion into an actual order (§13.3) ·
-multi-location · Tauri desktop packaging.
+the staff activity view (§6.11) · multi-location · Tauri desktop packaging.
 
 **This section is the authority on release content.** Several v2 items are specified in full
 in Parts A and B — stocktake, purchase orders — because their data model has to exist in v1 or
@@ -2551,7 +2629,7 @@ any **other** type with no source is a bug. `reasonCode` is required when `type 
 | **Shift** | `id`, `userId`, `openedAt`, `closedAt?`, `openingFloat`, `expectedCash`, `countedCash`, `countedBreakdown`, `variance`, `status` (OPEN/CLOSING/CLOSED), `unsyncedAtClose`, `notes` | `countedBreakdown` stores the denomination counts from §6.6. `unsyncedAtClose` records how many sales were still queued when the shift closed, so the Z-report can state it — a Z-report that silently omits sales is worse than one that admits to them (§6.6). **`expectedCash` and `variance` are computed live while the shift is `OPEN` or `CLOSING`, and frozen at `CLOSED`** — after that the stored value is the figure that was counted, printed and signed, and it is never recomputed, exactly as `Sale.priceBasis` is never recomputed from the current setting (§10.8). A `ShiftLateArrival` is stated beside it and never folded into it (§12.5). **They are deliberately not drift-checked** (§10.4): a closed shift's stored figure is a historical fact rather than a cache, so a mismatch against a replay is the late arrivals doing their job, not drift. Every other duplicated value in this system is declared somewhere; these two were the exception |
 | **CashMovement** | `id`, `shiftId`, `businessDate`, `type` (PAY_IN/PAY_OUT/DROP/NO_SALE/REPAYMENT/REFUND), `amount`, `reasonCode?` (SUPPLIER_PAYMENT/WAGE/EXPENSE/OWNER_DRAW/CORRECTION), `reason?`, `sourceType`, `sourceId`, `userId`, `reversesId?`, `createdAt` | Cash leaves the drawer for non-sale reasons constantly; unmodelled, it destroys every reconciliation. **`NO_SALE` carries `amount = 0`** — it records only that the drawer was opened outside a sale, which is the classic cover for taking cash and the reason §16.3 re-authenticates it. **`REFUND` is cash leaving the drawer for a sale return** (§12.4), and it exists because §12.5's formula had no term for one: a shift taking a single 8 000 ֏ cash refund closed 8 000 ֏ short, and «Տարբերություն −8 000 ֏» appeared on the one screen §6.6 says exists to catch theft. It is its own type rather than a `PAY_OUT` with a reason, because §20.2 must be able to separate refunds from supplier payments — folding them together would cost the shrinkage report its most important category. **The six fields after `shiftId` arrived in 3.73, when this row was finally read against `StockMovement`.** The two are this system's two ledgers and only one of them had ever been audited: §10.4 gained a source rule, a replay key, a per-type cost table and a drift check across a dozen versions, while this row kept the shape `StockMovement` had before anybody looked at it. What it now carries, and why each was missing: **`createdAt` — it had no timestamp at all**, alone among every ledger row in §11, so an X-report could not order the movements inside a shift and a drawer count could not be placed against the moment cash left. **`businessDate`** — server-stamped at commit in `shop.timezone`, exactly as on `Sale` and `SaleReturn`: a cash movement is queue-drained (§14.5) and §12.5's late-arrival rule names it by name, so the period and the drawer diverge here for precisely the reason they diverge on a sale, and this was the one of the three queue-drained documents never given the field. **`sourceType`/`sourceId`** — §10.4's rule mirrored: a `REPAYMENT` names its `DebtEntry`, a `REFUND` names its `SaleReturn`, a supplier `PAY_OUT` names its `SupplierPayment`; `PAY_IN`, `DROP`, `NO_SALE` and an ad-hoc `PAY_OUT` are self-sourced exactly as `ADJUSTMENT` and `WRITE_OFF` are. Without it §12.5's claim that the drawer is recomputable *"(rule 3)"* was true of the total and false of every line inside it — a `REPAYMENT` row could not say who paid — so §6.9's promise that every figure drills to the events behind it stopped at the cash tile. **`reasonCode`** — §13.5's argument applied where nobody had applied it: write-offs got a coded field because *"a `note` column would only ever produce a list nobody can total"*, and money leaving the drawer is the same question with the same answer. It is also what makes this row's own closing sentence true, since separating refunds from supplier payments requires supplier payments to be identifiable, which `PAY_OUT` alone never made them. **`reversesId`** — a `PAY_OUT` typed 12 000 ֏ that was 1 200 ֏ could not be edited (§10.7), could not be deleted (rule 4) and could not be reversed, because the field did not exist; §8.2's recovery table had no row for it either. That is the defect §10.7 records fixing for `DebtEntry` in 3.8, still standing on the ledger nobody re-read |
 | **ShiftLateArrival** | `id`, `shiftId`, `sourceType`, `sourceId`, `amount`, `arrivedAt` | **A sale, repayment or cash movement that reached the server after its shift had closed.** It posts normally and keeps naming the closed shift — what this row adds is that the Z-report can *say so* as a linked line («+31 000 ֏ ստացվել է փակումից հետո») rather than a closed period's variance being silently rewritten or the money going missing from the sales report. `Shift.unsyncedAtClose` records how many were outstanding; this records what actually arrived, which is the difference between a count and a reconciliation. `amount` is signed, because a late `REFUND` reduces the drawer |
-| **User** | `id`, `name`, `pinHash`, `recoveryCodeHash?`, `role`, `isActive`, `failedAttempts`, `lockedUntil`, `coachMarksSeen` | §16.2, §16.4. `recoveryCodeHash` exists only on `ADMIN` rows: generated at setup (§7.1), shown once, hashed like a PIN, single-use and regenerated after use. It is the third way out of a lockout when the locked-out person is the only admin. `coachMarksSeen` lists the screens this person has already been shown (§7.5) — per user, not per device, because Գոռ should not be taught the till again just because he picked up the other phone |
+| **User** | `id`, `name`, `pinHash`, `recoveryCodeHash?`, `role`, `isActive`, `failedAttempts`, `lockedUntil`, `coachMarksSeen`, `avatar?`, `phone?`, `startedOn?`, `note?` | §16.2, §16.4. **`avatar` is the one personal field on this row and the only binary column in the schema** (§6.17) — a small square image, held in the database rather than beside it, because §19.2 backs up one file and a photograph stored outside it would not survive the restore §27.10 rehearses. It is the reason §19.6 has a staff half at all: a face is personal data, so the sentence *"it is the only personal data Simon holds"* stopped being true the moment this column existed. **`phone`, `startedOn` and `note` are the personal details §6.17 shows the owner** — enough to ring someone who has not arrived and to remember when they started. They are `ADMIN`-only and they never reach the pre-auth sign-in list (§16.5). Still absent, deliberately: no address, no wage, no identity-document number — §9 refuses payroll and §19.6 is where that refusal is enforced. **`User` is the only model whose personal field is served to an unauthenticated caller**, since `GET /auth/users` draws the sign-in tiles (§15.4, §26.2). `recoveryCodeHash` exists only on `ADMIN` rows: generated at setup (§7.1), shown once, hashed like a PIN, single-use and regenerated after use. It is the third way out of a lockout when the locked-out person is the only admin. `coachMarksSeen` lists the screens this person has already been shown (§7.5) — per user, not per device, because Գոռ should not be taught the till again just because he picked up the other phone |
 | **Device** | `id`, `prefix` (unique), `label`, `registeredAt`, `lastSequence`, `blockStart?`, `blockEnd?`, `outboxDepth`, `outboxOldestAt?`, `parkedDepth`, `isActive` | The till as a durable thing, which `Session` is not: a session is revoked at every logout and a receipt number printed on paper outlives it by years. `prefix` is two characters, unique across the shop, assigned once and never reused — it is the left half of every `Sale.number` this device issues (§12.1). **The server assigns it** at first registration (§16.2): the lowest unused value in `[A-Z0-9]{2}`, written before the device may complete its first sale, because a prefix chosen on the device cannot be checked for collision by the one participant that is offline. The owner renames the till through `label` and never through `prefix`. `lastSequence` is the right half. **The device's own copy of the counter is authoritative**; the server row records the highest sequence it has received, because a till that is offline still has to number the sale in the customer's hand (§14.2, rule 1). `blockStart`/`blockEnd` are null unless §26 Q10 turns out to require Simon to issue a gapless sequence, in which case they hold the range this till has been allocated (§12.1) — the field exists now so that answer costs a setting rather than a redesign. `outboxDepth` and `outboxOldestAt` count **sales awaiting delivery only** — a parked basket sits in the same FIFO queue (§14.4) but is not money in transit, and `parkedDepth` counts those separately. They live here rather than on `Session`, because a queue belongs to the till and not to whoever is signed in on it — summing them across sessions would count one phone once per login it has ever had (§19.5). A device registers on its first successful login (§16.2), and **deactivating it revokes its sessions in the same transaction** (§16.3): a lost phone that stops issuing receipt numbers but carries on selling has not been stopped |
 | **Session** | `id`, `userId`, `deviceId` → `Device` (§11), `tokenHash`, `mode` (LIVE/PRACTICE), `shiftId?`, `createdAt`, `lastSeenAt`, `expiresAt`, `revokedAt?` | **§16.3's token is a row, because everything §16 asks of it needs storage.** `tokenHash`, never the token — a bearer credential at rest is a stolen credential. `revokedAt` makes revocation real; `shiftId` is what lets a session end at shift close; `mode` is how practice stays per-device (§19.4) rather than shop-wide; `lastSeenAt` drives the idle timeouts and §21.2's dashboard-use figure. **Writes to this row and to `Device` are throttled and never sit inside another transaction** (§16.3): SQLite has one writer (§13.1), and a row written on every barcode lookup would spend §21's concurrency budget on bookkeeping |
 | **AuditLog** | `id`, `userId`, `action`, `entityType`, `entityId`, `before?`, `after?`, `reason?`, `createdAt` | §10.7. **`reason` is the text a person typed to justify an override** — **line** price override (§6.1, the till's long-press — *not* the catalogue price change beside it in §10.7, which is audited without one), credit-limit override, discount above the cap, blind return, **repayment reversal**, stock adjustment. It is required for those actions and null elsewhere. *Repayment reversal joined the list in 3.77: 3.76 added it to §10.7's audited actions and not here, so an admin could move money between two customers' pages and type nothing — which is the half of the trail §10.7 calls the more useful one in a shrinkage investigation.* `before`/`after` record what changed; `reason` records why, and in a shrinkage investigation it is the more useful of the two. `before`/`after` are **nullable**: entering or leaving practice mode (§19.4) and opening the drawer outside a sale are events that happened, not fields that changed, and §27.19 counts exactly those rows |
@@ -2590,7 +2668,12 @@ every receipt less every allocation against it, and the debt ledger had an index
 payables side had none · **`CashMovement(shiftId)`** — §12.5's
 expected-cash formula is five aggregates over this table by shift, recomputed live on every
 X-report and on the close screen, and it had no index while the debt ledger had one ·
-`ReviewFlag(resolvedAt, type)` — the
+**`Sale(userId, businessDate)`**, **`StockMovement(userId, seq)`**, **`CashMovement(userId, createdAt)`** and
+**`AuditLog(userId, createdAt)`** — §6.17 asks every one of these tables the same question, *what did
+this person do between these dates*, and **`Shift(userId, status)` was the only per-person index in the
+schema**: the attribution has been on every row since Phase 0 and nothing had ever read it that way.
+The pattern is §11's own, found twice before — the payables side had none where the debt ledger did,
+and `CashMovement` had none while §12.5 ran five aggregates over it · `ReviewFlag(resolvedAt, type)` — the
 needs-attention list (§14.6), the recount list (§13.6) and §19.5's alerts are all the same query
 for unresolved flags, and it is read by three screens. Barcode
 lookup is the hottest path in the system.
@@ -2691,7 +2774,12 @@ endpoint forgets.
 | `CashMovement.sourceId` | Required — §10.4's rule for `StockMovement`, mirrored, and **every type and every `PAY_OUT` reason code is classified here or the row is incomplete**. *Sourced:* a `REPAYMENT` names its `DebtEntry`; a `REFUND` its `SaleReturn`; a `PAY_OUT` with `reasonCode = SUPPLIER_PAYMENT` its `SupplierPayment` (§6.14); and a `PAY_OUT` with `reasonCode = CORRECTION` **the `DebtEntry` it answers** (§10.6) — saying which repayment it undoes is the entire reason that movement exists, and it was the one member of this set 3.76 added without re-walking it. *Self-sourced* (`sourceType = 'CashMovement'`, `sourceId = id`): `PAY_IN`, `DROP`, `NO_SALE`, and a `PAY_OUT` whose reason is `WAGE`, `EXPENSE` or `OWNER_DRAW`. A sourced movement with no source is a bug; a new reason code that joins neither side is an unfinished edit, and `check:prd` now says so |
 | `CashMovement.reasonCode` | Required when `type = PAY_OUT`; null for every other type — `StockMovement.reasonCode`'s shape, and §13.5's argument about what a free-text column can never total (§20.2) |
 | `CashMovement.reason` | Free text. **Required on a self-sourced movement**, where nothing else explains it; optional where the movement names a source, because the source is the explanation |
+| `User.name` | 1–120 chars, trimmed, not blank, NFC-normalised — `Product.name` and `Customer.fullName`'s rule, which this row had never been given. It is the label under every figure in §6.17 and on every sign-in tile |
 | `User.pinHash` | argon2id output. The PIN is 4–8 digits and is never stored (§16.2) |
+| `User.phone` | Nullable, trimmed, ≤ 40 chars, NFC-normalised. **Format is not validated** — an Armenian number is written half a dozen ways and refusing one costs a shop more than accepting all of them, which is `Customer.phone`'s rule for the same reason |
+| `User.startedOn` | Nullable `TEXT`, `YYYY-MM-DD`, shop-local (§19.3). A date, not a timestamp: nobody knows what time they started |
+| `User.note` | Nullable free text, trimmed, ≤ 500 chars, NFC-normalised. §19.6's warning for `Customer.notes` applies here and harder: the owner should be told plainly not to write anything about a person here that he would not say to them |
+| `User.avatar` | Nullable `BLOB`. **PNG or JPEG, square, at most 256 × 256 and 64 KB**, re-encoded on the device before upload and re-checked on the host — a column that is served before authentication (§15.4) is a column whose bound is enforced where the caller cannot reach. Null is the ordinary case and renders as the person's initial, which is what every till showed before this field existed. The size bound is what keeps §19.3's growth story and §19.2's backup unchanged: a whole staff of photographs is smaller than one day of movements |
 | `StockMovement.sourceId` | Required — a movement with no source is a bug (§10.4) |
 | `StockMovement.reasonCode` | Required when `type = WRITE_OFF`; null for every other type (§13.5) |
 | `StockMovement.unitCostMdram` | **Nullable, and null means what it means on `Product.avgCostMdram`** — no cost basis had been established when this row was written (§10.5, §10.4's table). **Required and ≥ 0 for `PURCHASE_RECEIPT` and `PURCHASE_RETURN`**, which carry a cost of their own off an invoice; nullable for every other type, each of which copies an average that may itself be null. Zero is a legal cost and means free; it is not the same value as null. Written `NOT NULL` this row forbade the movement §27.29 requires — a quick-added product sold before it was ever received — which is §9's category 1 firing on the nullable-cost decision of 3.48 |
@@ -3422,7 +3510,7 @@ need authoritative state, so they fail loudly rather than silently (§14.5).
 | Stock | `GET /products/:id/movements`, `POST /adjustments`, `POST /write-offs` — each writes a self-sourced movement (§11) — `POST /stocktakes` *(v2)* |
 | Review | `GET /review-flags?resolved=false`, `POST /review-flags/:id/resolve` — the needs-attention list (§14.6), the recount list (§13.6), and what §8.5's `sync-failed` and §19.5's alerts open onto. **Reading is any authenticated session; resolving is gated by the flag's `type`.** `INSUFFICIENT_STOCK` resolves for `STOCK` or `ADMIN`, because it *is* §13.6's recount list and the person who recounts the shelf is the person who clears it. **Every other type is `ADMIN`-only**, and `COST_VARIANCE` is the sharpest reason why: §13.2 raises it precisely because the `STOCK` role types a number it is structurally unable to check, so letting that role clear its own flag closes the loop it was opened to break. The rest are worse — `CREDIT_LIMIT_EXCEEDED_ON_SYNC` and `DISCOUNT_ABOVE_CAP_ON_SYNC` are the durable trace of §16.1's second-ranked threat, *"a worker discounting their own sales to cover cash theft"*, and a control a worker can dismiss is not a control (§16.5). The route had no gate at all until 3.71, sitting outside the `ADMIN` block above while §14.6 called the same table *the owner's* list |
 | Import | `POST /imports` (multipart, returns an `ImportBatch`), `GET /imports/:id` for per-row results (§19.1) |
-| Admin *(`ADMIN` only, every route)* | `GET`/`PATCH /settings` (§6.11), `GET`/`POST`/`PATCH /users` (§7.1, §16.4), `GET`/`POST`/`PATCH /categories`, `GET /diagnostics` (§19.5) — the payload an owner reads down the phone, and therefore not the thing an unauthenticated probe returns — `GET /audit-log?entityType=&entityId=&from=&to=` — an audit trail nobody can read is a trail nobody is protected by (§10.7). The audit log is gated **as a route**, not stripped field by field, for the reason §16.5 gives |
+| Admin *(`ADMIN` only, every route)* | `GET`/`PATCH /settings` (§6.11), `GET`/`POST`/`PATCH /users` and `GET /users/:id` (§7.1, §16.4, §6.17) — the only two routes carrying `phone`, `startedOn` and `note` (§16.5) — `PUT`/`DELETE /users/:id/avatar` — the photograph is written and removed here, under the role that manages the person. **It is read from `GET /users/:id/avatar`, which is its own route and answers without a session** (§16.5, §26.2): a photograph is bytes, and carrying it base64-encoded inside the sign-in list would put a third of a megabyte of it on the one screen that must appear before anyone can do anything. The JSON rows carry `avatarUpdatedAt` instead — whether there is a photograph, and what to cache-bust on — `GET`/`POST`/`PATCH /categories`, `GET /diagnostics` (§19.5) — the payload an owner reads down the phone, and therefore not the thing an unauthenticated probe returns — `GET /audit-log?entityType=&entityId=&from=&to=` — an audit trail nobody can read is a trail nobody is protected by (§10.7). The audit log is gated **as a route**, not stripped field by field, for the reason §16.5 gives |
 | Shift | `POST /shifts`, `POST /shifts/:id/close`, `GET /shifts/:id/x-report`, `GET /shifts/:id/z-report` |
 | Printing | `POST /print/receipt` (`saleId` or `saleReturnId` or `debtPaymentId`), `POST /print/x-report`, `POST /print/z-report` — **the backend owns the printer** (§18); a browser cannot drive ESC/POS, so every receipt in this document is a call to one of these. Each is a **reprint by construction**: it renders from the stored document, so the jam recovery §8.2 offers is the same call made twice, and §12.1's *print after commit* is a second request rather than a step inside the first. **They never pulse the drawer** — see the row below |
 | Cash drawer | `POST /cash-drawer/open` — the ESC/POS kick-out pulse, on its own route because printing and opening are different acts (§18). **It is free once per document that accounts for the cash**: a `Sale` completed in this shift with a cash payment, a `SaleReturn` with a cash tender (§12.4), a cash repayment (§12.3), a `PAY_IN`, `PAY_OUT` or `DROP` (§11), or **any open while the shift is `OPEN`-ing its float or `CLOSING`** (§11, *Lifecycles*) — that
@@ -3434,7 +3522,7 @@ it. Every open still writes its `AuditLog` row (§10.7), so the trail is identic
 ceremony goes. **Every open writes an `AuditLog` row** naming the actor and the document, or none (§10.7) — which is both the record and the mechanism: the server knows a document has already been spent because it wrote that row.
 
 **The second open naming the same document is a no-sale open**, and takes the no-sale path: re-auth (§16.3) plus a `NO_SALE` movement (§11). So does an open naming nothing. That is what a no-sale open *is* — the drawer opened with nothing left to account for it, *"the classic cover for taking cash"* — and **the bound is what makes the exemption safe**. Without *once*, a worker completes one cash sale and names it all afternoon: unlimited, silent, no admin, and a control §16.3 believes it is enforcing. A sale opens the drawer once; the rule now says so. An earlier form exempted only the sale and swept the other six into the re-auth path, which would have put an admin at the till for every routine refund and written a spurious `NO_SALE` beside every real movement — polluting the one signal §20.2 reads to catch exactly this. A route rather than a side effect of printing is what makes reprint safe: §8.2 offers a reprint after a jam, and that must not open the drawer for whoever asked |
-| Auth | `POST /auth/login`, `POST /auth/logout`, `POST /auth/reauth` (§16.3) |
+| Auth | `POST /auth/login`, `POST /auth/logout`, `POST /auth/reauth` (§16.3), and — **the two routes that answer without a session, because they draw the screen you sign in from** — `GET /auth/users` (the tiles: id, name, `avatarUpdatedAt`, active only — the photograph itself is one request per face, §15.4's admin row) and `GET /auth/admins` (who may approve an override). They are the reason §16.5 has a rule about a personal field: whatever `User` carries here is readable by anyone who can reach the host (§26.2). Neither was listed in this table until 3.79, while every screen in §6 begins at one of them |
 | Backup | `POST /backup/passphrase/reveal` and `POST /backup/passphrase/rotate` — **`ADMIN` only, re-auth required, both audited** (§10.7, §16.3). The passphrase is not a `Setting` row and no settings route can return it (§19.2): reveal reads the host's key material directly, which is exactly why it is its own route with its own control rather than a field on a screen |
 | Sessions | `GET /sessions` and `POST /sessions/:id/revoke` — **revoke, not delete**: `Session.revokedAt` (§11) is the record of who was signed in, on which device, until when, and it is what an owner needs after a theft. An `ADMIN` sees who is signed in on what and revokes it, which is what §16.3 means by *revocable*; a dismissed worker's till is otherwise still logged in. `POST /session/mode` enters and leaves practice (§19.4) |
 | Lockout | `POST /auth/unlock` — any `ADMIN` clears another user's lockout in one call (§16.2). `POST /auth/recover` redeems the owner's single-use recovery code when the locked-out person is the only admin, and reissues it |
@@ -3554,6 +3642,23 @@ as a whole route** (§15.4) rather than stripped field by field — the one plac
 where the control is the endpoint and not the shape. **Anything that stores a record snapshot
 inherits that rule**, so a future diff, export or replay feature is gated the same way rather
 than trusted to a filter that was never designed to see inside it.
+
+**A personal field is stripped by route, not by shape, and the split is not where you would guess.**
+`User` carries four (§11): `avatar`, `phone`, `startedOn`, `note`.
+
+- **`avatar` is served to anyone**, authenticated or not, because `GET /auth/users` draws the
+  sign-in tiles and runs before there is a session to check (§15.4, §26.2). It is the only column
+  in this schema readable without a token, and deliberately: a face is what its owner shows every
+  customer who walks in.
+- **`phone`, `startedOn` and `note` are `ADMIN`-only**, and they reach exactly two routes —
+  `GET /users` and `GET /users/:id`. They appear in no report row, no CSV export, and above all
+  **not on the sign-in list**, which would otherwise publish a staff phone book to anyone within
+  Wi-Fi range. A `WORKER` or `STOCK` token never sees another person's details.
+
+*3.79 wrote this paragraph as "there is exactly one personal field" and said the rule would stop
+being the whole rule the moment a second one arrived. **3.80 is that moment**, one version later —
+which is the argument for naming the field rather than the category, and against writing a rule
+whose correctness depends on a count.*
 
 **A settings read is shaped, not gated.** `GET /settings/client` (§15.4) answers any
 authenticated session, because a `WORKER`'s till has to enforce the discount cap and the offline
@@ -3702,7 +3807,7 @@ forgives.
   is **separate from the record-retention period** (§6.11, §19.6) — the database keeps ten years
   of rows, the backups keep a year of *moments*, and neither number is the other.
 - Destinations: local disk **plus** a removable USB drive, matching how these owners already
-  think about backups. **Encrypted**, because they contain customer PII (§19.6).
+  think about backups. **Encrypted**, because they contain personal data — a customer's name, phone and debts, and since 3.79 a staff photograph too (§19.6).
 - **The passphrase is the owner's, on paper, and the key is the host's.** Encryption with an
   unnamed key is not a backup — it is a file nobody can open on the day it is needed, and §25
   ranks losing the host as *Likely* with *fatal without a tested backup*. So: a **passphrase is
@@ -3849,9 +3954,17 @@ who does not know what a log is.
 
 ### 19.6 Personal data
 
-The Nisya ledger holds names, phone numbers and debts. That is personal data under Armenian law
-(§17, item 5), and it is the *only* personal data Simon holds — there is no marketing list, no
-purchase profile, no analytics (§1).
+Simon holds personal data about two groups of people and no others: **customers**, who owe money,
+and **staff**, who work here. There is no marketing list, no purchase profile, no analytics (§1).
+
+*Until 3.79 this section opened by calling the Nisya ledger the only personal data Simon holds,
+which was true when it was written and was falsified by a photograph — one column on one row, in a
+change whose visible part was a screen. §9's fifth direction asks who watches a feature; this
+section watched a claim, and nothing in adding a field reminds anyone that a sentence four
+sections away asserted the field did not exist.*
+
+**Customers.** The Nisya ledger holds names, phone numbers and debts. That is personal data under
+Armenian law (§17, item 5).
 
 - **What is held, and why.** `Customer.fullName` and `phone` identify who owes what; `DebtEntry`
   rows are financial record. Everything else on the row is operational — a credit limit, a block
@@ -3878,6 +3991,43 @@ purchase profile, no analytics (§1).
 - **Export on request** is already built: `GET /customers/:id/ledger` (§15.4) returns everything
   held about one person, and the Diagnostics screen can write it to a file to hand over.
 
+**Staff.** A worker's row holds a name, a role, a photograph, two hashes and some lockout counters
+(§11 `User`). The same questions, answered for them:
+
+- **What is held, and why.** The name labels every figure attributed to them; the role decides what
+  they may do; the **photograph** exists so a shared till is a row of faces rather than a row of
+  words (§6.17); **`phone`** so the owner can ring someone who has not arrived; **`startedOn`**
+  because how long someone has worked here is a thing a shop knows about its own people; and
+  **`note`**, which is free text and therefore the field to be careful about. `pinHash` and
+  `recoveryCodeHash` are credentials, never readable. **Still absent, and this is where the refusal
+  is enforced rather than merely stated: no address, no wage, no identity-document number** — §9
+  refuses payroll, and each of those costs a basis, a retention rule and an erasure path while
+  making no shop sell anything. The activity a worker's page shows is **business record** — sales,
+  movements, shifts, cash — held because it is the shop's books, not because it is about them.
+- **Lawful basis.** Employment, for the name, the role and `startedOn`: a shop cannot record who
+  sold something without recording who works there, and cannot employ someone without knowing when
+  they started. **The photograph and the phone number are not necessary** for Simon to function, so
+  both are **optional**, the person is asked rather than told, and a refusal costs them nothing —
+  the tile falls back to their initial, which is what every till showed before the field existed,
+  and an empty phone field simply shows nothing. Like the customer basis (A16, §26 Q14) this **must
+  be confirmed** before the first pilot store, and it is the weaker of the two: consent from an
+  employee is consent from someone who is not free to say no comfortably, which is why every
+  optional field has to degrade invisibly in use rather than nag.
+- **Retention.** The name follows the financial retention period, for the same reason a customer's
+  does — a Z-report naming nobody is not an accounting record. **The photograph, the phone and the
+  note do not**: they are operational, not financial, and nothing in the books needs any of them.
+  All three are deleted when the person is deactivated, in the same transaction that revokes their
+  sessions. A shop keeps a former employee's sales for ten years and their telephone number for
+  none.
+- **Erasure.** Deleting the row is impossible (rule 4; ten `ON DELETE RESTRICT` relations), so
+  erasure takes the customer's shape: the photograph, phone and note go null, and the name may be
+  replaced by a neutral label while every figure stays attributed to the same id. `User` has no
+  `anonymisedAt` today; it needs one before this is claimed as built. **Deactivation already does
+  most of it** — what the missing field would add is the name, and a record of when.
+- **The photograph is the one personal field served before authentication** (§16.5, §26.2), and
+  the only one that may be. The phone, the start date and the note are `ADMIN`-only and reach two
+  routes; a staff phone book on the sign-in screen is the failure that boundary exists to prevent.
+
 ---
 
 ## 20. Reporting & language
@@ -3899,11 +4049,16 @@ by how long" left the grouping to be invented, and two implementations would hav
 different ones — the argument against copying §10.6's buckets was never an argument for
 specifying none* · **item history** — what
 changed, when and who, per product, and never called a movement anywhere the owner can see it
-(§4.3, §6.16) · shift Z-reports with variances · discount by worker · write-offs by reason · stock turnover
+(§4.3, §6.16) · shift Z-reports with variances · discount by worker · write-offs by reason ·
+**stock movements by person** — the ledger grouped by `StockMovement.userId` rather than by product,
+which is *item history* asked from the other end and the answer to *what did this person move*
+(§6.17) · stock turnover
 and dead stock · **voids and returns by worker**, beside discount by worker and for the same
 reason · **cash out by reason** — `PAY_OUT` grouped by `reasonCode` (§11), the drawer's answer to
 write-offs-by-reason and read for the same purpose: money leaving the till for a stated reason is
 a shrinkage route, and until 3.73 the reason was free text that nothing could total (§13.5) ·
+**cash out by person** — the same rows grouped by `CashMovement.userId` instead, because *which
+reason* and *whose hand* are two different questions and the drawer answered only the first ·
 **the audit trail**, filtered by person, date or record (§10.7). All exportable.
 
 **Margin reports carry two columns wherever a cost has been corrected**: *as booked* — the
@@ -4075,7 +4230,7 @@ whether the layering is right: **can the rule be unit-tested with no HTTP and no
 | **2 — Services** | Transactional use cases: checkout, debt sale, repayment, returns, receiving, purchase returns, write-offs, shift close. Then the non-transactional ones: catalogue and opening-debt import, the reorder-stats job, **the ledger-vs-cache drift job**, erasure, the `nameSearch` derivation and its matching, and every report query | §13.1 **first**, then §12.1–§12.5, §13.2, §13.3, §13.5–§13.7, §10.4, §10.7, §19.1, §20.2, §20.3 | layer 1 | Each commits in one transaction and is testable with no HTTP: **§27.2, §27.3, §27.5, §27.6, §27.7, §27.18, §27.20, §27.22, §27.23, §27.25, §27.26, §27.27, §27.30, §27.33, §27.42, §27.43, §27.44, §27.45, §27.46** and **§27.38**'s import half — all provable before a screen exists. The three added in 3.71 are the same kind of proof: an erasure that leaves the ledger's arithmetic untouched, a drift job that reports rather than repairs, and a search that folds `malukh` onto `Մալուխ` — each a query or a service call, and each cheaper to get wrong here than on a screen (§27.43's alert and §27.44's two screens are layers 6 and 5, but neither is where the rule lives) |
 | **3 — HTTP** | Routes, Zod validation, RFC 7807 errors, response shaping | §15.1–§15.4, and **§16.5 built into the shaping from the very first endpoint** | layer 2 | **§27.9** — a `WORKER` token gets no cost field from any route — **§27.37**, which is the print routes and the rule that a jam never rolls back a commit — and **§27.28**, its mirror on the write side: the server owns sale arithmetic, so a client cannot set a line total or discount past the cap. The two are one rule about response and request shaping, tested in both directions |
 | **4 — Access** | PIN, sessions, devices, roles, re-authentication, audit — and `Session.mode`, which is what keeps practice per-device rather than shop-wide | §16.2–§16.4, §16.6, §10.7, §19.4 | layers 1 and 3 | **§27.9**, **§27.28** and **§27.19** (practice leaves the real database untouched), plus **§27.39** (every lockout path in §16.2, including the one that is not a way out), **§27.40** (a session dies with its shift, and a deactivated device's dies with it) and **§27.41** (every audited action writes its row, with the reason the person typed). Those three were *"plus every lockout path in §16.2"* until 3.71 — an instruction to a builder, which is not a criterion anyone can fail |
-| **5 — Client** | Outbox, IndexedDB cache, the sixteen screens, the four input paths, the setup wizard and quick-add, Armenian | §14.3–§14.6, §6, §7.1, §7.4, §18, §20.3 | layer 3 | **§27.1**, **§27.8**, **§27.24**, **§27.32**, **§27.34**, **§27.35** and **§27.36**, plus the whole usability set **§27.11–§27.17** — all of it in a shop, none of it at a desk. The three added in 3.48 are what an outage actually produces: a sale that arrives after its shift closed, two tills that allocated the same charge while unable to see each other, and a queue that must tell a transient failure from a permanent one |
+| **5 — Client** | Outbox, IndexedDB cache, every screen in §6, the four input paths, the setup wizard and quick-add, Armenian | §14.3–§14.6, §6, §7.1, §7.4, §18, §20.3 | layer 3 | **§27.1**, **§27.8**, **§27.24**, **§27.32**, **§27.34**, **§27.35** and **§27.36**, plus the whole usability set **§27.11–§27.17** — all of it in a shop, none of it at a desk. The three added in 3.48 are what an outage actually produces: a sale that arrives after its shift closed, two tills that allocated the same charge while unable to see each other, and a queue that must tell a transient failure from a permanent one |
 | **6 — Operations** | Backup, the restore drill, diagnostics, packaging | §19.2, §19.5, §22 | layer 1 — **except diagnostics**, which is an endpoint and a screen, so 3 and 5 | **§27.10** — restored onto a different machine, by the owner |
 
 **Every criterion in §27 belongs to at least one layer above**, and most belong below layer 5.
@@ -4210,7 +4365,7 @@ next person judges whether it is still true.
 | **A1** | Most deliveries arrive with a paper invoice and no prior order (§6.7) | Receiving is built around the wrong primary path and the PO flow moves into v1 | Pilot: receipts with a PO vs. without, over two weeks |
 | **A2** | A worker will not type a catalogue in advance, but will build one at the till (§7.3) | Onboarding stalls in week one — the most likely single cause of pilot failure (§25) | Pilot: products created by quick-add vs. import, days 1–14 |
 | **A3** | Shelf prices in the pilot store are tax-inclusive (§10.8) | A setting, and one receipt layout that already exists in both forms. **It was a rewrite until 3.41** — the cheapness was bought, not inherent | §26 Q2, before the pilot |
-| **A4** | A short PIN on a shared device is an acceptable audit anchor for the owner (§16.2) | The audit trail is worthless and identity needs to be per-device or biometric | Pilot: whether PINs stay per-user, or get shared within a week |
+| **A4** | A short PIN on a shared device is an acceptable audit anchor for the owner (§16.2) | The audit trail is worthless and identity needs to be per-device or biometric | Pilot: whether PINs stay per-user, or get shared within a week. **§6.17 rests entirely on this assumption and is the strongest incentive in the product to falsify it** — a page that attributes a month's voids to a name is a reason to borrow a colleague's PIN, and the failure is silent: the numbers stay confident and become wrong about who. Settle this before that view ships, not after |
 | **A5** | A hardware store's stock is largely unbarcoded, making quick tiles and internal codes core rather than convenience (§6.1, §18) | Quick tiles are dead weight, and camera scanning plus TLS become urgent (§16.6) | Pilot: share of sale lines added by tile vs. by scan |
 | **A6** | Weighted average is accurate enough at this scale that no owner asks for FIFO (§10.5) | Lot tracking becomes necessary — expensive, and it touches every movement | Pilot: whether the owner's hand-check of margin (§27.4) reconciles |
 | **A7** | ~100k sale lines a year is the realistic ceiling and SQLite is comfortable there (§19.3) | Query plans and storage need revisiting. Not architectural | §26 Q3, at setup |
@@ -4283,6 +4438,7 @@ goes first.
 | **Catalogue never gets populated** | **Likely** — it is how these rollouts usually die | Fatal — the system is unusable | CSV import plus quick-add at checkout (§7.3); tracked as A2 (§24.2) |
 | **Host PC dies** | **Likely** across three years | Fatal without a tested backup; survivable with one | Hourly snapshots, USB copies, rehearsed restore, spare-machine runbook (§19.2). **The drill restores using only the USB drive and the owner's written passphrase** (§27.10) — an encrypted backup whose key lived only on the dead machine is the same outcome as no backup, arrived at more expensively |
 | **Worker rejects it under queue pressure** | **Possible** | Fatal — no adoption, and the data rots | Sub-15-second checkout as a hard requirement; practice mode; pilot with a real worker (H2, §24.3) |
+| **Worker rejects it because of what it shows the owner** | **Possible** once §6.17 ships | Fatal — the same outcome as the row above, reached another way, **and it looks identical to a speed failure** | §6.17's tone rule and its refusal to rank, score or compare people; every figure drillable so a number can be contested (rule 3); the photograph optional. **The row above is the only worker-rejection risk this register had, and every one of its mitigations is about speed** — H2 is stated as *"speed decides adoption"* and tested by whether Գոռ is still using Simon in week four, which a worker who quietly stops for a different reason falsifies in a way nobody can attribute (§24.3, §24.4). The pilot is n = 1. **Ship the activity view after the parallel fortnight**, not during it, or the one measurement §21.2 can take exactly once is taken through a confound |
 | **Owner stops trusting the numbers** | **Possible** — one unexplainable figure is enough | Severe — reverts to paper | Every figure drills to its source events (rule 3, H1) |
 | Shop Wi-Fi open to customers | **Likely** — it is the normal state of a shop | Moderate — the API is still reachable by strangers, even encrypted | **TLS in v1** (§16.6), plus staff SSID/VLAN and real auth as defence in depth. Impact stays moderate rather than low: TLS protects the transport, not the fact that the door is on the street, and §16.1 ranks insiders above remote attackers anyway |
 | Camera scanning needs a secure context | **Closed 2026-09-10** | — | TLS ships in v1 unconditionally (§16.6), which is what a secure context needs. HID remains the primary path (§18) |
@@ -4446,6 +4602,12 @@ already decided, and when?"*.
 | 2026-09-10 | **Build as though the shop has nothing digital** — quick-add is the onboarding story, import is a bonus | §7.3 | A2's ordering, correct whatever §26 Q4 returns |
 | 2026-09-10 | **`StockMovement.locationId` is carried from Phase 0** as a nullable column nobody writes | §9, §11 | Q7 / A12. Unblocked Phase 0; a second shop becomes a feature rather than a migration |
 | 2026-09-10 | **TLS ships in v1 unconditionally**; there is no plain-HTTP deployment | §16.6 | Q6 could no longer add work late, and §18's camera got its secure context |
+| 2026-09-18 | ~~**Staff activity is a view inside Settings, never a destination and never its own report**~~ — **reversed the same day, see below.** The half that stands: it defines no report of its own | §6.17, §20.2 | §5.3's tiering held, §6.10's single catalogue kept. *Recorded rather than deleted: the tiering argument was right about the activity and wrong about the person, and a judgment that looked settled for a day is worth leaving visible* |
+| 2026-09-18 | **A staff photograph is held, and is served before authentication** | §11 `User.avatar`, §16.5, §19.6 | `GET /auth/users` draws the sign-in tiles and cannot require a session, so the photograph is readable by anyone who can reach the host — which on a shop's Wi-Fi is anyone in the shop (§16.1). Accepted deliberately: the exposure is a face its owner shows every customer, the field is optional, and the alternatives each cost more than they save — initials only leaves the tile a word, which was the problem; a photograph withheld until after login appears only once you no longer need it to find your name. **It is bounded to one field by §16.5**: a second personal column on this row would inherit the exposure silently, and that is the failure that rule exists to prevent |
+| 2026-09-18 | ~~**No personal data beyond the photograph**~~ — **narrowed, see below.** The refusal of payroll stands | §19.6, §9 | The argument was sound and the line was drawn in the wrong place: a phone number is how a shop reaches someone who has not arrived, which is operational, not payroll |
+| 2026-09-18 | **Staff is an owner destination of its own** (§5.1's seventh), not a Settings sub-surface | §5.1, §6.17 | Reverses the row above it. A shop is made of goods, debtors, creditors and people; the first three have had destinations since §5.1 was written and the fourth was filed under configuration. **Settings is where a shop is configured, and a person is not a setting.** Cost: one more screen and one more destination, both of which this document had written as counts — §5.1 and §6's map now enumerate instead |
+| 2026-09-18 | **Three personal details are held about staff: phone, start date, note** — and no more | §11 `User`, §19.6, §16.5 | Narrows the row above it. All three are `ADMIN`-only, reach two routes, and never touch the unauthenticated sign-in list. Address, wage and identity-document number stay refused. §19.6 carries the basis, retention and erasure for each; retention is the sharp end — **a shop keeps a former employee's sales for ten years and their telephone number for none** |
+| 2026-09-18 | **An avatar is a circle** — the one exception to the 4px corner cap | §6.17, `theme.css` | A face in a rounded rectangle reads as a product tile; a face in a circle reads as a person. Stated as an exception so a design audit does not correct it back |
 | 2026-09-10 | **Both price bases are supported**; the basis is a setting, snapshotted onto each sale | §10.8, §6.11, §11 | Q2 / A3. A wrong answer costs a setting instead of a rewrite |
 | 2026-09-10 | **Receipt numbers are device-prefixed**, with pre-allocated blocks reserved in `Device` | §12.1, §11 | Q10 / A11. A gapless requirement costs a numbering mode instead of §14's offline design |
 | 2026-09-10 | The shop buys **both an HID scanner and a thermal printer** | §26 Q5, §18 | A8 confirmed. HID stays the primary path |

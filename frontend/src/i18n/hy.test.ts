@@ -73,7 +73,7 @@ describe("§27.15 — the user is never shown the right-hand column", () => {
   });
 
   it("explains every screen a person can open", () => {
-    expect(Object.keys(hy.help.screens).sort()).toEqual(["debts", "home", "products", "reports", "settings", "shift", "stock", "till"]);
+    expect(Object.keys(hy.help.screens).sort()).toEqual(["debts", "home", "products", "reports", "settings", "shift", "staff", "stock", "till"]);
     for (const [, sentence] of walk(hy.help.screens)) expect(sentence.length).toBeGreaterThan(40);
   });
 });
