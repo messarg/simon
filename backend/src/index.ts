@@ -16,6 +16,7 @@ import { applyPendingRestore, backupTick } from "./services/backup.service.ts";
 import { openPractice } from "./services/practice.service.ts";
 import { fiscalSince, retryPendingFiscal } from "./services/fiscal.service.ts";
 import { checkpoint } from "./lib/wal.ts";
+import { watchParent } from "./lib/parent-watch.ts";
 
 // A restore staged by the owner is swapped in here, before anything opens the database (§19.2).
 if (applyPendingRestore(databaseFile("LIVE"))) logger.warn("restored the database from a staged backup");
@@ -72,4 +73,6 @@ async function shutdown(signal: string) {
   process.exit(0);
 }
 process.on("SIGINT", () => void shutdown("SIGINT"));
+// Started by the Mac app: go when it goes, however it went (lib/parent-watch.ts).
+watchParent({ expected: config.parentPid, onGone: () => void shutdown("parent-gone") });
 process.on("SIGTERM", () => void shutdown("SIGTERM"));

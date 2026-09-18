@@ -24,6 +24,8 @@ export const config = {
   version: process.env.SIMON_VERSION ?? "0.1.0",
   /** The built SPA, when the API serves it itself — the desktop app, which has no Nginx. */
   staticDir: process.env.SIMON_STATIC_DIR ?? "",
+  /** Set by the Mac app: the server exits when that process does (lib/parent-watch.ts). */
+  parentPid: Number(process.env.SIMON_PARENT_PID ?? 0) || 0,
   /** Argon2id cost. §16.2 asks for ≥ 250 ms on the host; tests lower it. */
   argon2: {
     memoryCost: Number(process.env.SIMON_ARGON2_MEMORY ?? 65_536),

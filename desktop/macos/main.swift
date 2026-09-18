@@ -22,6 +22,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
     private var webView: WKWebView!
     private var status: NSTextField!
     private var server: Process?
+    /// SIGTERM would otherwise end the app without `applicationWillTerminate`, orphaning the server.
+    private var sigterm: DispatchSourceSignal?
     private var downloads: [ObjectIdentifier: URL] = [:]
 
     private let fm = FileManager.default
@@ -29,6 +31,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
     private lazy var logs = fm.urls(for: .libraryDirectory, in: .userDomainMask)[0].appendingPathComponent("Logs/Simon", isDirectory: true)
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // A `kill`, a logout or a shutdown sends SIGTERM, whose default ends the process on the
+        // spot and skips `applicationWillTerminate` — the one place the server is stopped. Turned
+        // into an ordinary quit, it stops the server like Cmd-Q does.
+        signal(SIGTERM, SIG_IGN)
+        let term = DispatchSource.makeSignalSource(signal: SIGTERM, queue: .main)
+        term.setEventHandler { NSApp.terminate(nil) }
+        term.resume()
+        sigterm = term
         buildMenu()
         buildWindow()
         Task { await start() }
@@ -48,9 +58,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
     // MARK: - The API
 
     private func start() async {
+        // A server whose app is gone — crashed, force-quit, killed — is stopped, never reused: it
+        // may be any older build, and reusing it once showed a new build running old code. The
+        // server also exits by itself when its app goes (backend/src/lib/parent-watch.ts); this
+        // catches the ones started before it did.
+        stopOrphanedServers()
         if await healthy() {
-            // Already answering — a server left from an earlier launch. Use it rather than fight it.
-            await MainActor.run { show() }
+            // Still answering, so it has a live app: another Simon window, or something else on
+            // our port. Either way it is not ours to use.
+            await MainActor.run { fail("Սիմոնն արդեն բաց է մեկ այլ պատուհանում։ Փակե՛ք այն և նորից բացե՛ք։") }
             return
         }
         do {
@@ -67,6 +83,36 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
         await MainActor.run {
             fail("Սիմոնը չպատասխանեց։ Մանրամասները՝\n\(logs.appendingPathComponent("server.log").path)")
         }
+    }
+
+    /// Simon's own bundled `node`, re-parented to launchd because the app that started it is gone.
+    /// Matching the parent as well as the path leaves another running Simon's server alone.
+    private func orphanedServers() -> [pid_t] {
+        let count = proc_listallpids(nil, 0)
+        guard count > 0 else { return [] }
+        var pids = [pid_t](repeating: 0, count: Int(count) + 64)
+        let n = Int(proc_listallpids(&pids, Int32(pids.count * MemoryLayout<pid_t>.size)))
+        var path = [CChar](repeating: 0, count: 4 * Int(MAXPATHLEN))
+        var found: [pid_t] = []
+        for pid in pids.prefix(max(0, n)) where pid > 0 {
+            guard proc_pidpath(pid, &path, UInt32(path.count)) > 0,
+                  String(cString: path).hasSuffix("/Simon.app/Contents/Resources/node") else { continue }
+            var info = proc_bsdinfo()
+            guard proc_pidinfo(pid, PROC_PIDTBSDINFO, 0, &info, Int32(MemoryLayout<proc_bsdinfo>.size)) > 0 else { continue }
+            if info.pbi_ppid == 1 { found.append(pid) }
+        }
+        return found
+    }
+
+    /// SIGTERM first, so the server closes the database cleanly (backend/src/index.ts); SIGKILL only
+    /// for one that has not gone within five seconds.
+    private func stopOrphanedServers() {
+        let orphans = orphanedServers()
+        guard !orphans.isEmpty else { return }
+        for pid in orphans { kill(pid, SIGTERM) }
+        let deadline = Date().addingTimeInterval(5)
+        while orphans.contains(where: { kill($0, 0) == 0 }) && Date() < deadline { usleep(100_000) }
+        for pid in orphans where kill(pid, 0) == 0 { kill(pid, SIGKILL) }
     }
 
     private func healthy() async -> Bool {
@@ -105,6 +151,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
             "SIMON_KEY_DIR": dirs[2].path,
             "SIMON_PRINT_DIR": dirs[3].path,
             "SIMON_LOG_DIR": logs.path,
+            // The server watches for this pid to stop being its parent, and exits when it does.
+            "SIMON_PARENT_PID": String(ProcessInfo.processInfo.processIdentifier),
             "LOG_LEVEL": "warn",
             "HOME": NSHomeDirectory(),
         ]
@@ -166,8 +214,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
         window.contentView = root
         window.center()
         window.setFrameAutosaveName("SimonMainWindow")
+        // The saved frame wins over `center()`, and it may belong to a display that is no longer
+        // there — the window then opens where nobody can see it. Checked again whenever a display
+        // is plugged in, unplugged or rearranged.
+        keepOnScreen()
+        NotificationCenter.default.addObserver(forName: NSApplication.didChangeScreenParametersNotification, object: nil, queue: .main) { [weak self] _ in
+            self?.keepOnScreen()
+        }
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
+    }
+
+    /// The title bar is what a person grabs to move a window, so it must be on a screen. If it is on
+    /// none, the window moves to the middle of the main screen — the one with the menu bar — shrunk
+    /// to fit if that screen is smaller than the window was.
+    private func keepOnScreen() {
+        let frame = window.frame
+        let titleBar = NSRect(x: frame.minX, y: frame.maxY - 28, width: frame.width, height: 28)
+        if NSScreen.screens.contains(where: { $0.visibleFrame.intersection(titleBar).width >= 120 }) { return }
+        guard let main = NSScreen.screens.first else { return }
+        let area = main.visibleFrame
+        let size = NSSize(width: min(frame.width, area.width), height: min(frame.height, area.height))
+        window.setFrame(NSRect(x: area.midX - size.width / 2, y: area.midY - size.height / 2, width: size.width, height: size.height), display: true)
     }
 
     private func show() {
