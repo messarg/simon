@@ -69,7 +69,8 @@
    * **A deliberate exception to this file's contrast rule, chosen by the owner:** white text on it
    * is 3.32:1, under WCAG 2.2 AA's 4.5:1 for button-size text (the rest of the palette meets it).
    * Dark text would read at 5.0:1 and #53815B is the nearest shade that passes with white. Do not
-   * "fix" it in an audit without asking.
+   * "fix" it in an audit without asking. An employee's palette swaps it for a blue of the same
+   * lightness (#668DC1, 3.42:1), under the same exception.
    */
   --action: oklch(0.635 0.078 148.5);
   --action-foreground: oklch(1 0 0);
@@ -153,8 +154,8 @@
 /*
  * An employee's palette (§16.4) — pastel blue, a soft blue rail on a pale blue page. The counter
  * screens a cashier or a stock keeper works in all day, calm and cool, and plainly not the owner's
- * dark rail or a manager's green. Tokens only, every pairing checked against WCAG 2.2 AA; action
- * buttons keep `--action`, which is app-wide.
+ * dark rail or a manager's green. Tokens only, every pairing checked against WCAG 2.2 AA except
+ * `--action`, which carries the same recorded exception as the green one it replaces.
  */
 :root[data-tier="employee"] {
   --background: oklch(0.962 0.011 256.7);
@@ -181,6 +182,12 @@
   --sidebar-active-foreground: oklch(0.243 0.04 259.3);
   --sidebar-border: oklch(0.871 0.035 256.3);
   --sidebar-mark: oklch(0.679 0.101 256.8);
+
+  /*
+   * Cornflower #668DC1 for action buttons — the green #699870's lightness in this palette's hue, so
+   * the two carry the same weight. White on it is 3.42:1: the owner's recorded exception above.
+   */
+  --action: oklch(0.635 0.09 256);
 }
 
 :root[data-text-size="large"] { --text-scale: 1.125; }

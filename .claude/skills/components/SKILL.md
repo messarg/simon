@@ -49,7 +49,7 @@ Shared hooks that more than one feature needs (current shift, client settings) l
 Tokens in `src/styles/theme.css` (`@theme inline`). Use names, never values:
 
 - surfaces `bg-background`, `bg-card`, `bg-muted`, `border-border`
-- action buttons `bg-action text-action-foreground` (#699870) — the `Button` default variant; don't paint one by hand
+- action buttons `bg-action text-action-foreground` (#699870; an employee's palette swaps in cornflower #668DC1) — the `Button` default variant; don't paint one by hand
 - brand `bg-primary` / `text-primary` (deep teal-green #14544A) for links, focus and the active destination, `bg-primary-soft` (leaf #DCEDC8), `text-accent-foreground`
 - **three palettes by tier**, set as `data-tier` on the root in `App.tsx`: the owner's dark rail (`owner`), an employee's pastel blue (`employee`), a manager's default green. They swap tokens only — never branch a component on role for colour
 - **`--action` is a recorded contrast exception** (white on it is 3.32:1, chosen by the owner) — don't "fix" it without asking
