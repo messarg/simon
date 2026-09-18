@@ -163,7 +163,7 @@ export function ReceivingForm() {
       </div>
 
       {supplier && (orders.data?.items.length ?? 0) > 0 && (
-        <div className="space-y-2 rounded-xl bg-card p-3 ring-1 ring-border">
+        <div className="space-y-2 rounded-xl bg-card p-3 ring-1 ring-border shadow-sm">
           <p className="text-sm text-muted-foreground">{t("orders.fromOrderHint")}</p>
           <div className="flex flex-wrap gap-2">
             <Button size="sm" variant={po ? "ghost" : "soft"} onClick={() => setPo(null)}>{t("orders.noOrder")}</Button>
@@ -176,7 +176,7 @@ export function ReceivingForm() {
         </div>
       )}
 
-      <div className="rounded-xl bg-card ring-1 ring-border">
+      <div className="rounded-xl bg-card ring-1 ring-border shadow-sm">
         {lines.length === 0 ? (
           <p className="p-6 text-center text-muted-foreground">{t("buy.empty")}. {t("buy.scanHint")}</p>
         ) : (

@@ -94,14 +94,14 @@ export function StockPage() {
           <h1 className="text-2xl font-semibold">{selected.name}</h1>
           <p className="tabular text-muted-foreground">{selected.barcodes.join(" · ")}</p>
           <div className="mt-4 grid grid-cols-2 gap-3">
-            <div className="rounded-xl bg-card p-4 ring-1 ring-border">
+            <div className="rounded-xl bg-card p-4 ring-1 ring-border shadow-sm">
               <div className="text-sm text-muted-foreground">{t("stock.onHand")}</div>
               {selected.trackStock ? (
                 <div className={cn("tabular text-4xl font-bold", selected.stockQty < 0 && "text-attention-foreground")}>{qty(selected.stockQty, selected.decimalPlaces)} <span className="text-xl font-medium text-muted-foreground">{selected.stockUom}</span></div>
               ) : <div className="text-muted-foreground">{t("stock.notTracked")}</div>}
               {connection === "offline" && <div className="mt-1 text-xs text-attention-foreground">{t("stock.lastKnown")}</div>}
             </div>
-            <div className="rounded-xl bg-card p-4 ring-1 ring-border">
+            <div className="rounded-xl bg-card p-4 ring-1 ring-border shadow-sm">
               <div className="text-sm text-muted-foreground">{t("stock.price")}</div>
               <MoneyText amount={selected.sellPriceMdram / 1000} className="text-3xl font-bold" />
             </div>
@@ -115,7 +115,7 @@ export function StockPage() {
           )}
           <h2 className="mt-6 mb-2 text-lg font-semibold">{t("stock.history")}</h2>
           {connection === "offline" ? <p className="text-muted-foreground">{t("stock.offlineHistory")}</p> : history.data?.items.length === 0 ? <p className="text-muted-foreground">{t("stock.historyEmpty")}</p> : (
-            <ul className="divide-y divide-border rounded-xl bg-card ring-1 ring-border">
+            <ul className="divide-y divide-border rounded-xl bg-card ring-1 ring-border shadow-sm">
               {history.data?.items.map((m) => (
                 <li key={m.id} className="flex items-center gap-3 px-4 py-2.5">
                   <div className="min-w-0 flex-1">

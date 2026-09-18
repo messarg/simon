@@ -1,7 +1,7 @@
 /**
  * The shell. Below `lg`: status strip on top, the page, and a bottom tab bar within thumb reach
  * (§5.2) — a phone and a tablet both get the reachable layout, since a tablet is held, not moused.
- * From `lg` up every role gets a left rail instead, the owner's carrying all ten destinations and a
+ * From `lg` up every role gets a left rail instead, the owner's carrying every destination and a
  * worker's the four of §5.1. No drawer, no hamburger.
  *
  * The shell publishes its measurements as CSS variables — the rail's width, and the status strip's
@@ -38,7 +38,7 @@ function TabLink({ d, compact }: { d: Destination; compact?: boolean }) {
     >
       {({ isActive }) => (
         <>
-          <span className={cn("grid h-8 w-14 place-items-center rounded-full transition-colors", isActive && "bg-primary-soft")}>
+          <span className={cn("grid h-8 w-14 place-items-center rounded-md transition-colors", isActive && "bg-primary-soft")}>
             <Icon className="size-6" aria-hidden />
           </span>
           {t(d.label)}

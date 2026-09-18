@@ -97,7 +97,7 @@ export function PersonPage() {
         {t("staff.backToList")}
       </Link>
 
-      <header className="rounded-md bg-card p-4 ring-1 ring-border">
+      <header className="rounded-md bg-card p-4 ring-1 ring-border shadow-sm">
         <div className="flex flex-wrap items-center gap-4">
           <Avatar name={person?.name ?? "?"} userId={id} avatarUpdatedAt={person?.avatarUpdatedAt} className="size-16 text-2xl sm:size-20 sm:text-3xl" />
           <div className="min-w-0 flex-1">

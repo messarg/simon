@@ -26,7 +26,7 @@ interface Home {
 /** A figure is a link: tapping it opens the events that produced it. */
 function Figure({ label, amount, to, sub, tone }: { label: string; amount: number; to: string; sub?: string; tone?: "attention" }) {
   return (
-    <Link to={to} className="block rounded-xl bg-card p-4 ring-1 ring-border transition-colors hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring">
+    <Link to={to} className="block rounded-xl bg-card p-4 ring-1 ring-border shadow-sm transition-colors hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring">
       <div className="text-sm text-muted-foreground">{label}</div>
       <MoneyText amount={amount} className={cn("text-3xl font-bold", tone === "attention" && "text-attention-foreground")} />
       {sub && <div className="mt-0.5 text-sm text-muted-foreground">{sub}</div>}
@@ -63,7 +63,7 @@ export function HomePage() {
       <section aria-labelledby="today" className="space-y-3">
         <h2 id="today" className="text-sm font-semibold tracking-wide text-muted-foreground">{t("home.today")}</h2>
         {d.today.salesCount === 0 ? (
-          <EmptyState icon={Sun} title={t("home.emptyTitle")} hint={t("home.emptyHint")} className="rounded-xl bg-card ring-1 ring-border" />
+          <EmptyState icon={Sun} title={t("home.emptyTitle")} hint={t("home.emptyHint")} className="rounded-xl bg-card ring-1 ring-border shadow-sm" />
         ) : (
           <div className="grid gap-3 sm:grid-cols-2">
             <Figure label={t("home.takings")} amount={d.today.takings} to={`/reports?r=sales&by=sale&${period}`} sub={t("home.salesCount", { n: d.today.salesCount })} />
@@ -106,7 +106,7 @@ export function HomePage() {
 
 function CountTile({ label, n, to }: { label: string; n: number; to: string }) {
   return (
-    <Link to={to} className="flex items-center justify-between rounded-xl bg-card p-4 ring-1 ring-border hover:bg-muted/50">
+    <Link to={to} className="flex items-center justify-between rounded-xl bg-card p-4 ring-1 ring-border shadow-sm hover:bg-muted/50">
       <div>
         <div className="text-sm text-muted-foreground">{label}</div>
         <div className="tabular text-2xl font-semibold">{n}</div>

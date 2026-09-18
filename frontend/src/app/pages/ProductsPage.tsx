@@ -104,7 +104,7 @@ export function ProductsPage() {
               ? <EmptyState icon={PackageSearch} title={t("products.emptyDead")} hint={t("products.emptyDeadHint")} />
               : <EmptyState icon={PackagePlus} title={t("products.emptyAll")} hint={t("products.emptyAllHint")} action={<Button onClick={() => setEditing({ id: null })}>{t("products.add")}</Button>} />
       ) : (
-        <ul className="divide-y divide-border overflow-hidden rounded-xl bg-card ring-1 ring-border">
+        <ul className="divide-y divide-border overflow-hidden rounded-xl bg-card ring-1 ring-border shadow-sm">
           {list.data?.items.map((p) => (
             <li key={p.id}>
               <button onClick={() => setEditing({ id: p.id })} className="flex min-h-touch-lg w-full items-center gap-4 px-4 py-3 text-left hover:bg-muted/60">

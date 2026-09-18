@@ -51,7 +51,7 @@ export function PinPad({ onSubmit, busy, error, minLength = 4, maxLength = 8, la
           <span
             key={i}
             className={cn(
-              "size-3.5 rounded-full transition-all duration-150",
+              "size-3.5 rounded-xs transition-all duration-150",
               i < pin.length ? "scale-110 bg-primary" : "bg-border",
               error && pin.length === 0 && "bg-destructive/35",
             )}
@@ -61,7 +61,7 @@ export function PinPad({ onSubmit, busy, error, minLength = 4, maxLength = 8, la
       {/* The line is reserved even when empty, so a message never pushes the keypad down. */}
       <div className="mt-2 flex min-h-8 items-center justify-center" role="alert">
         {error && (
-          <p className="flex items-center gap-1.5 rounded-full bg-destructive-soft px-3 py-1 text-center text-sm text-destructive">
+          <p className="flex items-center gap-1.5 rounded-xs bg-destructive-soft px-3 py-1 text-center text-sm text-destructive">
             <AlertCircle className="size-4 shrink-0" aria-hidden />
             {error}
           </p>

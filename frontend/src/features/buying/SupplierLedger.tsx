@@ -51,7 +51,7 @@ export function SupplierLedger({ supplierId, shiftId, onBack }: { supplierId: st
         <Button variant="secondary" onClick={() => setSheet("edit")}><Pencil />{t("suppliers.edit")}</Button>
       </div>
       <div className="mb-3 grid grid-cols-2 gap-3">
-        <div className="rounded-xl bg-card p-4 ring-1 ring-border">
+        <div className="rounded-xl bg-card p-4 ring-1 ring-border shadow-sm">
           <div className="text-sm text-muted-foreground">{d.outstanding >= 0 ? t("suppliers.owe") : t("suppliers.credit", { amount: "" })}</div>
           <MoneyText amount={Math.abs(d.outstanding)} className="text-3xl font-bold" />
         </div>
@@ -63,7 +63,7 @@ export function SupplierLedger({ supplierId, shiftId, onBack }: { supplierId: st
       <Button size="xl" className="mb-4 w-full" onClick={() => setSheet("pay")}><Banknote />{t("suppliers.pay")}</Button>
 
       <h2 className="mb-1 font-semibold">{t("suppliers.receipts")}</h2>
-      <ul className="mb-4 divide-y divide-border rounded-xl bg-card ring-1 ring-border">
+      <ul className="mb-4 divide-y divide-border rounded-xl bg-card ring-1 ring-border shadow-sm">
         {d.receipts.slice().reverse().map((r) => (
           <li key={r.id}>
             <button onClick={() => setReceiptId(r.id)} className="flex w-full items-center gap-3 px-4 py-2.5 text-left active:bg-muted">
@@ -84,7 +84,7 @@ export function SupplierLedger({ supplierId, shiftId, onBack }: { supplierId: st
       {d.payments.length > 0 && (
         <>
           <h2 className="mb-1 font-semibold">{t("suppliers.payments")}</h2>
-          <ul className="mb-4 divide-y divide-border rounded-xl bg-card ring-1 ring-border">
+          <ul className="mb-4 divide-y divide-border rounded-xl bg-card ring-1 ring-border shadow-sm">
             {d.payments.slice().reverse().map((p) => (
               <li key={p.id} className={cn("flex items-center gap-3 px-4 py-2.5", (p.reversed || p.reversesId) && "opacity-60")}>
                 <div className="min-w-0 flex-1">
@@ -106,7 +106,7 @@ export function SupplierLedger({ supplierId, shiftId, onBack }: { supplierId: st
       {d.returns.length > 0 && (
         <>
           <h2 className="mb-1 font-semibold">{t("suppliers.returns")}</h2>
-          <ul className="divide-y divide-border rounded-xl bg-card ring-1 ring-border">
+          <ul className="divide-y divide-border rounded-xl bg-card ring-1 ring-border shadow-sm">
             {d.returns.map((r) => (
               <li key={r.id} className="flex items-center gap-3 px-4 py-2.5">
                 <div className="min-w-0 flex-1"><div className="font-medium">{r.reason}</div><div className="text-sm text-muted-foreground">{dateTime(r.createdAt)}{r.landedCostLost ? ` · ${t("buy.lost", { amount: money(r.landedCostLost) })}` : ""}</div></div>

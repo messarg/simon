@@ -116,7 +116,7 @@ export function ImportPage() {
       {file && <p className="text-sm text-muted-foreground">{t("imports.file", { name: file.name })}{busy ? ` · ${t("imports.checking")}` : ""}</p>}
 
       {preview && (
-        <section className="space-y-3 rounded-xl bg-card p-4 ring-1 ring-border">
+        <section className="space-y-3 rounded-xl bg-card p-4 ring-1 ring-border shadow-sm">
           <h2 className="text-lg font-semibold">{applied ? t("common.done") : t("imports.preview")}</h2>
           <ul className="space-y-1 text-sm">
             <li>{t(applied ? "imports.done" : "imports.willApply", { n: applied ? applied.appliedCount : preview.appliedCount })}</li>
@@ -159,7 +159,7 @@ export function ImportPage() {
       )}
 
       {history.data && history.data.items.length > 0 && (
-        <section className="rounded-xl bg-card p-4 ring-1 ring-border">
+        <section className="rounded-xl bg-card p-4 ring-1 ring-border shadow-sm">
           <h2 className="mb-2 font-semibold">{t("imports.history")}</h2>
           <ul className="divide-y divide-border text-sm">
             {history.data.items.map((b) => (

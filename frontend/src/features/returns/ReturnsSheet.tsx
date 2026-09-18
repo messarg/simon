@@ -167,7 +167,7 @@ export function ReturnsSheet({ open, onOpenChange, shiftId, initialNumber }: { o
             <Label htmlFor="ret-reason">{t("returns.reason")}</Label>
             <div className="mb-2 flex flex-wrap gap-2">
               {REASONS.map((k) => (
-                <button key={k} onClick={() => setReason(t(k))} className={cn("h-10 rounded-full border px-3 text-sm", reason === t(k) ? "border-primary bg-primary-soft" : "border-border")}>{t(k)}</button>
+                <button key={k} onClick={() => setReason(t(k))} className={cn("h-10 rounded-md border px-3 text-sm", reason === t(k) ? "border-primary bg-primary-soft" : "border-border")}>{t(k)}</button>
               ))}
             </div>
             <Input id="ret-reason" value={reason} onChange={(e) => setReason(e.target.value)} maxLength={200} />

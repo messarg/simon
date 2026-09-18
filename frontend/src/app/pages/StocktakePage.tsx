@@ -69,7 +69,7 @@ function StartView({ onStarted, admin }: { onStarted: () => void; admin: boolean
   return (
     <div className="mx-auto w-full max-w-2xl space-y-4 p-4 md:p-6">
       <h1 className="text-2xl font-semibold">{t("stocktake.title")}</h1>
-      <section className="space-y-3 rounded-xl bg-card p-4 ring-1 ring-border">
+      <section className="space-y-3 rounded-xl bg-card p-4 ring-1 ring-border shadow-sm">
         <p className="text-muted-foreground">{t("stocktake.startHint")}</p>
         <Button size="lg" className="w-full" disabled={busy} onClick={() => void start(null)}><ClipboardList />{t("stocktake.whole")}</Button>
         {(categories.data?.items.length ?? 0) > 0 && (
@@ -83,7 +83,7 @@ function StartView({ onStarted, admin }: { onStarted: () => void; admin: boolean
           </>
         )}
       </section>
-      <section className="rounded-xl bg-card p-4 ring-1 ring-border">
+      <section className="rounded-xl bg-card p-4 ring-1 ring-border shadow-sm">
         <h2 className="mb-2 font-semibold">{t("stocktake.history")}</h2>
         {history.data?.items.length === 0 ? <p className="text-muted-foreground">{t("stocktake.emptyHistory")}</p> : (
           <ul className="divide-y divide-border">
@@ -153,7 +153,7 @@ function CountView({ st, onChange }: { st: Stocktake; onChange: () => void }) {
         <h1 className="flex-1 text-2xl font-semibold">{t("stocktake.title")}</h1>
         <span className="tabular text-muted-foreground">{t("stocktake.progress", { counted: st.progress.counted, total: st.progress.total })}</span>
       </div>
-      <div className="h-2 overflow-hidden rounded-full bg-muted" aria-hidden>
+      <div className="h-2 overflow-hidden rounded-xs bg-muted" aria-hidden>
         <div className="h-full bg-primary transition-[width]" style={{ width: `${st.progress.total ? (st.progress.counted / st.progress.total) * 100 : 0}%` }} />
       </div>
       <p className="text-sm text-muted-foreground">{t("stocktake.blind")}</p>
@@ -163,7 +163,7 @@ function CountView({ st, onChange }: { st: Stocktake; onChange: () => void }) {
         <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("stocktake.searchHint")} className="pl-10" />
       </div>
       {shownResults.length > 0 && (
-        <ul className="divide-y divide-border rounded-xl bg-card ring-1 ring-border">
+        <ul className="divide-y divide-border rounded-xl bg-card ring-1 ring-border shadow-sm">
           {shownResults.map((p) => (
             <li key={p.id}>
               <button className="flex min-h-touch w-full items-center px-4 py-2 text-left" onClick={() => { setQuery(""); openLine(p.id, p); }}>{p.name}</button>
@@ -177,7 +177,7 @@ function CountView({ st, onChange }: { st: Stocktake; onChange: () => void }) {
           <button key={f} onClick={() => setFilter(f)} className={cn("h-touch flex-1 rounded-md text-sm font-medium", filter === f ? "bg-card shadow-xs" : "text-muted-foreground")}>{t(`stocktake.filters.${f}`)}</button>
         ))}
       </div>
-      <ul className="divide-y divide-border overflow-hidden rounded-xl bg-card ring-1 ring-border">
+      <ul className="divide-y divide-border overflow-hidden rounded-xl bg-card ring-1 ring-border shadow-sm">
         {shown.map((l) => (
           <li key={l.productId}>
             <button className="flex min-h-touch-lg w-full items-center gap-3 px-4 py-2 text-left active:bg-muted" onClick={() => setCounting(l)}>
@@ -253,7 +253,7 @@ function ReviewView({ st, admin, onChange }: { st: Stocktake; admin: boolean; on
       {admin && st.summary && (
         <section className="grid grid-cols-3 gap-3">
           {([["shortage", -st.summary.shortage], ["surplus", st.summary.surplus], ["net", st.summary.net]] as const).map(([k, amount]) => (
-            <div key={k} className="rounded-xl bg-card p-3 ring-1 ring-border">
+            <div key={k} className="rounded-xl bg-card p-3 ring-1 ring-border shadow-sm">
               <div className="text-sm text-muted-foreground">{t(`stocktake.${k}`)}</div>
               <MoneyText amount={amount} signed className={cn("text-2xl font-bold", amount < 0 && "text-attention-foreground")} />
             </div>
@@ -264,9 +264,9 @@ function ReviewView({ st, admin, onChange }: { st: Stocktake; admin: boolean; on
       {st.progress.total > st.progress.counted && <p className="text-sm text-muted-foreground">{t("stocktake.uncountedNote", { n: st.progress.total - st.progress.counted })}</p>}
 
       {differing.length === 0 ? (
-        <EmptyState icon={CheckCircle2} title={t("stocktake.noDifferences")} hint={t("stocktake.noDifferencesHint")} className="rounded-xl bg-card ring-1 ring-border" />
+        <EmptyState icon={CheckCircle2} title={t("stocktake.noDifferences")} hint={t("stocktake.noDifferencesHint")} className="rounded-xl bg-card ring-1 ring-border shadow-sm" />
       ) : (
-        <div className="overflow-x-auto rounded-xl bg-card ring-1 ring-border">
+        <div className="overflow-x-auto rounded-xl bg-card ring-1 ring-border shadow-sm">
           <table className="w-full min-w-max text-[0.95rem]">
             <thead>
               <tr className="border-b border-border text-sm text-muted-foreground">

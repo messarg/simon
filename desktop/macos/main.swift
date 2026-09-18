@@ -142,7 +142,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
 
         let root = NSView()
         root.wantsLayer = true
-        root.layer?.backgroundColor = NSColor(calibratedRed: 0.969, green: 0.957, blue: 0.933, alpha: 1).cgColor
+        // The SPA's --background (#EDF0DE), so the launch window matches the page that replaces it.
+        // sRGB, not calibrated: the web view renders sRGB, and a flat fill makes any mismatch visible.
+        root.layer?.backgroundColor = NSColor(srgbRed: 0.929, green: 0.941, blue: 0.871, alpha: 1).cgColor
         webView.translatesAutoresizingMaskIntoConstraints = false
         root.addSubview(webView)
         root.addSubview(status)

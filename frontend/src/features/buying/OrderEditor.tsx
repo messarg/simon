@@ -144,7 +144,7 @@ function DraftEditor({ order, onBack, onSaved }: { order: Order | null; onBack: 
           <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("orders.addProduct")} className="pl-10" />
         </div>
         {shownResults.length > 0 && (
-          <ul className="divide-y divide-border rounded-xl bg-card ring-1 ring-border">
+          <ul className="divide-y divide-border rounded-xl bg-card ring-1 ring-border shadow-sm">
             {shownResults.map((p) => <li key={p.id}><button className="flex min-h-touch w-full items-center px-4 text-left" onClick={() => add(p)}>{p.name}</button></li>)}
           </ul>
         )}
@@ -179,7 +179,7 @@ function SentOrder({ order: o, onBack, onChanged }: { order: Order; onBack: () =
       <div className="print-hidden space-y-3">
         <div className="flex items-center gap-3">
           <button onClick={onBack} className="h-touch text-muted-foreground md:hidden">← {t("common.back")}</button>
-          <span className={cn("rounded-full px-3 py-1 text-sm font-medium", statusTone(o.status))}>{t(`orders.statuses.${o.status}` as StringKey)}</span>
+          <span className={cn("rounded-xs px-3 py-1 text-sm font-medium", statusTone(o.status))}>{t(`orders.statuses.${o.status}` as StringKey)}</span>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="secondary" onClick={printPage}><Printer />{t("orders.print")}</Button>
@@ -189,7 +189,7 @@ function SentOrder({ order: o, onBack, onChanged }: { order: Order; onBack: () =
       </div>
 
       {/* The document the supplier gets: no status, no buttons. */}
-      <article className="print-area space-y-4 rounded-xl bg-card p-5 ring-1 ring-border print:ring-0">
+      <article className="print-area space-y-4 rounded-xl bg-card p-5 ring-1 ring-border shadow-sm print:ring-0">
         <header className="flex flex-wrap items-baseline justify-between gap-2">
           <h1 className="text-2xl font-semibold">{t("orders.printTitle")} {o.number}</h1>
           <span className="text-muted-foreground">{t("orders.printedAt")}: {dateTime(o.openedAt ?? o.createdAt)}</span>
@@ -232,7 +232,7 @@ function SentOrder({ order: o, onBack, onChanged }: { order: Order; onBack: () =
       </article>
 
       {o.receipts.length > 0 && (
-        <section className="print-hidden rounded-xl bg-card p-4 ring-1 ring-border">
+        <section className="print-hidden rounded-xl bg-card p-4 ring-1 ring-border shadow-sm">
           <h2 className="mb-1 font-semibold">{t("stockOps.receipts")}</h2>
           <ul className="text-sm">{o.receipts.map((r) => <li key={r.id} className="tabular">{r.number} · {dateTime(r.receivedAt)}</li>)}</ul>
         </section>

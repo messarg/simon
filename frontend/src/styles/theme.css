@@ -1,10 +1,18 @@
 /*
- * Simon design tokens — "calm utilitarian".
+ * Simon design tokens — "market green".
  *
- * A modern paper ledger: warm off-white ground, deep teal for the one thing to do next,
- * amber for attention, and a neutral slate for variance so a shift close never reads as an
- * accusation (§6.6). Destructive red is reserved for irreversible actions only.
- * Components use the semantic names (`bg-primary`, `text-muted-foreground`), never values.
+ * A produce-stall palette: a sage-tinted page (#EDF0DE) that white cards sit on top of, deep
+ * teal-green (#14544A) for the one thing to do next, a light leaf green (#DCEDC8) behind whatever
+ * is currently selected, amber (#F0A43C) for attention, and a deep brick (#6E1610) reserved for
+ * irreversible actions only. Surfaces are rounded and lifted rather than ruled — a card is an
+ * object on the counter, not a row in a ledger.
+ *
+ * Variance and money deltas stay neutral in both directions, so a shift close never reads as an
+ * accusation (§6.6) — green and red mark state (in stock, overdue), never the sign of a number.
+ * Tints and shades hold their anchor's hue; only lightness and chroma move. Every pairing below
+ * is verified against WCAG 2.2 AA: body text ≥ 4.5:1 on each surface it can land on, and a field
+ * boundary ≥ 3:1 (1.4.11). Components use the semantic names (`bg-primary`,
+ * `text-muted-foreground`), never values.
  */
 @import "tailwindcss";
 
@@ -39,35 +47,43 @@
 }
 
 :root {
-  --background: oklch(0.978 0.008 85);
-  --foreground: oklch(0.24 0.02 250);
-  --card: oklch(0.995 0.004 85);
+  /* Page is the sage tint; cards are plain white lifted off it. */
+  --background: oklch(0.948 0.024 114.5);
+  --foreground: oklch(0.234 0.021 168.6);
+  --card: oklch(1 0 0);
   --card-foreground: var(--foreground);
-  --muted: oklch(0.945 0.01 85);
-  --muted-foreground: oklch(0.48 0.02 250);
-  --border: oklch(0.89 0.012 85);
-  --input: oklch(0.86 0.014 85);
-  --ring: oklch(0.52 0.09 190);
+  --muted: oklch(0.921 0.026 121.2);
+  --muted-foreground: oklch(0.511 0.025 158);
+  --border: oklch(0.893 0.026 126.6);
+  /* A field boundary is a UI component: 3:1 on the card AND on the page (WCAG 1.4.11). */
+  --input: oklch(0.612 0.029 150.5);
+  --ring: oklch(0.477 0.079 177.3);
 
-  --primary: oklch(0.45 0.085 192);
-  --primary-foreground: oklch(0.985 0.006 190);
-  --primary-soft: oklch(0.94 0.03 190);
-  --accent: oklch(0.93 0.02 190);
-  --accent-foreground: oklch(0.32 0.06 192);
+  /* Deep teal-green #14544A — 8.8:1 on white, so the primary button carries white text. */
+  --primary: oklch(0.404 0.065 180.1);
+  --primary-foreground: oklch(1 0 0);
+  /* Leaf #DCEDC8 — the pill behind the active destination, and the selected row. */
+  --primary-soft: oklch(0.924 0.052 127.5);
+  --accent: oklch(0.947 0.033 125.5);
+  --accent-foreground: oklch(0.404 0.065 180.1);
 
-  --attention: oklch(0.8 0.13 75);
-  --attention-foreground: oklch(0.33 0.07 60);
-  --attention-soft: oklch(0.96 0.045 85);
-  --success: oklch(0.55 0.1 155);
-  --success-soft: oklch(0.95 0.035 155);
-  --destructive: oklch(0.53 0.17 28);
-  --destructive-foreground: oklch(0.985 0.005 28);
-  --destructive-soft: oklch(0.95 0.03 28);
+  /* Amber #F0A43C over its tint, both read with the dark brown below them. */
+  --attention: oklch(0.776 0.145 70.5);
+  --attention-foreground: oklch(0.288 0.055 73.4);
+  --attention-soft: oklch(0.926 0.055 78.6);
+  /* The leaf green is far too light to read as text; the token is the same hue, darkened. */
+  --success: oklch(0.503 0.118 140.8);
+  --success-soft: oklch(0.941 0.041 126.9);
+  /* Brick #6E1610 — the palette's darkest, and the only colour for what cannot be undone. */
+  --destructive: oklch(0.354 0.123 28.9);
+  --destructive-foreground: oklch(1 0 0);
+  --destructive-soft: oklch(0.928 0.03 27.8);
 
   /* Variance and money deltas: neutral in both directions (§6.6 tone rule). */
-  --money-neutral: oklch(0.42 0.02 250);
+  --money-neutral: oklch(0.385 0.036 173.8);
 
-  --radius: 0.875rem;
+  /* Corners are generous: 10px is a control, and the steps below run up to a card at 16px. */
+  --radius: 10px;
   --text-scale: 1;
 }
 
@@ -103,10 +119,31 @@
   /* Mardoto's digits are all one width already, so a money column aligns with no feature on. */
   --font-numeric: "Mardoto", system-ui, sans-serif;
 
-  --radius-sm: calc(var(--radius) - 6px);
-  --radius-md: calc(var(--radius) - 3px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 6px);
+  /*
+   * The steps carry meaning, so the existing `rounded-*` classes land where they should without
+   * touching a component: `xs` is a checkbox, `md`/`lg` a control or a row, `xl` a card, and
+   * `2xl` and up a sheet or a panel.
+   */
+  --radius-xs: 6px;
+  --radius-sm: 8px;
+  --radius-md: var(--radius);
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
+  --radius-3xl: 24px;
+  --radius-4xl: 28px;
+
+  /*
+   * Shadows are tinted with the page's own hue rather than grey, so a lifted card reads as warm
+   * paper and not as a drop of ink. They stay soft — a POS screen is looked at in daylight.
+   */
+  --shadow-2xs: 0 1px 1px oklch(0.3 0.03 150 / 0.04);
+  --shadow-xs: 0 1px 2px oklch(0.3 0.03 150 / 0.06);
+  --shadow-sm: 0 1px 3px oklch(0.3 0.03 150 / 0.07), 0 1px 2px oklch(0.3 0.03 150 / 0.05);
+  --shadow-md: 0 4px 10px oklch(0.3 0.03 150 / 0.08), 0 2px 4px oklch(0.3 0.03 150 / 0.05);
+  --shadow-lg: 0 10px 22px oklch(0.3 0.03 150 / 0.09), 0 4px 8px oklch(0.3 0.03 150 / 0.05);
+  --shadow-xl: 0 18px 36px oklch(0.3 0.03 150 / 0.11), 0 6px 12px oklch(0.3 0.03 150 / 0.06);
+  --shadow-2xl: 0 28px 56px oklch(0.3 0.03 150 / 0.16);
 
   /* Touch: 48px is the floor for anything tapped during a sale (§27.17). */
   --spacing-touch: 3rem;

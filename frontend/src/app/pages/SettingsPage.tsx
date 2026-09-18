@@ -25,7 +25,7 @@ type Settings = Record<string, unknown>;
 
 function Section({ title, hint, children, onSave, dirty }: { title: string; hint?: string; children: ReactNode; onSave?: () => void; dirty?: boolean }) {
   return (
-    <section className="rounded-xl bg-card p-4 ring-1 ring-border md:p-5">
+    <section className="rounded-xl bg-card p-4 ring-1 ring-border shadow-sm md:p-5">
       <div className="mb-3 flex items-start gap-3">
         <div className="min-w-0 flex-1"><h2 className="text-lg font-semibold">{title}</h2>{hint && <p className="text-sm text-muted-foreground">{hint}</p>}</div>
         {onSave && <Button size="sm" className="shrink-0" disabled={!dirty} onClick={onSave}>{t("common.save")}</Button>}

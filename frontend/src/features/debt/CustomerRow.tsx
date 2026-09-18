@@ -11,7 +11,7 @@ export function CustomerRow({ c, selected, onClick, showLimit }: { c: CachedCust
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <span className="truncate font-medium">{c.fullName ?? t("customers.anonymised")}</span>
-          {c.isBlocked && <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 text-xs text-muted-foreground"><Ban className="size-3" aria-hidden />{t("customers.blockedBadge")}</span>}
+          {c.isBlocked && <span className="inline-flex items-center gap-1 rounded-xs bg-muted px-2 text-xs text-muted-foreground"><Ban className="size-3" aria-hidden />{t("customers.blockedBadge")}</span>}
         </div>
         <div className="tabular text-sm text-muted-foreground">
           {c.phone ?? ""}{showLimit ? `${c.phone ? " · " : ""}${t("debt.limit")} ${c.creditLimit.toLocaleString("en").replace(/,/g, " ")}` : ""}

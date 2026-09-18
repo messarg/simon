@@ -76,7 +76,7 @@ export function AttentionPage() {
       {flags.data && items.length === 0 && parked.length === 0 ? (
         <EmptyState icon={CheckCircle2} title={t("attention.empty")} hint={t("attention.emptyHint")} />
       ) : (
-        <ul className="divide-y divide-border overflow-hidden rounded-xl bg-card ring-1 ring-border">
+        <ul className="divide-y divide-border overflow-hidden rounded-xl bg-card ring-1 ring-border shadow-sm">
           {items.map((f) => (
             <li key={f.id} className="flex flex-wrap items-start gap-3 p-4">
               <ShieldAlert className="mt-0.5 size-5 shrink-0 text-attention-foreground" aria-hidden />

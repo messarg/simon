@@ -36,16 +36,18 @@ colour-vision deficiency, and a hardware-store owner is disproportionately likel
 grep -rnE 'className="[^"]{160,}"' frontend/src --include=*.tsx   # extract a component
 grep -rn '!important\|!\[' frontend/src --include=*.tsx           # specificity escape hatch
 grep -rnE '\b(w|h|p|m|gap)-\[[0-9]' frontend/src --include=*.tsx  # arbitrary sizing
-grep -rn 'rounded-full' frontend/src --include=*.tsx              # corners cap at 4px
+grep -rn 'rounded-full' frontend/src --include=*.tsx              # should be an avatar or a pill
+grep -rn 'bg-card' frontend/src --include=*.tsx | grep -v shadow   # a card that does not lift
 ```
 
-Every `rounded-*` step resolves to `--radius` (4px) or less, so the step name is free to choose.
-`rounded-full` is the one that escapes the cap on anything taller than 8px — use `rounded-xs` for
-a pill or dot and `rounded-md` for anything larger.
+Corners are no longer capped (ADR 0008), so **the step name is now a choice that carries meaning**:
+`xs` (6px) a checkbox or dot, `md` (10px) a control, `lg` (12px) a row, `xl` (16px) a card, `2xl`
+and up a sheet or panel. A card at `rounded-md`, or a checkbox at `rounded-xl`, is the finding.
 
-**The one legitimate `rounded-full`** is the avatar (`components/shared/Avatar.tsx`, PRD §6.17 and
-§26.2): a face in a rounded rectangle reads as a product tile. The grep above will hit it — that
-hit is correct, and anything else it finds is not.
+**`rounded-full` is legitimate on exactly two things**: the avatar
+(`components/shared/Avatar.tsx`, PRD §6.17 and §26.2 — a face in a rounded rectangle reads as a
+product tile) and a shape with no content to square off, such as the sheet's drag handle. The grep
+above hits both; anything else it finds is a panel or a control that should carry a step instead.
 
 - Long class strings are a component boundary, not a formatting problem.
 - Conditional classes go through the project's `cn()`; never string-concatenate, which breaks

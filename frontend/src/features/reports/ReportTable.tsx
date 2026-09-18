@@ -48,7 +48,7 @@ export function ReportTable({ report }: { report: ReportResult }) {
         <Button variant="soft" onClick={exportCsv}><Download />{t("reports.export")}</Button>
       </div>
 
-      <div className="overflow-x-auto rounded-xl bg-card ring-1 ring-border">
+      <div className="overflow-x-auto rounded-xl bg-card ring-1 ring-border shadow-sm">
         <table className="w-full min-w-max border-collapse text-[0.95rem]">
           <thead>
             <tr className="border-b border-border text-sm text-muted-foreground">

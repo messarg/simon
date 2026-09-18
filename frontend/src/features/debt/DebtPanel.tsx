@@ -78,7 +78,7 @@ export function DebtPanel({ debtAmount, settings, onBack, onComplete }: { debtAm
           <UserRound className="size-5 text-primary" aria-hidden />{customer.fullName}
         </button>
       </div>
-      <dl className="divide-y divide-border rounded-xl bg-card ring-1 ring-border">
+      <dl className="divide-y divide-border rounded-xl bg-card ring-1 ring-border shadow-sm">
         {rows.map(([label, value]) => (
           <div key={label} className="flex items-center justify-between px-4 py-2.5 text-lg"><dt className="text-muted-foreground">{label}</dt><dd className="tabular font-medium">{value}</dd></div>
         ))}

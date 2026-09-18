@@ -70,12 +70,12 @@ export function CustomerLedger({ customerId, admin, shiftId, onBack }: { custome
       </div>
 
       <div className="mb-3 grid grid-cols-2 gap-3">
-        <div className="rounded-xl bg-card p-4 ring-1 ring-border">
+        <div className="rounded-xl bg-card p-4 ring-1 ring-border shadow-sm">
           <div className="text-sm text-muted-foreground">{outstanding >= 0 ? t("debt.owes") : t("debt.credit", { amount: "" })}</div>
           <MoneyText amount={Math.abs(outstanding)} className="text-3xl font-bold" />
           {connection === "offline" && <div className="text-xs text-attention-foreground">{t("debt.lastKnown")}</div>}
         </div>
-        <div className="rounded-xl bg-card p-4 ring-1 ring-border">
+        <div className="rounded-xl bg-card p-4 ring-1 ring-border shadow-sm">
           <div className="text-sm text-muted-foreground">{t("debt.oldest")}</div>
           <div className="text-3xl font-bold">{(data?.aging.oldestChargeDays ?? customer.oldestChargeDays) !== null && outstanding > 0 ? t("debt.days", { n: data?.aging.oldestChargeDays ?? customer.oldestChargeDays ?? 0 }) : "—"}</div>
           <div className="text-sm text-muted-foreground">{t("debt.limit")} {money(customer.creditLimit)}</div>
@@ -87,7 +87,7 @@ export function CustomerLedger({ customerId, admin, shiftId, onBack }: { custome
       {data && outstanding > 0 && (
         <div className="mb-3 grid grid-cols-4 gap-1 text-center text-xs">
           {(["d0_30", "d31_60", "d61_90", "d90plus"] as const).map((k) => (
-            <div key={k} className={cn("rounded-lg p-2", data.aging[k] > 0 ? "bg-card ring-1 ring-border" : "bg-muted text-muted-foreground")}>
+            <div key={k} className={cn("rounded-lg p-2", data.aging[k] > 0 ? "bg-card ring-1 ring-border shadow-sm" : "bg-muted text-muted-foreground")}>
               <div>{t(`debt.buckets.${k}`)}</div>
               <MoneyText amount={data.aging[k]} symbol={false} className="text-sm font-semibold" />
             </div>
@@ -102,7 +102,7 @@ export function CustomerLedger({ customerId, admin, shiftId, onBack }: { custome
 
       {data ? (
         data.entries.length === 0 ? <EmptyState icon={HandCoins} title={t("debt.noDebt")} className="py-6" /> : (
-          <ul className="divide-y divide-border rounded-xl bg-card ring-1 ring-border">
+          <ul className="divide-y divide-border rounded-xl bg-card ring-1 ring-border shadow-sm">
             {data.entries.map((e) => (
               <li key={e.id} className={cn("px-4 py-3", (e.reversed || e.reversesId) && "opacity-60")}>
                 <div className="flex items-start gap-3">

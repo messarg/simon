@@ -61,7 +61,7 @@ export function OrdersPanel({ selectedId, onSelect, onNew }: { selectedId: strin
                   <div className="tabular text-sm text-muted-foreground">{o.number} · {o.expectedAt ? dateLabel(o.expectedAt) : dateTime(o.createdAt)}</div>
                 </div>
                 <div className="text-right">
-                  <span className={cn("rounded-full px-2 py-0.5 text-xs font-medium", statusTone(o.status))}>{t(`orders.statuses.${o.status}` as StringKey)}</span>
+                  <span className={cn("rounded-xs px-2 py-0.5 text-xs font-medium", statusTone(o.status))}>{t(`orders.statuses.${o.status}` as StringKey)}</span>
                   {o.total !== undefined && <div><MoneyText amount={o.total} className="text-sm font-semibold" /></div>}
                 </div>
               </button>

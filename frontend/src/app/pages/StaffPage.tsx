@@ -57,7 +57,7 @@ export function StaffPage() {
         {users.data?.items.map((u) => {
           const locked = isLockedOut(u, now);
           return (
-            <li key={u.id} className="rounded-xl bg-card p-2 ring-1 ring-border">
+            <li key={u.id} className="rounded-xl bg-card p-2 ring-1 ring-border shadow-sm">
               <div className="flex flex-wrap items-center gap-2">
                 <Link
                   to={`/staff/${u.id}`}

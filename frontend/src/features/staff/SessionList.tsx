@@ -33,7 +33,7 @@ export function SessionList({ userId, name }: { userId: string; name: string }) 
       {sessions.isError && <p className="text-muted-foreground">{t("problems.network")}</p>}
       {sessions.data && mine.length === 0 && <p className="text-muted-foreground">{t("staff.noSessions")}</p>}
       {mine.length > 0 && (
-        <ul className="divide-y divide-border rounded-md bg-card ring-1 ring-border">
+        <ul className="divide-y divide-border rounded-md bg-card ring-1 ring-border shadow-sm">
           {mine.map((s) => (
             <li key={s.id} className="flex items-center gap-3 px-3 py-2.5">
               <Smartphone className="size-5 shrink-0 text-muted-foreground" aria-hidden />

@@ -68,7 +68,7 @@ export function LabelsPage() {
     <div className="mx-auto w-full max-w-4xl space-y-4 p-4 md:p-6">
       <div className="print-hidden space-y-3">
         <h1 className="text-2xl font-semibold">{t("labels.title")}</h1>
-        <ul className="divide-y divide-border rounded-xl bg-card ring-1 ring-border">
+        <ul className="divide-y divide-border rounded-xl bg-card ring-1 ring-border shadow-sm">
           {items.map((l) => (
             <li key={l.productId} className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2">
               <div className="min-w-40 flex-1">

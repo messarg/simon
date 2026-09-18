@@ -49,13 +49,17 @@ Shared hooks that more than one feature needs (current shift, client settings) l
 Tokens in `src/styles/theme.css` (`@theme inline`). Use names, never values:
 
 - surfaces `bg-background`, `bg-card`, `bg-muted`, `border-border`
-- action `bg-primary` (slate #45575D), `bg-primary-soft`, `text-accent-foreground`
-- attention `bg-attention` (gold #EDC03B), `bg-attention-soft` (wheat #E6D18D), `text-attention-foreground` — offline, stale, recount
-- `bg-destructive` (oxblood #490905) only for irreversible actions; **variance uses `text-money-neutral`**, never red (§6.6)
-- **corners never exceed 4px.** Every `rounded-*` step is clamped to `--radius`, so any of them is
-  safe; `rounded-full` is not — use `rounded-xs` for a pill or dot, `rounded-md` for anything larger
-- **one exception: an avatar is a circle** (`components/shared/Avatar.tsx`, PRD §6.17). A face in a
-  rounded rectangle reads as a product tile. `rounded-full` there is correct; anywhere else it is a bug
+- action `bg-primary` (deep teal-green #14544A), `bg-primary-soft` (leaf #DCEDC8), `text-accent-foreground`
+- attention `bg-attention` (amber #F0A43C), `bg-attention-soft`, `text-attention-foreground` — offline, stale, recount
+- `bg-destructive` (brick #6E1610) only for irreversible actions; **variance uses `text-money-neutral`**,
+  never red or green (§6.6) — colour marks state (in stock, overdue), never the sign of a number
+- **the `rounded-*` step carries meaning**, so choose it by what the thing is, not by how it looks:
+  `xs` (6px) a checkbox or dot, `md` (10px) a control, `lg` (12px) a row, `xl` (16px) a card,
+  `2xl` and up a sheet or panel. There is no cap — see ADR 0008
+- **an avatar is a circle** (`components/shared/Avatar.tsx`, PRD §6.17). A face in a rounded
+  rectangle reads as a product tile. `rounded-full` there is correct; elsewhere, prefer a step
+- a card is `rounded-xl bg-card ring-1 ring-border shadow-sm` — the shadow is what lifts it off
+  the tinted page, so a card without one looks unfinished
 - sizes `h-touch` (48 px floor), `h-touch-lg`, `h-touch-xl`; `tabular` for every number
 - text scale follows the text-size setting via `data-text-size` on `<html>`
 

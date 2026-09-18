@@ -11,7 +11,7 @@
  * It is `aria-hidden` by default: it sits beside the name everywhere it is used, and a screen
  * reader that announces both reads the person's name twice.
  *
- * **`rounded-full` here is deliberate, and is the one exception to the 4 px corner cap the rest of
+ * **`rounded-full` here is deliberate, and is rounder than the step scale the rest of
  * this interface keeps.** A face is a face wherever it appears — the sign-in tiles, the staff list,
  * a person's page — and a circle is what reads as *a person* rather than as another card in a
  * screen full of cards. It also crops to the middle of the photograph, which is where the face is.
