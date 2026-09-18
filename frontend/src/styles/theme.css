@@ -150,6 +150,39 @@
   --sidebar-mark: oklch(0.816 0.175 145.9);
 }
 
+/*
+ * An employee's palette (§16.4) — pastel blue, a soft blue rail on a pale blue page. The counter
+ * screens a cashier or a stock keeper works in all day, calm and cool, and plainly not the owner's
+ * dark rail or a manager's green. Tokens only, every pairing checked against WCAG 2.2 AA; action
+ * buttons keep `--action`, which is app-wide.
+ */
+:root[data-tier="employee"] {
+  --background: oklch(0.962 0.011 256.7);
+  --foreground: oklch(0.243 0.04 259.3);
+  --muted: oklch(0.935 0.015 257.2);
+  --muted-foreground: oklch(0.486 0.041 260.3);
+  --border: oklch(0.903 0.022 256.7);
+  --input: oklch(0.622 0.041 258.4);
+  --ring: oklch(0.533 0.115 257.3);
+
+  /* Denim #2E5A96 for links and the focus ring; powder #D9E7FA behind what is selected. */
+  --primary: oklch(0.467 0.109 256.8);
+  --primary-soft: oklch(0.923 0.03 256);
+  --accent: oklch(0.952 0.017 256.3);
+  --accent-foreground: oklch(0.39 0.096 256.3);
+  --success-soft: oklch(0.941 0.032 136.6);
+  --money-neutral: oklch(0.386 0.049 256.7);
+
+  --sidebar: oklch(0.926 0.024 254);
+  --sidebar-foreground: oklch(0.243 0.04 259.3);
+  --sidebar-muted: oklch(0.439 0.044 259.7);
+  --sidebar-hover: oklch(0.892 0.032 255.6);
+  --sidebar-active: oklch(0.856 0.046 254.5);
+  --sidebar-active-foreground: oklch(0.243 0.04 259.3);
+  --sidebar-border: oklch(0.871 0.035 256.3);
+  --sidebar-mark: oklch(0.679 0.101 256.8);
+}
+
 :root[data-text-size="large"] { --text-scale: 1.125; }
 :root[data-text-size="xlarge"] { --text-scale: 1.25; }
 
