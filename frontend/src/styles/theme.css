@@ -7,11 +7,36 @@
  * Components use the semantic names (`bg-primary`, `text-muted-foreground`), never values.
  */
 @import "tailwindcss";
-@import "@fontsource/noto-sans-armenian/400.css";
-@import "@fontsource/noto-sans-armenian/500.css";
-@import "@fontsource/noto-sans-armenian/600.css";
-@import "@fontsource/noto-sans-armenian/700.css";
-@import "@fontsource-variable/inter";
+
+/*
+ * Mardoto (Apache-2.0, Christian Robertson and Vahan Hovhannisyan) — Roboto's Latin with an
+ * Armenian design drawn for it, so one family covers every string Simon shows, ֏ included.
+ * Self-hosted, never a CDN: a shop may have no internet (§16.6).
+ *
+ * The family ships 100/300/400/500/700/900 and has no 600, while the UI uses four steps —
+ * body, medium, semibold, bold. So the four faces are remapped onto the four steps the app
+ * asks for, keeping them evenly spaced: `font-bold` is Black, and `font-semibold` is Bold.
+ */
+@font-face {
+  font-family: "Mardoto";
+  src: url("../assets/fonts/mardoto-regular.woff2") format("woff2");
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "Mardoto";
+  src: url("../assets/fonts/mardoto-medium.woff2") format("woff2");
+  font-weight: 500; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "Mardoto";
+  src: url("../assets/fonts/mardoto-bold.woff2") format("woff2");
+  font-weight: 600; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "Mardoto";
+  src: url("../assets/fonts/mardoto-black.woff2") format("woff2");
+  font-weight: 700; font-style: normal; font-display: swap;
+}
 
 :root {
   --background: oklch(0.978 0.008 85);
@@ -74,8 +99,9 @@
   --color-destructive-soft: var(--destructive-soft);
   --color-money-neutral: var(--money-neutral);
 
-  --font-sans: "Noto Sans Armenian", "Inter Variable", system-ui, sans-serif;
-  --font-numeric: "Inter Variable", "Noto Sans Armenian", system-ui, sans-serif;
+  --font-sans: "Mardoto", system-ui, sans-serif;
+  /* Mardoto's digits are all one width already, so a money column aligns with no feature on. */
+  --font-numeric: "Mardoto", system-ui, sans-serif;
 
   --radius-sm: calc(var(--radius) - 6px);
   --radius-md: calc(var(--radius) - 3px);
@@ -112,7 +138,8 @@
   }
 }
 
-@utility tabular { font-family: var(--font-numeric); font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1, "cv11" 1; }
+/* `tabular-nums` is for the fallback stack; Mardoto itself needs no feature (see --font-numeric). */
+@utility tabular { font-family: var(--font-numeric); font-variant-numeric: tabular-nums; }
 @utility safe-bottom { padding-bottom: max(env(safe-area-inset-bottom), 0px); }
 @utility safe-top { padding-top: max(env(safe-area-inset-top), 0px); }
 
