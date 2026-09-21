@@ -24,9 +24,18 @@ interface Secrets { recoveryCode: string; backupPassphrase: string }
 
 const QUESTIONS = 5;
 
+/**
+ * One centred card, the sign-in screen's shape (§7.1).
+ *
+ * The insets are folded into the padding rather than applied with `safe-top`, which *sets*
+ * padding-top to the inset — 0px on any screen without a notch — and so silently cancelled the
+ * top half of `py-10`, leaving the card hanging from the top edge while the bottom kept its
+ * padding. `min-h-dvh` with `items-center` is safe for a card taller than the screen: the
+ * container grows rather than clipping, which `h-dvh` would not.
+ */
 function Card({ children, icon: Icon, title, hint, step }: { children: React.ReactNode; icon: typeof Store; title: string; hint?: string; step?: number }) {
   return (
-    <div className="flex min-h-dvh items-start justify-center bg-background px-4 py-10 safe-top">
+    <div className="flex min-h-dvh items-center justify-center bg-background px-4 pt-[max(2.5rem,env(safe-area-inset-top))] pb-[max(2.5rem,env(safe-area-inset-bottom))]">
       <div className="w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-sm">
         <div className="mb-4 flex items-center gap-3">
           <div className="grid size-12 shrink-0 place-items-center rounded-2xl bg-primary-soft text-primary"><Icon className="size-6" aria-hidden /></div>

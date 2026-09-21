@@ -82,19 +82,35 @@ const atCounter = (a: Actor) => can(a, "sell") || can(a, "returns");
 const manager = (a: Actor) => isManager(a.role);
 const owner = (a: Actor) => isOwner(a.role);
 
+/**
+ * Each tier wears its own palette (theme.css) — the owner dark, a manager lavender, an employee
+ * pastel blue — so whose session is open is recognisable across the counter. Set on the root so
+ * sheets and portals pick it up too.
+ *
+ * **The two signed-out screens are chosen by route, not by session**, and the route wins. The
+ * wizard signs the owner in at its second question, so keying this on the session alone would
+ * repaint the screen from navy to the owner's green in the middle of setup, on the step where he
+ * is being shown the two secrets to write down. Sign-in has no session to read either.
+ */
+const GUEST_ROUTES = ["/sign-in", "/setup"];
+
+function Palette() {
+  const role = useSession()?.user.role;
+  const { pathname } = useLocation();
+  const guest = GUEST_ROUTES.includes(pathname);
+  useEffect(() => {
+    const root = document.documentElement;
+    if (guest) root.dataset.tier = "guest";
+    else if (role) root.dataset.tier = role.toLowerCase();
+    else delete root.dataset.tier;
+  }, [guest, role]);
+  return null;
+}
+
 export function App() {
   const [queryClient] = useState(createQueryClient);
 
   useEffect(() => connection.start(), []);
-  // Each tier wears its own palette (theme.css) — the owner dark, a manager lavender, an employee
-  // pastel blue — so whose session is open is recognisable across the counter. Set on the root so
-  // sheets and portals pick it up too; cleared on sign-out, back to the default green.
-  const role = useSession()?.user.role;
-  useEffect(() => {
-    const root = document.documentElement;
-    if (role) root.dataset.tier = role.toLowerCase();
-    else delete root.dataset.tier;
-  }, [role]);
   // A 401 on an ordinary request returns to the PIN pad; the basket lives in IndexedDB and survives (§16.3).
   // A session ended by closing its shift stays on screen until the worker leaves the Z-report.
   useEffect(() => onSessionExpired(() => { if (!sessionStore.get()?.endedByShiftClose) sessionStore.set(null); }), []);
@@ -102,6 +118,7 @@ export function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
+        <Palette />
         <Routes>
           <Route path="/setup" element={<SetupPage />} />
           <Route path="/sign-in" element={<SignInPage />} />

@@ -33,7 +33,7 @@ import { sessionStore, useSession, type SessionState } from "@/lib/session-store
 
 function Frame({ children }: { children: ReactNode }) {
   return (
-    <div className="flex min-h-dvh items-center justify-center bg-muted px-4 pt-[max(1.5rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+    <div className="flex min-h-dvh items-center justify-center bg-background px-4 pt-[max(1.5rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))]">
       <main className="w-full max-w-sm">
         <header className="mb-6 flex items-center justify-center gap-2.5">
           <img src="/favicon.svg" alt="" width={36} height={36} className="rounded-lg" />

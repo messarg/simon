@@ -229,6 +229,57 @@
   --action: oklch(0.635 0.09 300.2);
 }
 
+/*
+ * The signed-out palette — dark blue, pastel accents. The sign-in screen and the setup wizard are
+ * the only two screens a person sees before the shop knows who they are, and they are also the
+ * screens a stranger sees: they should read as the front door of a business, not as a till whose
+ * session someone left open. Dark navy ground, a lighter navy card, and a powder-blue accent that
+ * carries the button, the rule above the card and the focus ring.
+ *
+ * It is applied by route rather than by session (`app/Palette.tsx`), because the wizard signs the
+ * owner in at Q2 and the palette must not change colour underneath him halfway through setup.
+ *
+ * Unlike the three tier palettes, this one takes **no** WCAG exception: the action button is dark
+ * navy text on a pastel fill (7.37:1) rather than white on a mid-tone, so the compromise recorded
+ * for `--action` above does not apply here. Every pairing below is verified against WCAG 2.2 AA:
+ * body text 12.6:1 on the card, secondary text 6.6:1, the field boundary 3.4:1 (1.4.11).
+ */
+:root[data-tier="guest"] {
+  --background: oklch(0.21 0.035 258);
+  --foreground: oklch(0.96 0.012 250);
+  --card: oklch(0.29 0.038 258);
+  --card-foreground: var(--foreground);
+  --muted: oklch(0.33 0.035 258);
+  --muted-foreground: oklch(0.76 0.028 252);
+  --border: oklch(0.4 0.035 258);
+  /* A field boundary is a UI component: 3.4:1 on the card, 4.2:1 on the page (WCAG 1.4.11). */
+  --input: oklch(0.585 0.045 256);
+  --ring: oklch(0.74 0.09 250);
+
+  /* Powder #95C3EB — the rule above the card, links, and what is selected. */
+  --primary: oklch(0.8 0.075 245);
+  --primary-foreground: oklch(0.2 0.04 258);
+  --primary-soft: oklch(0.36 0.05 255);
+  --accent: oklch(0.34 0.045 256);
+  --accent-foreground: oklch(0.88 0.05 248);
+
+  /* Cornflower #6AAAE6 under dark navy text — the one button on these screens. */
+  --action: oklch(0.72 0.11 248);
+  --action-foreground: oklch(0.2 0.05 258);
+
+  --attention: oklch(0.82 0.12 80);
+  --attention-foreground: oklch(0.24 0.05 75);
+  --attention-soft: oklch(0.36 0.05 78);
+  --success: oklch(0.78 0.11 150);
+  --success-soft: oklch(0.33 0.05 150);
+  /* On a dark ground the brick reverses: a pastel red on a deep one, 5.4:1. */
+  --destructive: oklch(0.76 0.11 25);
+  --destructive-foreground: oklch(0.2 0.05 25);
+  --destructive-soft: oklch(0.34 0.06 25);
+
+  --money-neutral: oklch(0.85 0.02 252);
+}
+
 :root[data-text-size="large"] { --text-scale: 1.125; }
 :root[data-text-size="xlarge"] { --text-scale: 1.25; }
 

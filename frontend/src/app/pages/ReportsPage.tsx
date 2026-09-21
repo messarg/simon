@@ -71,7 +71,22 @@ export function ReportsPage() {
         </ul>
       </nav>
 
-      <section className={cn("min-h-0 flex-1 overflow-y-auto p-4", !name && "hidden md:block")}>
+      {/*
+        The report stays put while the catalogue scrolls past it. There are fifteen reports and the
+        list is taller than most screens, so scrolling to the one you want used to carry the report
+        you are reading off the top of the window — the two panes each declare `overflow-y-auto`,
+        but the shell scrolls the page rather than the panes (`AppShell`, which is why the rail and
+        the status strip are sticky rather than fixed), so neither pane was ever its own scroller.
+        `self-start` is what makes it work: without it the flex row stretches this pane to the
+        catalogue's full height and a sticky element with nowhere to move does nothing.
+      */}
+      <section
+        className={cn(
+          "min-h-0 flex-1 overflow-y-auto p-4",
+          "md:sticky md:self-start md:top-(--strip-h) md:h-[calc(100dvh-var(--strip-h))]",
+          !name && "hidden md:block",
+        )}
+      >
         {!entry ? (
           <EmptyState icon={BarChart3} title={t("reports.pick")} className="h-full" />
         ) : (

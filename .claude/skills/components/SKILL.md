@@ -51,8 +51,8 @@ Tokens in `src/styles/theme.css` (`@theme inline`). Use names, never values:
 - surfaces `bg-background`, `bg-card`, `bg-muted`, `border-border`
 - action buttons `bg-action text-action-foreground` (#699870 for the owner; an employee's palette swaps in cornflower #668DC1, a manager's lavender #937EB9) — the `Button` default variant; don't paint one by hand
 - brand `bg-primary` / `text-primary` (deep teal-green #14544A) for links, focus and the active destination, `bg-primary-soft` (leaf #DCEDC8), `text-accent-foreground`
-- **three palettes by tier**, set as `data-tier` on the root in `App.tsx`: the owner's dark rail (`owner`), a manager's lavender (`manager`), an employee's pastel blue (`employee`); the default green shows only before sign-in. They swap tokens only — never branch a component on role for colour
-- **`--action` is a recorded contrast exception** (white on it is 3.32:1, chosen by the owner) — don't "fix" it without asking
+- **four palettes**, set as `data-tier` on the root by `Palette` in `App.tsx`: the owner's dark rail (`owner`), a manager's lavender (`manager`), an employee's pastel blue (`employee`), and `guest` — dark navy with powder-blue accents — on the two signed-out screens. `guest` is chosen **by route** (`/sign-in`, `/setup`), not by session, because the wizard signs the owner in at Q2 and the screen must not change colour underneath him mid-setup. They swap tokens only — never branch a component on role for colour
+- **`--action` is a recorded contrast exception** (white on it is 3.32:1, chosen by the owner) — don't "fix" it without asking. The `guest` palette is the one that takes no exception: dark navy text on a pastel fill, 7.4:1
 - attention `bg-attention` (amber #F0A43C), `bg-attention-soft`, `text-attention-foreground` — offline, stale, recount
 - `bg-destructive` (brick #6E1610) only for irreversible actions; **variance uses `text-money-neutral`**,
   never red or green (§6.6) — colour marks state (in stock, overdue), never the sign of a number
