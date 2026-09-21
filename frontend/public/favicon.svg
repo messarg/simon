@@ -1,1 +1,16 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#14544a"/><path d="M20 22h24M20 32h24M20 42h14" stroke="#dcedc8" stroke-width="5" stroke-linecap="round"/></svg>
+<!--
+  Simon's mark: Ս — the shop's initial — resting on the counter.
+
+  The letter is drawn to the icon's own grid rather than set in Mardoto, so the file renders in a
+  browser tab with no font loaded: 6-unit stems, flat terminals, a true semicircular bowl. The rule
+  beneath it is the counter the whole app happens across, and the line a total is written on.
+
+  Deep teal #14544A on leaf #DCEDC8: the primary and primary-soft tokens from styles/theme.css.
+  Every other size is rendered from this file by scripts/render-icon.mjs; nothing else is drawn by hand.
+  (Values are literal here because an SVG loaded through an img tag inherits no CSS.)
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="14" fill="#14544a"/>
+  <path d="M20 15 V27 A12 12 0 0 0 44 27 V15 H38 V27 A6 6 0 0 1 26 27 V15 Z" fill="#dcedc8"/>
+  <path d="M17 47 H47" stroke="#dcedc8" stroke-width="5" stroke-linecap="round"/>
+</svg>
