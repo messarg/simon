@@ -321,6 +321,16 @@
   --font-sans: "Mardoto", system-ui, sans-serif;
   /* Mardoto's digits are all one width already, so a money column aligns with no feature on. */
   --font-numeric: "Mardoto", system-ui, sans-serif;
+  /*
+   * The wordmark's face, used by nothing but the logo (`components/shared/Wordmark.tsx`).
+   *
+   * **Slice Brush is not in the tree yet**, so this currently resolves to Mardoto and the logo
+   * renders in the UI face. Adding it is two steps: drop `slice-brush.woff2` beside the Mardoto
+   * files in `src/assets/fonts/`, and add an `@font-face` for it above — self-hosted, never a CDN,
+   * because a shop may have no internet (§16.6). It needs a licence that permits embedding: the
+   * font ships inside the SPA and inside the Mac app's bundle.
+   */
+  --font-display: "Slice Brush", "Mardoto", system-ui, sans-serif;
 
   /*
    * The steps carry meaning, so the existing `rounded-*` classes land where they should without

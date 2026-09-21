@@ -14,6 +14,7 @@
 import { FlaskConical, LogOut, MoreHorizontal } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { NavLink, useNavigate } from "react-router";
+import { Wordmark } from "@/components/shared/Wordmark.tsx";
 import { Button } from "@/components/ui/button.tsx";
 import { Sheet } from "@/components/ui/sheet.tsx";
 import { destinationsFor, type Destination } from "@/config/navigation.ts";
@@ -100,9 +101,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div data-shell className="flex min-h-dvh [--rail-w:0px] [--strip-h:0px] [--tabbar-h:0px] lg:[--rail-w:15rem]">
       <aside className="sticky top-0 hidden h-dvh w-(--rail-w) shrink-0 flex-col border-r border-sidebar-border bg-sidebar px-3 py-4 text-sidebar-foreground lg:flex">
-        <div className="mb-5 flex items-center gap-2 px-3">
-          <img src="/favicon.svg" alt="" width={28} height={28} className="rounded-md" />
-          <span className="text-lg font-semibold">{t("app.name")}</span>
+        <div className="mb-5 flex px-3">
+          <Wordmark className="text-2xl" />
         </div>
         <nav className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto" aria-label={t("nav.home")}>
           {isOwner ? (

@@ -23,6 +23,7 @@ import type { ReactNode } from "react";
 import { useRef, useState } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router";
 import { isValidPin, normalisePinInput, PIN_LENGTH } from "@simon/shared";
+import { Wordmark } from "@/components/shared";
 import { Button } from "@/components/ui/button.tsx";
 import { Input, Label } from "@/components/ui/input.tsx";
 import { Sheet } from "@/components/ui/sheet.tsx";
@@ -35,9 +36,8 @@ function Frame({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-dvh items-center justify-center bg-background px-4 pt-[max(1.5rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))]">
       <main className="w-full max-w-sm">
-        <header className="mb-6 flex items-center justify-center gap-2.5">
-          <img src="/favicon.svg" alt="" width={36} height={36} className="rounded-lg" />
-          <span className="text-xl font-semibold tracking-tight">{t("app.name")}</span>
+        <header className="mb-6 flex justify-center">
+          <Wordmark className="text-3xl" />
         </header>
         <section className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
           {/* The card's one piece of colour, and the only thing on the screen that is brand. */}

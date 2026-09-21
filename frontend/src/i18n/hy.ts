@@ -5,7 +5,7 @@
  * Armenian is indicative until a native speaker reviews it (§8.5, §26 Q9).
  */
 export const hy = {
-  app: { name: "Սիմոն" },
+  app: { name: "Սիմոն", wordmark: "ՍԻՄՈՆ" },
   nav: {
     sell: "Վաճառել", debts: "Պարտքեր", stock: "Պահեստ", shift: "Հերթափոխ",
     home: "Գլխավոր", reports: "Հաշվետվություն", products: "Ապրանքներ", customers: "Հաճախորդներ",

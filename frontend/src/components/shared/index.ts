@@ -10,3 +10,4 @@ export { Barcode } from "./Barcode.tsx";
 export { ActionBar } from "./ActionBar.tsx";
 export { Toggle } from "./Toggle.tsx";
 export { Avatar, type AvatarProps } from "./Avatar.tsx";
+export { Wordmark } from "./Wordmark.tsx";
