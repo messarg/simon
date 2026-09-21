@@ -1,6 +1,6 @@
 /**
  * J1 → J2 → offline → J4 on a phone (PRD §6 journeys, §27.1, §27.8, §27.7).
- * The dev seed provides the worker Գոռ (PIN 3333) and a small hardware catalogue.
+ * The dev seed provides the worker Գոռ (PIN 333333) and a small hardware catalogue.
  */
 import { expect, test, type Page } from "@playwright/test";
 import { dismissCoach, signIn } from "./helpers.ts";
@@ -16,7 +16,7 @@ async function tapKeys(page: Page, keys: string) {
 
 test("a worker opens a shift, sells, keeps selling offline, syncs exactly once and closes", async ({ page }) => {
   // J1 — sign in and open on a counted float.
-  await signIn(page, "Գոռ", "3333");
+  await signIn(page, "Գոռ", "333333");
   await expect(page.getByText("Հերթափոխը բաց չէ")).toBeVisible();
   await page.goto("/shift");
   await dismissCoach(page);

@@ -15,3 +15,4 @@ export * from "./cash.ts";
 export * from "./periods.ts";
 export * from "./csv-import.ts";
 export * from "./code128.ts";
+export * from "./pin.ts";

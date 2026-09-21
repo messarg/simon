@@ -4,6 +4,7 @@
  */
 import { AlertCircle, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { PIN_LENGTH } from "@simon/shared";
 import { Button } from "@/components/ui/button.tsx";
 import { t } from "@/i18n/t.ts";
 import { cn } from "@/lib/cn.ts";
@@ -21,7 +22,7 @@ export interface PinPadProps {
   submitLabel?: string;
 }
 
-export function PinPad({ onSubmit, busy, error, minLength = 4, maxLength = 8, label, submitLabel }: PinPadProps) {
+export function PinPad({ onSubmit, busy, error, minLength = PIN_LENGTH, maxLength = PIN_LENGTH, label, submitLabel }: PinPadProps) {
   const [pin, setPin] = useState("");
 
   // Hardware keyboards type PINs too.

@@ -4,13 +4,13 @@ import { z } from "zod";
 import type { Db } from "../lib/db.ts";
 import { config } from "../lib/config.ts";
 import { problem } from "../lib/problem.ts";
-import { DeviceRateLimiter } from "../domain/pin-policy.ts";
+import { DeviceRateLimiter, PIN_PATTERN } from "../domain/pin-policy.ts";
 import { login, recover, reauth } from "../services/auth.service.ts";
 import { createInstallPassphrase } from "../services/backup.service.ts";
 import { readSettings } from "../services/settings.service.ts";
 import { createOwner, needsSetup } from "../services/user.service.ts";
 
-const pin = z.string().regex(/^\d{4,8}$/);
+const pin = z.string().regex(PIN_PATTERN);
 /** A typed name, as the person spells it; `nameKey` decides what it matches (§16.2). */
 const typedName = z.string().trim().min(1).max(60);
 

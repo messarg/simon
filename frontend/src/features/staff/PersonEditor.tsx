@@ -17,7 +17,7 @@
  */
 import { useState } from "react";
 import { toast } from "sonner";
-import { assignableRoles, canManage, normalisePermissions, Permission, PERMISSION_PRESETS, type Role } from "@simon/shared";
+import { assignableRoles, canManage, isValidPin, normalisePermissions, normalisePinInput, Permission, PERMISSION_PRESETS, type Role } from "@simon/shared";
 import { Button } from "@/components/ui/button.tsx";
 import { Input, Label } from "@/components/ui/input.tsx";
 import { Sheet } from "@/components/ui/sheet.tsx";
@@ -94,7 +94,7 @@ function PersonForm({ person, onClose, onSaved }: { person: StaffUser | null; on
     }
   };
 
-  const incomplete = !name.trim() || (person ? pin.length > 0 && pin.length < 4 : pin.length < 4);
+  const incomplete = !name.trim() || (person ? pin.length > 0 && !isValidPin(pin) : !isValidPin(pin));
 
   return (
     <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); void submit(); }}>
@@ -186,7 +186,7 @@ function PersonForm({ person, onClose, onSaved }: { person: StaffUser | null; on
         <Input
           id="person-pin"
           value={pin}
-          onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 8))}
+          onChange={(e) => setPin(normalisePinInput(e.target.value))}
           inputMode="numeric"
           type="password"
           autoComplete="new-password"

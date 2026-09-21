@@ -10,11 +10,11 @@ describe("first-run setup (§7.1 Q1–Q2)", () => {
     const t = await createTestDb();
     const server = createApp({ live: t.db, practice: async () => t.db }).listen(0);
     expect((await request(server).get("/api/setup/status")).body).toMatchObject({ needsOwner: true, step: 0, completedAt: null, taxRegimeSet: false });
-    expect((await request(server).post("/api/auth/login").send({ name: "Արամ", pin: "4321" })).status).toBe(401);
-    const res = await request(server).post("/api/setup/owner").send({ shopName: "Շինանյութ", ownerName: "Արամ", pin: "4321" });
+    expect((await request(server).post("/api/auth/login").send({ name: "Արամ", pin: "432100" })).status).toBe(401);
+    const res = await request(server).post("/api/setup/owner").send({ shopName: "Շինանյութ", ownerName: "Արամ", pin: "432100" });
     expect(res.status).toBe(201);
     expect(res.body.recoveryCode).toMatch(/^[A-Z2-9]{4}(-[A-Z2-9]{4}){3}$/);
-    expect((await request(server).post("/api/setup/owner").send({ shopName: "x", ownerName: "y", pin: "1234" })).status).toBe(403);
+    expect((await request(server).post("/api/setup/owner").send({ shopName: "x", ownerName: "y", pin: "123400" })).status).toBe(403);
     server.close();
     await t.close();
   });
@@ -30,13 +30,13 @@ describe("PIN login — §27.39", () => {
   it("four wrong PINs leave the worker able to sign in; the fifth locks with 423; others still sign in", async () => {
     const worker = t.users.WORKER.name;
     for (let i = 4; i >= 1; i--) {
-      const res = await attempt(worker, "0000", t.devices.WORKER);
+      const res = await attempt(worker, "000000", t.devices.WORKER);
       expect(res.status).toBe(401);
       expect(res.body.attemptsRemaining).toBe(i);
     }
     expect((await attempt(worker, PINS.WORKER, t.devices.WORKER)).status).toBe(200);
-    for (let i = 0; i < 4; i++) await attempt(worker, "0000", t.devices.STOCK);
-    const locked = await attempt(worker, "0000", t.devices.STOCK);
+    for (let i = 0; i < 4; i++) await attempt(worker, "000000", t.devices.STOCK);
+    const locked = await attempt(worker, "000000", t.devices.STOCK);
     expect(locked.status).toBe(423);
     expect(locked.body.minutesRemaining).toBe(15);
     expect((await attempt(worker, PINS.WORKER, t.devices.OWNER)).status).toBe(423); // the right PIN is not a way out
@@ -56,7 +56,7 @@ describe("PIN login — §27.39", () => {
   it("the lock expires by itself after fifteen minutes", async () => {
     const stock = t.users.STOCK.name;
     const device = (await t.loginAs("OWNER")).deviceId;
-    for (let i = 0; i < 5; i++) await attempt(stock, "0000", device);
+    for (let i = 0; i < 5; i++) await attempt(stock, "000000", device);
     expect((await attempt(stock, PINS.STOCK, device)).status).toBe(423);
     clock.advance(15 * 60_000 + 1000);
     try {
@@ -67,15 +67,15 @@ describe("PIN login — §27.39", () => {
   it("the owner's recovery code clears the only admin's lock, and is single-use", async () => {
     const t2 = await createTestDb();
     const server = createApp({ live: t2.db, practice: async () => t2.db }).listen(0);
-    const owner = (await request(server).post("/api/setup/owner").send({ shopName: "Ա", ownerName: "Արամ", pin: "4321" })).body;
-    for (let i = 0; i < 5; i++) await request(server).post("/api/auth/login").send({ name: "Արամ", pin: "0000", deviceId: "d" + i });
-    expect((await request(server).post("/api/auth/login").send({ name: "Արամ", pin: "4321" })).status).toBe(423);
+    const owner = (await request(server).post("/api/setup/owner").send({ shopName: "Ա", ownerName: "Արամ", pin: "432100" })).body;
+    for (let i = 0; i < 5; i++) await request(server).post("/api/auth/login").send({ name: "Արամ", pin: "000000", deviceId: "d" + i });
+    expect((await request(server).post("/api/auth/login").send({ name: "Արամ", pin: "432100" })).status).toBe(423);
     // The code alone says whose it is: only the owner holds one, so nobody is picked from a list.
     const rec = await request(server).post("/api/auth/recover").send({ recoveryCode: owner.recoveryCode });
     expect(rec.status).toBe(200);
     expect(rec.body.recoveryCode).not.toBe(owner.recoveryCode);
     expect((await request(server).post("/api/auth/recover").send({ recoveryCode: owner.recoveryCode })).status).toBe(401);
-    expect((await request(server).post("/api/auth/login").send({ name: "Արամ", pin: "4321" })).status).toBe(200);
+    expect((await request(server).post("/api/auth/login").send({ name: "Արամ", pin: "432100" })).status).toBe(200);
     server.close();
     await t2.close();
   });
@@ -86,8 +86,8 @@ describe("PIN login — §27.39", () => {
       expect(res.status).not.toBe(200);
       expect(JSON.stringify(res.body)).not.toContain(t.users.WORKER.name);
     }
-    const unknown = await request(t.server).post("/api/auth/login").send({ name: "Ոչ ոք", pin: "1234", deviceId: "probe-a" });
-    const wrong = await request(t.server).post("/api/auth/login").send({ name: t.users.MANAGER.name, pin: "0000", deviceId: "probe-b" });
+    const unknown = await request(t.server).post("/api/auth/login").send({ name: "Ոչ ոք", pin: "123400", deviceId: "probe-a" });
+    const wrong = await request(t.server).post("/api/auth/login").send({ name: t.users.MANAGER.name, pin: "000000", deviceId: "probe-b" });
     expect(unknown.status).toBe(401);
     expect(wrong.status).toBe(401);
     expect(unknown.body.type).toBe(wrong.body.type);
@@ -112,7 +112,7 @@ describe("PIN login — §27.39", () => {
 
   it("rate limits ten attempts a minute per device with 429", async () => {
     const statuses: number[] = [];
-    for (let i = 0; i < 11; i++) statuses.push((await request(t.server).post("/api/auth/login").send({ name: "nobody", pin: "1234", deviceId: "rate-device" })).status);
+    for (let i = 0; i < 11; i++) statuses.push((await request(t.server).post("/api/auth/login").send({ name: "nobody", pin: "123400", deviceId: "rate-device" })).status);
     expect(statuses.slice(0, 10).every((s) => s === 401)).toBe(true);
     expect(statuses[10]).toBe(429);
   });

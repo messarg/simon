@@ -97,7 +97,7 @@ describe("the staff photograph — §6.11.1, §19.6, §26.2", () => {
     expect((await request(t.server).get(`/api/users/${t.users.STOCK.id}/avatar`)).status).toBe(404);
 
     // The name is financial record and stays; the photograph is operational and does not.
-    const leaver = (await post(t, "/users", { name: "Հրաժեշտ", pin: "5678", role: "EMPLOYEE", permissions: ["sell"] }, "OWNER")).body;
+    const leaver = (await post(t, "/users", { name: "Հրաժեշտ", pin: "567800", role: "EMPLOYEE", permissions: ["sell"] }, "OWNER")).body;
     await putAvatar(t, leaver.id, dataUrl("image/png", pngBytes()));
     expect((await request(t.server).get(`/api/users/${leaver.id}/avatar`)).status).toBe(200);
     await request(t.server).patch(`/api/users/${leaver.id}`).set(bearer(t.tokens.OWNER)).send({ isActive: false });
@@ -331,7 +331,7 @@ describe("staff personal details — §6.11, §19.6", () => {
   });
 
   it("the phone and the note go when the person does; the start date is employment record (§19.6)", async () => {
-    const leaver = (await post(t, "/users", { name: "Հեռացող", pin: "4321", role: "EMPLOYEE" }, "OWNER")).body;
+    const leaver = (await post(t, "/users", { name: "Հեռացող", pin: "432100", role: "EMPLOYEE" }, "OWNER")).body;
     await patch(leaver.id, { phone: PHONE, startedOn: "2021-06-01", note: NOTE });
     await patch(leaver.id, { isActive: false });
 

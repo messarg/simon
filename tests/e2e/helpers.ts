@@ -12,13 +12,12 @@ export async function dismissCoach(page: Page) {
   }
 }
 
-/** Nobody is listed on the sign-in screen (§16.2): a person types their name, then their PIN. */
+/** Nobody is listed on the sign-in screen (§16.2): a person types their own name and PIN, on one form. */
 export async function signIn(page: Page, name: string, pin: string, landsOn: RegExp = /\/sell/) {
   await page.goto("/sign-in");
   await page.getByLabel("Անուն").fill(name);
-  await page.keyboard.press("Enter");
-  // A PIN shorter than the maximum is submitted deliberately, by Enter or the ✓ key.
-  await page.keyboard.type(pin);
+  // Exact: the reveal toggle beside the field carries "PIN" in its label too.
+  await page.getByLabel("PIN", { exact: true }).fill(pin);
   await page.keyboard.press("Enter");
   await expect(page).toHaveURL(landsOn);
   await dismissCoach(page);

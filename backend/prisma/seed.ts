@@ -5,7 +5,7 @@
  *   npm run db:seed --workspace backend
  *
  * Sign in by typing the name (§16.2):
- *   Արամ 1111 — owner · Անի 4444 — manager · Լուսինե 2222 — employee, stock · Գոռ 3333 — employee, till
+ *   Արամ 111111 — owner · Անի 444444 — manager · Լուսինե 222222 — employee, stock · Գոռ 333333 — employee, till
  */
 import { databaseFile } from "../src/lib/config.ts";
 import { openDatabase } from "../src/lib/db.ts";
@@ -25,11 +25,11 @@ if ((await db.user.count()) > 0) {
   process.exit(1);
 }
 
-const owner = await createOwner(db, { shopName: "Շինանյութ «Արարատ»", ownerName: "Արամ", pin: "1111" });
+const owner = await createOwner(db, { shopName: "Շինանյութ «Արարատ»", ownerName: "Արամ", pin: "111111" });
 const by = { id: owner.user.id, role: "OWNER" as const };
-await createUser(db, by, { name: "Անի", pin: "4444", role: "MANAGER" });
-await createUser(db, by, { name: "Լուսինե", pin: "2222", role: "EMPLOYEE", permissions: [...PERMISSION_PRESETS.stock] });
-await createUser(db, by, { name: "Գոռ", pin: "3333", role: "EMPLOYEE", permissions: [...PERMISSION_PRESETS.cashier] });
+await createUser(db, by, { name: "Անի", pin: "444444", role: "MANAGER" });
+await createUser(db, by, { name: "Լուսինե", pin: "222222", role: "EMPLOYEE", permissions: [...PERMISSION_PRESETS.stock] });
+await createUser(db, by, { name: "Գոռ", pin: "333333", role: "EMPLOYEE", permissions: [...PERMISSION_PRESETS.cashier] });
 await db.$transaction((tx) => writeSettings(tx, { "tax.regime": "VAT", "tax.priceBasis": "INCLUSIVE", "tax.rateBp": 2000, "shop.address": "Երևան", "setup.step": 5, "setup.completedAt": new Date().toISOString() }, owner.user.id));
 
 // A small hardware-store catalogue: name, price ֏, unit, decimals, stock (display units), cost ֏, barcode, pinned.

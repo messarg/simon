@@ -85,7 +85,7 @@ npm run lint                 # oxlint — frontend only; no other workspace has 
 npm test                     # vitest, single root run across all workspaces
 npm run test:watch
 npm run check:prd            # PRD index consistency (python3 scripts/check-prd.py)
-npm run db:seed -w backend   # dev database, sign in by name: Արամ 1111 owner, Անի 4444 manager, Լուսինե 2222 / Գոռ 3333 employees; 12 products (refuses if users exist)
+npm run db:seed -w backend   # dev database, sign in by name: Արամ 111111 owner, Անի 444444 manager, Լուսինե 222222 / Գոռ 333333 employees; 12 products (refuses if users exist)
 npm run restore -w backend -- --from <backup.simonbak>   # restore drill (§27.10); asks for the passphrase
 scripts/dev-cert.sh simon.local 192.168.1.50             # the shop's TLS certificate (§16.6); trust it on every device
 docker compose up -d --build                             # Nginx + Express on one origin; see docs/runbook.md §0

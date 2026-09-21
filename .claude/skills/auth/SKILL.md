@@ -34,7 +34,9 @@ const ok = await argon2.verify(user.pinHash, pin);
 **Never compare a PIN in the client.** Never send a PIN list to the device. Never store a PIN
 in `localStorage`.
 
-Because the keyspace is tiny (4–6 digits), compensate:
+The PIN is **exactly 6 digits**, and its shape lives once, in `@simon/shared`'s `pin.ts`
+(`PIN_LENGTH`, `PIN_PATTERN`, `isValidPin`, `normalisePinInput`) — never re-written in a route,
+a form or a keypad default. Because the keyspace is still small, compensate:
 - **Rate limit** per user and per device; exponential backoff.
 - **Lock** after N failures (`failedAttempts`, `lockedUntil`) — admin unlock only.
 - Argon2/bcrypt with a real work factor. The login path is not hot; a slow hash costs nothing
@@ -55,7 +57,11 @@ Because the keyspace is tiny (4–6 digits), compensate:
 ## Sign-in (PRD §16.2)
 
 **Nobody is listed before sign-in** — no `GET /auth/users`, no `GET /auth/admins`. A person types
-their name, then their PIN; `POST /auth/login {name, pin}`. Names match by `nameKey`
+their name and their PIN on **one form**, posted as a single `POST /auth/login {name, pin}` —
+there is no earlier step for the server to answer, which is what keeps an unknown name
+indistinguishable. The sign-in screen carries **no keypad**: a name field has already raised the
+device's keyboard, and `PinPad`'s window-level key listener would eat digits typed into a field
+beside it (that listener is why the screen used to be two steps). Names match by `nameKey`
 (`backend/src/domain/person-name.ts`: NFC, spaces collapsed, Armenian case-fold) and two active
 people may not share one (`duplicate-name`). **An unknown name must fail exactly as a wrong PIN**
 — same `pin-incorrect`, same time (a decoy argon2 verify) — or the screen is the staff list again,

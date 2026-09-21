@@ -79,7 +79,7 @@ export function ReauthSheet({ open, onOpenChange, action, description, requireRe
                 <ShieldCheck className="size-4 text-primary" aria-hidden />
                 {OWNER_ACTIONS.includes(action) ? t("reauth.whoOwner") : t("reauth.who")}
               </p>
-              <Button type="submit" size="lg" className="mt-3 w-full" disabled={!typed.trim()}>{t("signIn.next")}</Button>
+              <Button type="submit" size="lg" className="mt-3 w-full" disabled={!typed.trim()}>{t("common.next")}</Button>
             </form>
           ) : (
             <>

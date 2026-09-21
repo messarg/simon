@@ -23,12 +23,12 @@ describe("the setup wizard", () => {
       expect(await status()).toMatchObject({ needsOwner: true, step: 0, completedAt: null });
 
       // Q1 and Q2 arrive together: the shop's name, and the owner who is the first admin (§7.1).
-      const setup = await request(server).post("/api/setup/owner").send({ shopName: "Շինանյութ «Արարատ»", ownerName: "Արամ", pin: "4321" });
+      const setup = await request(server).post("/api/setup/owner").send({ shopName: "Շինանյութ «Արարատ»", ownerName: "Արամ", pin: "432100" });
       expect(setup.status).toBe(201);
       expect(setup.body.recoveryCode).toMatch(/^[A-Z2-9]{4}(-[A-Z2-9]{4}){3}$/);
       expect(setup.body.backupPassphrase).toMatch(/^[A-HJ-NP-Z2-9]{4}(-[A-HJ-NP-Z2-9]{4}){5}$/);
 
-      const token = (await request(server).post("/api/auth/login").send({ name: setup.body.user.name, pin: "4321", deviceLabel: "setup" })).body.token;
+      const token = (await request(server).post("/api/auth/login").send({ name: setup.body.user.name, pin: "432100", deviceLabel: "setup" })).body.token;
       const patch = (body: object) => request(server).patch("/api/settings").set(bearer(token)).send(body);
 
       // Q3 — sold by weight or length? Answered, then the laptop closes.

@@ -64,13 +64,13 @@ describe("who makes and changes whom — §6.17", () => {
   afterAll(async () => { await t.close(); });
 
   it("the owner makes managers and employees; a manager makes employees only; nobody makes an owner", async () => {
-    expect((await post(t, "/users", { name: "Նոր մենեջեր", pin: "5555", role: "MANAGER" }, "OWNER")).status).toBe(201);
-    expect((await post(t, "/users", { name: "Մեկ այլ", pin: "5556", role: "MANAGER" }, "MANAGER")).status).toBe(403);
-    const hired = await post(t, "/users", { name: "Սարո", pin: "5557", role: "EMPLOYEE", permissions: ["sell"] }, "MANAGER");
+    expect((await post(t, "/users", { name: "Նոր մենեջեր", pin: "555500", role: "MANAGER" }, "OWNER")).status).toBe(201);
+    expect((await post(t, "/users", { name: "Մեկ այլ", pin: "555600", role: "MANAGER" }, "MANAGER")).status).toBe(403);
+    const hired = await post(t, "/users", { name: "Սարո", pin: "555700", role: "EMPLOYEE", permissions: ["sell"] }, "MANAGER");
     expect(hired.status).toBe(201);
     expect(hired.body).toMatchObject({ role: "EMPLOYEE", permissions: ["sell"] });
     // OWNER is not a value the body accepts at all.
-    expect((await post(t, "/users", { name: "Երկրորդ տեր", pin: "5558", role: "OWNER" }, "OWNER")).status).toBe(400);
+    expect((await post(t, "/users", { name: "Երկրորդ տեր", pin: "555800", role: "OWNER" }, "OWNER")).status).toBe(400);
   });
 
   it("nobody demotes or deactivates the owner — the owner included", async () => {
@@ -89,7 +89,7 @@ describe("who makes and changes whom — §6.17", () => {
     expect(own.body.phone).toBe("091 000000");
     expect((await m.get(`/users/${t.users.MANAGER.id}`)).body.phone).toBe("091 000000");
     expect((await m.patch(`/users/${t.users.MANAGER.id}`, { isActive: false })).status).toBe(403);
-    const other = (await post(t, "/users", { name: "Երկրորդ մենեջեր", pin: "6666", role: "MANAGER" }, "OWNER")).body;
+    const other = (await post(t, "/users", { name: "Երկրորդ մենեջեր", pin: "666600", role: "MANAGER" }, "OWNER")).body;
     expect((await m.patch(`/users/${other.id}`, { phone: "1" })).status).toBe(404);
     await request(t.server).patch(`/api/users/${other.id}`).set(bearer(t.tokens.OWNER)).send({ phone: "093 222222" });
     const listed = (await m.get("/users")).body.items.find((u: { id: string }) => u.id === other.id);
@@ -98,7 +98,7 @@ describe("who makes and changes whom — §6.17", () => {
   });
 
   it("refuses a second active person with the same name, however it is written (§16.2)", async () => {
-    const dup = await post(t, "/users", { name: "  ԳՈՌ ", pin: "7777", role: "EMPLOYEE" }, "OWNER");
+    const dup = await post(t, "/users", { name: "  ԳՈՌ ", pin: "777700", role: "EMPLOYEE" }, "OWNER");
     expect(dup.status).toBe(422);
     expect(dup.body.type).toMatch(/duplicate-name$/);
     expect((await request(t.server).patch(`/api/users/${t.users.STOCK.id}`).set(bearer(t.tokens.OWNER)).send({ name: "գոռ" })).body.type).toMatch(/duplicate-name$/);
@@ -120,8 +120,8 @@ describe("an employee does exactly what they were granted — §16.4", () => {
   afterAll(async () => { await t.close(); });
 
   it("a receiver who does not sell cannot open a till, see the debt book, or sell", async () => {
-    await post(t, "/users", { name: "Արմեն", pin: "8181", role: "EMPLOYEE", permissions: ["receive"] }, "OWNER");
-    const s = await signIn(t, "Արմեն", "8181");
+    await post(t, "/users", { name: "Արմեն", pin: "818100", role: "EMPLOYEE", permissions: ["receive"] }, "OWNER");
+    const s = await signIn(t, "Արմեն", "818100");
     expect(s.user).toMatchObject({ role: "EMPLOYEE", permissions: ["receive"] });
     const e = as(t, s.token);
     expect((await e.get("/suppliers")).status).toBe(200);
@@ -136,8 +136,8 @@ describe("an employee does exactly what they were granted — §16.4", () => {
   it("selling on credit needs the debt book, not just the till", async () => {
     const p = await makeProduct(t, { name: "Պտուտակ", priceDram: 50, stock: 10_000 });
     const customer = await makeCustomer(t, "Սամվել", null, "OWNER");
-    await post(t, "/users", { name: "Կարեն", pin: "8282", role: "EMPLOYEE", permissions: ["sell"] }, "OWNER");
-    const s = await signIn(t, "Կարեն", "8282");
+    await post(t, "/users", { name: "Կարեն", pin: "828200", role: "EMPLOYEE", permissions: ["sell"] }, "OWNER");
+    const s = await signIn(t, "Կարեն", "828200");
     const shiftId = await openShift(t, "WORKER", 0, s.token);
     const onCredit = saleBody({ shiftId, lines: [{ product: p, qty: 1000 }], payments: [{ method: "DEBT" }], customerId: customer.id, prefix: "KR" });
     const refused = await request(t.server).post("/api/sales").set(bearer(s.token)).send(onCredit);
@@ -148,7 +148,7 @@ describe("an employee does exactly what they were granted — §16.4", () => {
   });
 
   it("a grant takes effect on the next request, without signing in again", async () => {
-    const s = await signIn(t, "Արմեն", "8181");
+    const s = await signIn(t, "Արմեն", "818100");
     expect((await as(t, s.token).get("/stocktakes")).status).toBe(403);
     const person = (await get(t, "/users", "OWNER")).body.items.find((u: { name: string }) => u.name === "Արմեն");
     await request(t.server).patch(`/api/users/${person.id}`).set(bearer(t.tokens.OWNER)).send({ permissions: ["receive", "stocktake"] });

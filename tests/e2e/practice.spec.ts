@@ -6,7 +6,7 @@ import { expect, test } from "@playwright/test";
 import { dismissCoach, signIn } from "./helpers.ts";
 
 test("a worker practises a sale and leaves nothing behind", async ({ page }) => {
-  await signIn(page, "Գոռ", "3333");
+  await signIn(page, "Գոռ", "333333");
 
   // Into practice from the same place sign-out lives, so it is found without being taught.
   await page.getByRole("button", { name: "Ավելին" }).click();

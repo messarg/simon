@@ -20,7 +20,7 @@ import { writeSettings } from "../services/settings.service.ts";
 import { createOwner, createUser } from "../services/user.service.ts";
 import { createTestDb, type TestDb } from "./db.ts";
 
-export const PINS = { OWNER: "1111", STOCK: "2222", WORKER: "3333", MANAGER: "4444" } as const;
+export const PINS = { OWNER: "111111", STOCK: "222222", WORKER: "333333", MANAGER: "444444" } as const;
 export type Persona = keyof typeof PINS;
 export const PERSONAS = Object.keys(PINS) as Persona[];
 

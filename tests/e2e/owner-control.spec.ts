@@ -7,7 +7,7 @@ import { expect, test } from "@playwright/test";
 import { dismissCoach, signIn } from "./helpers.ts";
 
 test("the owner reads the day, creates the backup passphrase, and takes the first backup", async ({ page }) => {
-  await signIn(page, "Արամ", "1111");
+  await signIn(page, "Արամ", "111111");
 
   // Home: nothing sold yet, and the one thing that would matter on the worst day is missing.
   await page.goto("/home");
@@ -21,7 +21,7 @@ test("the owner reads the day, creates the backup passphrase, and takes the firs
   await page.getByRole("button", { name: "Ստեղծել գաղտնաբառ" }).click();
   await page.getByRole("dialog").getByLabel("Հաստատողի անունը").fill("Արամ");
   await page.keyboard.press("Enter");
-  await page.keyboard.type("1111");
+  await page.keyboard.type("111111");
   await page.keyboard.press("Enter");
   const passphrase = page.getByRole("dialog").getByText(/^[A-HJ-NP-Z2-9]{4}(-[A-HJ-NP-Z2-9]{4}){5}$/);
   await expect(passphrase).toBeVisible();

@@ -11,7 +11,7 @@ import { useQuery } from "@tanstack/react-query";
 import { KeyRound, ShieldCheck, Store, UserPlus } from "lucide-react";
 import { useState } from "react";
 import { Navigate, useNavigate } from "react-router";
-import { PERMISSION_PRESETS, type Permission, type Role } from "@simon/shared";
+import { isValidPin, normalisePinInput, PERMISSION_PRESETS, PIN_LENGTH, type Permission, type Role } from "@simon/shared";
 import { Button } from "@/components/ui/button.tsx";
 import { Input, Label } from "@/components/ui/input.tsx";
 import { problemMessage, t } from "@/i18n/t.ts";
@@ -194,7 +194,7 @@ function Owner({ shopName, onDone }: { shopName: string; onDone: (secrets: Secre
   const [pin2, setPin2] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const valid = shopName && ownerName.trim() && /^\d{4,8}$/.test(pin) && pin === pin2;
+  const valid = shopName && ownerName.trim() && isValidPin(pin) && pin === pin2;
 
   const submit = async () => {
     setBusy(true);
@@ -224,14 +224,14 @@ function Owner({ shopName, onDone }: { shopName: string; onDone: (secrets: Secre
         <div className="grid grid-cols-2 gap-3">
           <div>
             <Label htmlFor="pin">{t("setup.ownerPin")}</Label>
-            <Input id="pin" value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 8))} inputMode="numeric" type="password" autoComplete="new-password" className="tabular text-lg tracking-widest" />
+            <Input id="pin" value={pin} onChange={(e) => setPin(normalisePinInput(e.target.value))} inputMode="numeric" type="password" autoComplete="new-password" className="tabular text-lg tracking-widest" />
           </div>
           <div>
             <Label htmlFor="pin2">{t("setup.ownerPinRepeat")}</Label>
-            <Input id="pin2" value={pin2} onChange={(e) => setPin2(e.target.value.replace(/\D/g, "").slice(0, 8))} inputMode="numeric" type="password" autoComplete="new-password" className="tabular text-lg tracking-widest" />
+            <Input id="pin2" value={pin2} onChange={(e) => setPin2(normalisePinInput(e.target.value))} inputMode="numeric" type="password" autoComplete="new-password" className="tabular text-lg tracking-widest" />
           </div>
         </div>
-        {pin2.length >= 4 && pin !== pin2 && <p className="text-sm text-destructive" role="alert">{t("setup.pinMismatch")}</p>}
+        {pin2.length >= PIN_LENGTH && pin !== pin2 && <p className="text-sm text-destructive" role="alert">{t("setup.pinMismatch")}</p>}
         {error && <p className="text-sm text-destructive" role="alert">{error}</p>}
         <Button type="submit" size="lg" className="w-full" disabled={!valid || busy}>{t("wizard.next")}</Button>
       </form>
@@ -276,7 +276,7 @@ function Staff({ onDone, busy }: { onDone: () => void; busy: boolean }) {
         <div className="grid grid-cols-2 gap-3">
           <div>
             <Label htmlFor="staff-pin">{t("settings.pin")}</Label>
-            <Input id="staff-pin" value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 8))} inputMode="numeric" type="password" className="tabular tracking-widest" />
+            <Input id="staff-pin" value={pin} onChange={(e) => setPin(normalisePinInput(e.target.value))} inputMode="numeric" type="password" className="tabular tracking-widest" />
           </div>
           <div>
             <Label>{t("wizard.q2Role")}</Label>
@@ -290,7 +290,7 @@ function Staff({ onDone, busy }: { onDone: () => void; busy: boolean }) {
           </div>
         </div>
         {error && <p className="text-sm text-destructive" role="alert">{error}</p>}
-        <Button className="w-full" disabled={!name.trim() || pin.length < 4} onClick={() => void add()}><UserPlus />{t("wizard.q2Add")}</Button>
+        <Button className="w-full" disabled={!name.trim() || !isValidPin(pin)} onClick={() => void add()}><UserPlus />{t("wizard.q2Add")}</Button>
         <Button size="lg" className="w-full" disabled={busy} onClick={onDone}>{t("wizard.next")}</Button>
       </div>
     </Card>

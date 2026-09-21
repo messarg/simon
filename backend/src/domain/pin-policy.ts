@@ -4,7 +4,8 @@
  * 5 consecutive failures lock the user for 15 minutes (423). Attempts are limited to 10
  * per minute per device (429). The lock is per user, so the next worker still signs in.
  */
-export const PIN_PATTERN = /^\d{4,8}$/;
+// The shape is @simon/shared's, so the till cannot accept a PIN this server would refuse (§16.2).
+export { PIN_LENGTH, PIN_PATTERN } from "@simon/shared";
 export const MAX_FAILURES = 5;
 export const LOCK_MINUTES = 15;
 export const ATTEMPTS_PER_MINUTE = 10;

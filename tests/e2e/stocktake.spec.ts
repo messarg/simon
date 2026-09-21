@@ -11,7 +11,7 @@ test("stock is counted while the shop keeps selling", async ({ browser }) => {
   const counter = await (await browser.newContext()).newPage();
 
   // The worker opens a shift.
-  await signIn(till, "Գոռ", "3333");
+  await signIn(till, "Գոռ", "333333");
   await till.goto("/shift");
   await dismissCoach(till);
   for (const d of "10000") await till.getByRole("button", { name: d, exact: true }).click();
@@ -19,7 +19,7 @@ test("stock is counted while the shop keeps selling", async ({ browser }) => {
   await expect(till).toHaveURL(/\/sell/);
 
   // Stock starts a whole-shop count: 40 sacks of cement on the books.
-  await signIn(counter, "Լուսինե", "2222");
+  await signIn(counter, "Լուսինե", "222222");
   await counter.goto("/stock/count");
   await dismissCoach(counter);
   await counter.getByRole("button", { name: "Ամբողջ խանութը" }).click();
@@ -57,7 +57,7 @@ test("stock is counted while the shop keeps selling", async ({ browser }) => {
 
   // The owner reviews: only the screws differ — the two sold sacks are not shrinkage.
   const owner = await (await browser.newContext({ viewport: { width: 1280, height: 900 } })).newPage();
-  await signIn(owner, "Արամ", "1111");
+  await signIn(owner, "Արամ", "111111");
   await owner.goto("/stock/count");
   await dismissCoach(owner);
   const rows = owner.locator("tbody tr");
